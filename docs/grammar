@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.1 2004/10/13 02:45:57 chris Exp $
+ * $Id: grammar,v 1.2 2004/10/15 13:33:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,12 +36,11 @@ module-decl-lst ::= module-decl
 
 /* Expressions {{{ */
 expr ::= LBRACK expr-lst RBRACK           /* defines a list */
-       | LBRACK record-assn-lst RBRACK    /* defines a record */
+       | LBRACE record-assn-lst RBRACE    /* defines a record */
        | case-expr
        | decl-expr                        /* creates a new level of scope */
        | if-expr
-       | id
-       | fun-call
+       | fun-call-or-id
        | INTEGER
        | STRING
        | BOOLEAN
@@ -60,8 +59,8 @@ decl-expr ::= DECL decl-lst IN expr END
 
 if-expr ::= IF expr THEN expr ELSE expr
 
-expr-lst ::= expr
-           | expr COMMA expr-lst
+expr-lst ::= expr COMMA expr-lst
+           | expr
 /* }}} */
 
 
@@ -71,8 +70,8 @@ decl ::= ty-decl
        | const-decl
        | fun-decl
 
-decl-lst ::= decl
-           | decl decl-lst
+decl-lst ::= decl decl-lst
+           | decl
 
 proto ::= ty-decl-proto
         | var-decl-proto
@@ -87,14 +86,13 @@ proto-lst ::= proto
 /* Types {{{ */
 ty-decl-proto ::= TYPE id
 
+single-ty ::= LBRACK id-lst RBRACK
+            | id
+
 ty-decl ::= ty-decl-proto ASSIGN ty
 
-ty ::= INTEGER
-     | STRING
-     | BOOLEAN
-     | ty LIST                            /* defines a list of type ty */
-     | LBRACK id-lst RBRACK               /* defines a record */
-     | id                                 /* alias to an existing type */
+ty ::= single-ty
+     | single-ty LIST                     /* defines a list of type ty */
 
 id-lst ::= IDENTIFIER COLON ty
          | IDENTIFIER COLON ty COMMA id-lst
@@ -109,8 +107,8 @@ var-decl-proto ::= VAR IDENTIFIER COLON ty
 
 var-decl ::= var-decl-proto ASSIGN expr
 
-id ::= id DOT IDENTIFIER
-     | IDENTIFIER
+id ::= IDENTIFIER
+     | IDENTIFIER DOT id
 /* }}} */
 
 
@@ -126,8 +124,9 @@ fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
 
 fun-decl ::= fun-decl-proto ASSIGN expr
 
-fun-call ::= id LPAREN expr-lst RPAREN
-           | id LPAREN RPAREN
+fun-call-or-id ::= id LPAREN expr-lst RPAREN
+                 | id LPAREN RPAREN
+                 | id
 /* }}} */
 
 
@@ -163,6 +162,8 @@ IN ::= in
 
 INTEGER ::= [0-9]+
 
+LBRACE ::= {
+
 LBRACK ::= [
 
 LIST ::= list
@@ -172,6 +173,8 @@ LPAREN ::= (
 MAPSTO ::= →
 
 MODULE ::= ℳ
+
+RBRACE ::= }
 
 RBRACK ::= ]
 
