@@ -6,7 +6,8 @@
       if t then
          case 40 in
             1 → 1,
-            40 → 40
+            40 → 40,
+            else → 0
          end
       else
          25

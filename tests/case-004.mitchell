@@ -10,7 +10,8 @@
       case Main.asdf() in
          t → case something in
                 1 → 1,
-                0 → 0
+                0 → 0,
+                else → 47
              end,
          f → 1
       end
