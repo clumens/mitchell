@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.18 2004/10/29 14:22:23 chris Exp $
+ * $Id: parse.c,v 1.19 2004/11/01 18:04:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -171,12 +171,12 @@ static void print_set (const int set[])
 {
    unsigned int i;
 
-   printf ("{");
+   fprintf (stderr, "{");
 
    for (i = 0; set[i] != -1; i++)
-      printf (" %s", token_map[set[i]]);
+      fprintf (stderr, " %s", token_map[set[i]]);
 
-   printf (" }");
+   fprintf (stderr, " }");
 }
 
 /* Describe a token more completely so the user has a better idea of what
@@ -341,7 +341,8 @@ static absyn_expr_t *parse_branch_expr()
    return retval;
 }
 
-/* branch-lst ::= branch-expr MAPSTO expr
+/* branch-lst ::= ELSE MAPSTO expr
+ *              | branch-expr MAPSTO expr
  *              | branch-expr MAPSTO expr COMMA branch-lst
  */
 static absyn_branch_lst_t *parse_branch_lst()
@@ -351,17 +352,28 @@ static absyn_branch_lst_t *parse_branch_lst()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_branch_lst_t))
 
-   retval->branch = (struct absyn_expr_t *) parse_branch_expr();
-   match(MAPSTO);
-   retval->expr = (struct absyn_expr_t *) parse_expr();
-
-   if (tok->type == COMMA)
+   if (tok->type == ELSE)
    {
-      match(COMMA);
-      retval->next = (struct branch_lst *) parse_branch_lst();
+      match(ELSE);
+      match(MAPSTO);
+      retval->branch = NULL;
+      retval->expr = (struct absyn_expr_t *) parse_expr();
+      retval->next = NULL;
    }
    else
-      retval->next = NULL;
+   {
+      retval->branch = (struct absyn_expr_t *) parse_branch_expr();
+      match(MAPSTO);
+      retval->expr = (struct absyn_expr_t *) parse_expr();
+
+      if (tok->type == COMMA)
+      {
+         match(COMMA);
+         retval->next = (struct branch_lst *) parse_branch_lst();
+      }
+      else
+         retval->next = NULL;
+   }
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -371,6 +383,7 @@ static absyn_branch_lst_t *parse_branch_lst()
 static absyn_case_expr_t *parse_case_expr()
 {
    absyn_case_expr_t *retval;
+   absyn_branch_lst_t *tmp, *prev_tmp;
 
    ENTERING (__FUNCTION__);
    MALLOC(retval, sizeof(absyn_case_expr_t))
@@ -378,8 +391,35 @@ static absyn_case_expr_t *parse_case_expr()
    match(CASE);
    retval->test = (struct absyn_expr_t *) parse_expr();
    match(IN);
+
+   /* Gatber up all the branches into a list.  If there is a default one, it
+    * should be at the very end (as enforced by the grammar above).
+    */
    retval->branch_lst = parse_branch_lst();
    match(END);
+
+   tmp = retval->branch_lst;
+   prev_tmp = NULL;
+
+   while (tmp != NULL)
+   {
+      /* No branch?  This must be it. */
+      if (tmp->branch == NULL)
+      {
+         retval->default_expr = tmp->expr;
+
+         /* Singleton list? */
+         if (prev_tmp != NULL)
+            prev_tmp->next = tmp->next;
+         else
+            retval->branch_lst = NULL;
+
+         break;
+      }
+
+      prev_tmp = tmp;
+      tmp = tmp->next;
+   }
 
    LEAVING(__FUNCTION__);
    return retval;

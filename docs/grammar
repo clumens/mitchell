@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.8 2004/10/29 04:04:12 chris Exp $
+ * $Id: grammar,v 1.9 2004/11/01 18:04:47 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -50,7 +50,8 @@ branch-expr ::= id
               | STRING
               | BOOLEAN
 
-branch-lst ::= branch-expr MAPSTO expr
+branch-lst ::= ELSE MAPSTO expr
+             | branch-expr MAPSTO expr
              | branch-expr MAPSTO expr COMMA branch-lst
 
 case-expr ::= CASE expr IN branch-lst END

@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.5 2004/10/29 04:04:14 chris Exp $
+ * $Id: absyn_printer.c,v 1.6 2004/11/01 18:04:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -105,7 +105,14 @@ static void print_case_expr_t (absyn_case_expr_t *node, unsigned int indent)
 {
    fprintf (out, "\n%*scase_expr_t", indent, "");
    print_expr_t ((absyn_expr_t *) node->test, indent+1);
-   print_branch_lst_t (node->branch_lst, indent+1);
+
+   /* Case expressions with just a default don't have a branch list. */
+   if (node->branch_lst != NULL)
+      print_branch_lst_t (node->branch_lst, indent+1);
+   
+   /* Not all case expressions have a default. */
+   if (node->default_expr != NULL)
+      print_expr_t ((absyn_expr_t *) node->default_expr, indent+1);
 }
 
 static void print_decl_t (absyn_decl_t *node, unsigned int indent)

@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.7 2004/11/01 05:11:42 chris Exp $
+ * $Id: absyn.h,v 1.8 2004/11/01 18:04:49 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -60,15 +60,16 @@ typedef struct {
    struct absyn_expr_t *test_expr, *then_expr, *else_expr;
 } absyn_if_expr_t;
 
-typedef struct {
+typedef struct absyn_branch_lst_t {
    struct absyn_expr_t *branch;
    struct absyn_expr_t *expr;
-   struct branch_lst *next;
+   struct absyn_branch_lst_t *next;
 } absyn_branch_lst_t;
 
 typedef struct {
    struct absyn_expr_t *test;
    absyn_branch_lst_t *branch_lst;
+   struct absyn_expr_t *default_expr;
 } absyn_case_expr_t;
 
 typedef struct absyn_expr_t {

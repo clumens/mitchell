@@ -1,0 +1,14 @@
+# Description:  Default case expression
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: boolean ()
+in
+   ƒ foo: boolean () ←
+      case Main.asdf() in
+         1 → t,
+         2 → f,
+         3 → t,
+         else → f
+      end
+end

@@ -1,0 +1,12 @@
+# Description:  Misplaced default expression
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ foo: boolean ()
+in
+   ƒ foo: boolean () ←
+      case Main.asdf() in
+         else → f,
+         1 → t
+      end
+end
