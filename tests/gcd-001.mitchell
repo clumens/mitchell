@@ -5,6 +5,6 @@
    ƒ gcd: int (a: int, b: int)
 in
    ƒ gcd: int (a: int, b: int) ←
-      if Boolean.= (b, 0) then a
+      if Integer.= (b, 0) then a
       else gcd (b, Integer.mod (a, b))
 end
