@@ -1,23 +1,26 @@
 - documentation:
    - lots and lots of documentation explaining syntax definition
-   - add doxygen docs to all the source
-   - explain the somewhat complicated scoping rules
 - grammar:
-   - visibility declarations (are these really needed?)
-   - remove DECL from module-decl (post-preview-3)
+   - allow empty lists (preview-3)
+   - come up with something besides a "." to separate records from their
+     elements when accessing (preview-3)
+   - remove DECL from module-decl (preview-4)
    - provide an escape mechanism for strings - way to insert literal
-     double quotes, tabs, escapes for colors, etc. (post-preview-3)
+     double quotes, tabs, escapes for colors, etc. (preview-4)
+   - are visibility declarations really needed?
 - misc:
    - need to think up a format for built modules that will allow us to
-     suck in a symbol table for them during semantic analysis
-   - proposal for C interface module (to make the runtime possible)
-   - outline contents for runtime library (long-term project)
+     suck in a symbol table for them during semantic analysis (preview-5)
+   - proposal for C interface module
+   - outline contents for runtime library
 - output:
-   - parser error messages can always be better (context, replacements, etc)
    - add column numbers to everything for better error reporting
+     (preview-4)
    - audit line number assignments in absyn to make sure they're right
+     (preview-4)
+   - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
-   - detect infinite loops of types
+   - detect infinite loops of types (preview-4)
    - base types may currently be overridden - good or bad?
 - testing:
    - more test cases for parser
