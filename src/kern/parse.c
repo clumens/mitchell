@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.21 2004/11/11 03:19:42 chris Exp $
+ * $Id: parse.c,v 1.22 2004/11/13 00:01:38 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -54,12 +54,12 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
 #define NRULES   22        /* number of parser rules in each set */
 #define SET_SIZE 14        /* max number of elements in each rule */
 
-static enum { SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
-              SET_DECL_EXPR, SET_DECL_LST, SET_EXPR, SET_EXPR_LST,
-              SET_FUN_CALL_OR_ID, SET_FUN_DECL, SET_ID, SET_ID_LST,
-              SET_IF_EXPR, SET_MODULE_DECL, SET_MODULE_DECL_LST,
-              SET_RECORD_ASSN_LST, SET_SINGLE_TY, SET_TOP_DECL,
-              SET_TOP_DECL_LST, SET_TY, SET_TY_DECL, SET_VAL_DECL };
+enum { SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
+       SET_DECL_EXPR, SET_DECL_LST, SET_EXPR, SET_EXPR_LST,
+       SET_FUN_CALL_OR_ID, SET_FUN_DECL, SET_ID, SET_ID_LST, SET_IF_EXPR,
+       SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_RECORD_ASSN_LST,
+       SET_SINGLE_TY, SET_TOP_DECL, SET_TOP_DECL_LST, SET_TY, SET_TY_DECL,
+       SET_VAL_DECL };
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
