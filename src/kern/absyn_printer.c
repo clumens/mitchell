@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.21 2005/01/16 06:28:17 chris Exp $
+ * $Id: absyn_printer.c,v 1.22 2005/01/17 04:51:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -320,7 +320,7 @@ static void print_record_ref_t (absyn_record_ref_t *node, unsigned int indent)
    if (node != NULL)
    {
       fprintf (out, "\n%*srecord_ref", indent, "");
-      print_id_expr_t (node->identifier, indent+1);
+      print_expr_t (node->rec, indent+1);
       print_id_expr_t (node->element, indent+1);
    }
 }

@@ -5,6 +5,7 @@ Compiler frontend:
 - Added -last-phase to halt compilation early.
 Grammar:
 - Added escape sequences into string literals.
+- Allow functions to return record values for element reference.
 Internals:
 - Use generic linked list code throughout the AST.  This removes the
   absyn_decl_lst_t, absyn_expr_lst_t, and absyn_module_lst_t structures.

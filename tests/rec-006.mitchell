@@ -1,0 +1,11 @@
+# Description:  Function returns a record that may be dereferenced.
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ rec ← { a: integer, b: string }
+
+   ƒ fun: rec () ← 
+      { a ← 47, b ← "foo" }
+
+   ʋ v: integer ← fun()|a
+end

@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.30 2005/01/10 04:53:33 chris Exp $
+ * $Id: semant.c,v 1.31 2005/01/17 04:51:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1184,25 +1184,59 @@ static ty_t *check_record_assn (list_t *lst, tabstack_t *stack)
 static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
 {
    ty_t *retval = NULL;
-   symbol_t *sym;
-   ty_t *sym_ty;
+   ty_t *sym_ty = NULL;
    absyn_id_expr_t *tmp;
 
-   if ((sym = lookup_id_global (node->identifier, SYM_VALUE, stack)) == NULL)
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, node->column,
-                        node->identifier->symbol, "unknown symbol referenced");
-      exit(1);
-   }
+   /* Records may be defined values or values returned from a function call,
+    * though they must be of a type defined in both the function's scope and
+    * the scope of the call.  In the function call case, we still have to
+    * type check the expression before we may do anything else.
+    */
+   switch (node->rec->kind) {
+      case ABSYN_ID:
+      {
+         symbol_t *sym = NULL;
 
-   sym_ty = unalias (sym->info.ty);
+         if ((sym = lookup_id_global (node->rec->identifier, SYM_VALUE,
+                                      stack)) == NULL)
+         {
+            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                              node->column, node->rec->identifier->symbol,
+                              "unknown symbol referenced in record expression");
+            exit(1);
+         }
 
-   /* Values and functions exist in the same namespace, so check what we got. */
-   if (sym->kind != SYM_VALUE || ! is_ty_kind (sym_ty, TY_RECORD))
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, node->column,
-                        sym->name, "symbol is not a record");
-      exit(1);
+         sym_ty = unalias (sym->info.ty);
+
+         if (!is_ty_kind (sym_ty, TY_RECORD))
+         {
+            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                              node->column, sym->name,
+                              "symbol is not a record");
+            exit(1);
+         }
+
+         break;
+      }
+
+      case ABSYN_FUN_CALL:
+         sym_ty = unalias(check_fun_call (node->rec->fun_call_expr, stack));
+         
+         if (!is_ty_kind (sym_ty, TY_RECORD))
+         {
+            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                              node->column,
+                              node->rec->fun_call_expr->identifier->symbol,
+                              "symbol is not a record");
+            exit(1);
+         }
+         break;
+
+      /* All other cases are ruled out by the grammar, but this shuts up a gcc
+       * warning.
+       */
+      default:
+         break;
    }
 
    /* Loop over each element in the path given, since we could be accessing
