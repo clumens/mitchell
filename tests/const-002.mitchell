@@ -1,0 +1,8 @@
+# Description:  Basic constant declaration missing its type
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ɕ foo
+in
+   ɕ foo ← 47
+end
