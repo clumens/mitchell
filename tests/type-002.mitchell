@@ -1,0 +1,8 @@
+# Description:  Wrong syntax on type definition
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ uid
+in
+   τ uid: integer
+end

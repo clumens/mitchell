@@ -1,0 +1,8 @@
+# Description:  Record definition
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ person
+in
+   τ person ← {name: string, age: integer, is_male: boolean}
+end

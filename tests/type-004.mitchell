@@ -1,0 +1,8 @@
+# Description:  List of records definition
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ people
+in
+   τ people ← {name: string, age: integer, is_male: boolean} list
+end
