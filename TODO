@@ -18,7 +18,8 @@
    - detect infinite loops of types (preview-4)
    - base types may currently be overridden - good or bad?
    - better hashing function
-   - handle case-exprs that don't check all the possibilities (preview-4)
+   - check for duplicate literals in case-expr (if we're not already doing
+     this - or, just say the first match wins)
 - testing:
    - more test cases for parser
    - more test cases for scope

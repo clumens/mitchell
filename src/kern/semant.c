@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.31 2005/01/17 04:51:44 chris Exp $
+ * $Id: semant.c,v 1.32 2005/01/17 23:18:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -610,6 +610,27 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
       }
       else
          node->ty = node->default_expr->ty;
+   }
+   else
+   {
+      /* If there is no default expression, make sure all possible values
+       * of the test are covered.  Since case-expr returns a value, we have
+       * to make sure that a value is defined for all the possible inputs.
+       * For integers and strings, we can just assume there's no way every
+       * value is covered.  For booleans, we can't yet figure out if all
+       * possibilities are covered (if the branch tests are identifiers
+       * especially) so just throw a warning.
+       */
+      if (is_ty_kind (node->test->ty, TY_INTEGER) ||
+          is_ty_kind (node->test->ty, TY_STRING))
+      {
+         NONEXHAUSTIVE_MATCH_ERROR (compiler_config.filename, node->lineno,
+                                    node->column);
+         exit(1);
+      }
+      else
+         NONEXHAUSTIVE_MATCH_WARNING (compiler_config.filename, node->lineno,
+                                      node->column);
    }
 
    return node->ty;

@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.5 2005/01/10 04:53:29 chris Exp $
+ * $Id: error.h,v 1.6 2005/01/17 23:18:48 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -23,6 +23,9 @@
 #ifndef _ERROR_H
 #define _ERROR_H 1
 
+/* Errors, which should be followed by whatever other text needs to be printed
+ * and then an exit(1).
+ */
 #define BAD_SYMBOL_ERROR(file, line, column, sym, msg) \
    fprintf (stderr, "%s:%d.%d Error:\n\t%ls: %s\n", (file), (line), (column), \
                     (sym), (msg))
@@ -37,6 +40,11 @@
    fprintf (stderr, "%s Mitchell Compiler Internal Error:\n" \
                     "%s:%d: %s\n", (in_file), __FILE__, __LINE__, (msg));
 
+#define NONEXHAUSTIVE_MATCH_ERROR(file, line, column) \
+   fprintf (stderr, "%s:%d.%d Error:  non-exhaustive match in case-expr - " \
+                    "recommend adding an else branch\n", (file), (line), \
+                    (column))
+
 #define PARSE_ERROR(file, line, column) \
    fprintf (stderr, "%s:%d.%d Error:  parse error\n", (file), (line), (column))
 
@@ -47,6 +55,12 @@
 
 #define USAGE_ERROR(file, msg) \
    fprintf (stderr, "%s Error:\n\t%s\n", (file), (msg))
+
+/* Warnings, which do not stop compilation. */
+#define NONEXHAUSTIVE_MATCH_WARNING(file, line, column) \
+      fprintf (stderr, "%s:%d.%d Warning:  non-exhaustive match in case-expr " \
+                       "- recommend adding an else branch to prevent runtime " \
+                       " errors\n", (file), (line), (column))
 
 #endif
 

@@ -9,6 +9,10 @@ Grammar:
 Internals:
 - Use generic linked list code throughout the AST.  This removes the
   absyn_decl_lst_t, absyn_expr_lst_t, and absyn_module_lst_t structures.
+Semantics:
+- Deal with case-exprs where there is no default:  if the branches are
+  integers or strings, throw an error; if the branches are booleans, throw a
+  warning.
 
 mitchell preview 3
 ==================
