@@ -2,8 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: integer ()
-in
    ƒ foo: integer () ←
       Integer.+ (if "true" then 1 else 0, if "false" then 1 else 0)
 end

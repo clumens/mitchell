@@ -3,6 +3,4 @@
 
 ℳ Main ← decl
    τ people ← {name: string, age: integer, is_male: boolean} list
-in
-   τ people ← {name: string, age: integer, is_male: boolean} list
 end

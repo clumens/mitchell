@@ -6,9 +6,4 @@
    τ name ← string
    τ is_root ← boolean
    τ things ← string list
-in
-   τ uid ← integer
-   τ name ← string
-   τ is_root ← boolean
-   τ things ← string list
 end

@@ -2,8 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ fib: integer (n: integer)
-in
    ƒ l: integer (n1: integer, n2: integer, n: integer) ←
       if Integer.< (n, 2) then n1
       else l (Integer.+ (n1, n2), n1, Integer.- (n, 1))

@@ -2,8 +2,6 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ foo: integer ()
-in
    ƒ foo: integer () ←
       case Main.asdf() in
          Integer.+ (3, 4) → t,

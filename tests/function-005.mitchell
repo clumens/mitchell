@@ -1,9 +1,6 @@
-# Description:  Function definition tries to define body as well
+# Description:  Function with no body
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ asdf: integer () ← 47
-in
-   ƒ asdf: integer () ←
-      47
+   ƒ asdf: integer ()
 end

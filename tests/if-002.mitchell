@@ -2,8 +2,6 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ foo: integer ()
-in
    ƒ foo: integer () ←
       if t then 47
 end

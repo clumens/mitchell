@@ -2,8 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ fact: integer (n: int)
-in
    ƒ fact: integer (n: int) ←
       if Integer.= (n, 0) then
          1

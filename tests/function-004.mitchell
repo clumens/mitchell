@@ -2,8 +2,6 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ asdf: integer (a: integer, b: string, c: boolean)
-in
    ƒ asdf: integer (a: integer, b: string c: boolean) ←
       a
 end

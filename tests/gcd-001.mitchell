@@ -2,8 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ gcd: integer (a: integer, b: integer)
-in
    ƒ gcd: integer (a: integer, b: integer) ←
       if Integer.= (b, 0) then a
       else gcd (b, Integer.mod (a, b))

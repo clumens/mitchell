@@ -2,7 +2,5 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   τ person
-in
    τ person ← {name: string, age: integer, }
 end

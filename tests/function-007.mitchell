@@ -2,8 +2,6 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ asdf: integer ()
-in
    ƒ asdf: integer () ← decl
    in
    end
