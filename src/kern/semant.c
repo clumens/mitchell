@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.13 2004/11/30 04:20:14 chris Exp $
+ * $Id: semant.c,v 1.14 2004/11/30 04:41:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -219,7 +219,7 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
    ty_t *test_ty = NULL;
    ty_t *branch_ty = NULL;
    ty_t *expr_ty = NULL;
-   ty_t *t;
+   ty_t *t = NULL;
 
    /* Save the type of the test-expr for comparison against every branch. */
    test_ty = check_expr (node->test, stack);
@@ -291,9 +291,12 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
       {
          t = check_expr (node->default_expr, stack);
 
-         TYPE_ERROR (compiler_config.filename, node->default_expr->lineno);
-         fprintf (stderr, "\tinconsistent types in case branch exprs\n");
-         exit(1);
+         if (!equal_types (expr_ty, t))
+         {
+            TYPE_ERROR (compiler_config.filename, node->default_expr->lineno);
+            fprintf (stderr, "\tinconsistent types in case branch exprs\n");
+            exit(1);
+         }
       }
       else
          expr_ty = check_expr (node->default_expr, stack);
