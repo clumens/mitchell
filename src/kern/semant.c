@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.12 2004/11/30 03:30:01 chris Exp $
+ * $Id: semant.c,v 1.13 2004/11/30 04:20:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,13 +36,18 @@
 /* This is the base environment, containing all the predefined values,
  * functions, modules, and types.  Keep this as absolutely small as possible.
  */
+static ty_t boolean_ty = { TY_BOOLEAN };
+static ty_t bottom_ty = { TY_BOTTOM };
+static ty_t integer_ty = { TY_INTEGER };
+static ty_t string_ty = { TY_STRING };
+
 static symbol_t base_env[] = {
-   { SYM_FUNVAL, NULL, L"f" },
-   { SYM_FUNVAL, NULL, L"t" },
-   { SYM_TYPE, NULL, L"⊥" },
-   { SYM_TYPE, NULL, L"boolean" },
-   { SYM_TYPE, NULL, L"integer" },
-   { SYM_TYPE, NULL, L"string" },
+   { SYM_FUNVAL, &boolean_ty, L"f" },
+   { SYM_FUNVAL, &boolean_ty, L"t" },
+   { SYM_TYPE, &bottom_ty, L"⊥" },
+   { SYM_TYPE, &boolean_ty, L"boolean" },
+   { SYM_TYPE, &integer_ty, L"integer" },
+   { SYM_TYPE, &string_ty, L"string" },
    { SYM_TYPE, NULL, NULL }
 };
 
@@ -78,7 +83,7 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
-static /* ty_t * */ void check_id (absyn_id_expr_t *node, tabstack_t *stack);
+static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack);
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
@@ -136,7 +141,8 @@ void check_program (ast_t *ast)
  * be doing a lot of this.  It's sort of like what check_id used to do but
  * specialized to this case.
  */
-static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack)
+static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack,
+                               ty_t *ty)
 {
    symbol_t *new = NULL;
 
@@ -152,6 +158,7 @@ static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack)
 
    MALLOC (new, sizeof (symbol_t))
    new->name = wcsdup (sym->symbol);
+   new->ty = ty;
    new->kind = SYM_FUNVAL;
 
    if (symtab_add_entry (stack, new) == -1)
@@ -189,6 +196,10 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
    }
 }
 
+/* Compare two types for equality.  This is really simple right now.  Expect
+ * it to get a lot more complicated in the near future - especially after
+ * aliases are in place.
+ */
 static unsigned int equal_types (ty_t *left, ty_t *right)
 {
    return (left->ty == right->ty ? 1 : 0);
@@ -199,6 +210,9 @@ static unsigned int equal_types (ty_t *left, ty_t *right)
  * +================================================================+
  */
 
+/* TODO:  need to check the branch tests to make sure they're a basic type
+ * (see grammar)
+ */
 static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 {
    absyn_branch_lst_t *tmp = node->branch_lst;
@@ -348,18 +362,21 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty = check_decl_expr (node->decl_expr, stack);
          break;
 
+      /* TODO: set type to a list of the type of the expr_lst */
       case ABSYN_EXPR_LST:
          check_expr_lst (node->expr_lst, stack);
          break;
 
-      /* TODO: check types of arguments against types of formals */
+      /* TODO: check types of arguments against types of formals, set type
+       * to return type of function
+       */
       case ABSYN_FUN_CALL:
          check_id (node->fun_call_expr.identifier, stack);
          check_expr_lst (node->fun_call_expr.arg_lst, stack);
          break;
 
       case ABSYN_ID:
-         check_id (node->identifier, stack);
+         node->ty = check_id (node->identifier, stack);
          break;
 
       case ABSYN_IF:
@@ -371,6 +388,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty->ty = TY_INTEGER;
          break;
 
+      /* TODO: set type to the formed record */
       case ABSYN_RECORD_LST:
          check_record_lst (node->record_assn_lst, stack);
          break;
@@ -384,6 +402,9 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
    return node->ty;
 }
 
+/* TODO: check that each expression has the same type, return a type that
+ * is a list of those
+ */
 static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
 {
    absyn_expr_lst_t *tmp = node;
@@ -395,6 +416,7 @@ static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
    }
 }
 
+/* TODO: add type information to symbol table entry */
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 {
    absyn_id_lst_t *tmp;
@@ -402,7 +424,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    /* The function name needs to be entered into the outer scope since it is
     * able to be referenced from out there.
     */
-   add_simple_funval (node->symbol, stack);
+   add_simple_funval (node->symbol, stack, NULL);
    check_ty (node->ty, stack);
    
    /* However, the parameters are only meaningful inside the function itself,
@@ -413,7 +435,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    /* TODO: add list of formal types into function's symtab entry. */
    for (tmp = node->id_lst; tmp != NULL; tmp = tmp->next)
    {
-      add_simple_funval (tmp->symbol, stack);
+      add_simple_funval (tmp->symbol, stack, NULL);
       check_ty (tmp->ty, stack);
    }
    
@@ -423,7 +445,8 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 }
 
 /* Check that an identifier exists somewhere in the symbol table. */
-static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
+/* TODO: return type information */
+static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
 {
    /* If there's no namespace, then this is just a naked identifier.  Traverse
     * the current module's symbol table stack from most local to the module's
@@ -451,8 +474,6 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
       {
          if (ns->sub != NULL)
          {
-            symbol_t s = { SYM_MODULE, NULL, ns->symbol };
-
             /* Look up the next part of the namespace path in the current
              * module's top-level symbol table (the part that's going to
              * contain entries for further modules).  If it's not found, that's
@@ -460,10 +481,11 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
              */
             symbol_t *retval;
 
-            if ((retval = table_lookup_entry (tbl, s.name, s.kind)) == NULL)
+            if ((retval = table_lookup_entry (tbl, ns->symbol,
+                                              SYM_MODULE)) ==NULL)
             {
-               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno, s.name,
-                                 "unknown symbol referenced");
+               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno,
+                                 ns->symbol, "unknown symbol referenced");
                exit(1);
             }
 
@@ -496,6 +518,8 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
          }
       }
    }
+
+   return NULL;
 }
 
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
@@ -572,7 +596,6 @@ static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
    }
 }
 
-/* FIXME:  This is all wrong. */
 static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
 {
    absyn_record_lst_t *tmp = node;
@@ -637,19 +660,36 @@ static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
        * modules we might be inside of).  If that fails, also check the global
        * symbol table for those basic types.
        */
-      if (!symtab_entry_exists (stack, node->identifier->symbol, SYM_TYPE) &&
-          !symtab_entry_exists (global, node->identifier->symbol, SYM_TYPE))
+      symbol_t *s = symtab_lookup_entry (stack, node->identifier->symbol,
+                                         SYM_TYPE);
+
+      if (s == NULL)
+      {
+         s = symtab_lookup_entry (global, node->identifier->symbol, SYM_TYPE);
+
+         if (s == NULL)
+         {
+            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                              node->identifier->symbol,
+                              "unknown symbol referenced");
+            exit(1);
+         }
+      }
+
+      if (s->ty == NULL)
       {
          BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                           node->identifier->symbol,
-                           "unknown symbol referenced");
+                           node->identifier->symbol, "symbol has no type");
          exit(1);
       }
+
+      return s->ty;
    }
 
    return NULL;
 }
 
+/* TODO:  handle new types */
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 {
    add_simple_type (node->symbol, stack);
@@ -658,9 +698,20 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 
 static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
 {
-   add_simple_funval (node->symbol, stack);
-   check_ty (node->ty, stack);
-   check_expr (node->init, stack);
+   ty_t *val_ty, *expr_ty;
+
+   val_ty = check_ty (node->ty, stack);
+   expr_ty = check_expr (node->init, stack);
+
+   if (!equal_types (val_ty, expr_ty))
+   {
+      TYPE_ERROR (compiler_config.filename, node->lineno);
+      fprintf (stderr, "\ttype of value initializer does not match value's "
+                       "type\n");
+      exit(1);
+   }
+
+   add_simple_funval (node->symbol, stack, val_ty);
 }
 
 /* vim: set tags=../tags: */
