@@ -77,3 +77,9 @@ In particular, the grammar file describes the exact syntax of source files
 recognized by the compiler.  Examples may be found in the tests directory.
 Additionally, the man page describes exact usage of the compiler including
 all command line options.
+
+
+5. License
+==========
+Mitchell is distributed under the terms of the GPL, a copy of which may be
+found in the COPYING file in the top level of this source distribution.
