@@ -2,11 +2,13 @@
 # Expected:  PASS
 
 ℳ Main ← decl
+   ʋ something: integer ← 0
+
    ƒ asdf: boolean () ← t
 
    ƒ foo: integer () ←
       case Main.asdf() in
-         t → case "something" in
+         t → case something in
                 1 → 1,
                 0 → 0
              end,

@@ -3,5 +3,5 @@
 
 ℳ Main ← decl
    ƒ foo: integer () ←
-      if 47 then t else f
+      if t then 47 else 1
 end
