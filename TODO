@@ -12,12 +12,13 @@
    - proposal for C interface module
    - outline contents for runtime library
    - command line option to stop after a certain phase (preview-4)
+   - add in the generic list code everywhere (preview-4)
 - output:
    - add column numbers to everything for better error reporting
      (preview-4)
    - audit line number assignments in absyn to make sure they're right
      (preview-4)
-   - debug option for dumping type-annotated AST (preview-3)
+   - debug option for dumping type-annotated AST (preview-4)
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
    - detect infinite loops of types (preview-4)

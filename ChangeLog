@@ -1,9 +1,10 @@
-current
-=======
+mitchell preview 3
+==================
 Compiler frontend:
 - Don't dump the abstract syntax by default, and also add an option to dump to
   standard out.
-- Added an option to dump the symbol tables.
+- Added an option to dump the symbol tables that works like the absyn dumping
+  option.
 Grammar:
 - Lists of lists (and even more complicated types) are now allowed by the
   grammar and recognized by the parser.  It was a grammar error that they were
@@ -20,6 +21,7 @@ Internals:
 - Added absyn_record_ref_t to the AST to represent element access.
 - Various minor renamings to make things more clear.
 - Beginning to work in my generic list code, but only in a few test places.
+- Added in a strict type checker.
 
 
 mitchell preview 2

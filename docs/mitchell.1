@@ -1,5 +1,5 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.7 2005/01/07 05:31:20 chris Exp $
+.\" $Id: mitchell.1,v 1.8 2005/01/08 03:38:18 chris Exp $
 .TH mitchell 1 "January 7, 2005" "mitchell preview 3"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
@@ -18,10 +18,12 @@ This manual page documents the usage of the mitchell compiler.  The
 definition of the mitchell language is included with the compiler source
 and should have come as part of your installation.
 .PP
-In its current state, mitchell can only check the syntactic validity of
-\fR\fIinfile\fR and begin to do some front-end transformations on the code.  If
-the syntax is invalid, a descriptive error message is printed to the screen and
-the compiler exits.  If the syntax is correct, the compiler exits silently.
+In its current state, mitchell can check the syntactic validity of
+\fR\fIinfile\fR, construct an abstract syntax tree representing that input
+file, and check the validity of the typing of that tree.  If there are any
+problems with syntax or type checking, a descriptive error message is
+printed to the screen and the compiler exits.  If the program passes, the
+compiler exits silently.
 .SH OPTIONS
 Compilers tend to have many many options for controlling the compilation
 process.  mitchell isn't there quite yet, but the number of options is

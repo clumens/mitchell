@@ -18,7 +18,7 @@ preview-4 - miscellaneous fixes
 - documentation and testing
 - tagged as PREVIEW_4
 - branch BRANCH_EXCEPTIONS for adding exception support
-- branch BRANCH_TYPE_CHECKER for adding a polymorphic inferring type
+- branch BRANCH_EXPLICIT_POLY for adding an explicit polymorphic type
   checker
 
 preview-5 - intermediate representation
@@ -51,7 +51,7 @@ preview-8 - compiler
 - front-end and IR frozen (exception - serious bugs)
 - complete basic runtime library consisting of C and mitchell components
 - runtime documentation and testing
-- latest time to merge BRANCH_TYPE_CHECKER since the polymorphic type
+- latest time to merge BRANCH_EXPLICIT_POLY since the polymorphic type
   checker will be required for a complete runtime later on
 - tagged as PREVIEW_8
 

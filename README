@@ -27,10 +27,10 @@ will follow the syntax and semantics definitions included with the source
 distribution.  There is just no guarantee that those definitions will
 remain constant.
 
-The current status of Mitchell is very limited.  It can only check the
-syntax of an input source code file, construct an abstract syntax tree
-based on the input, and perform some necessary internal transformations on
-that tree.  It cannot yet actually compile anything to an executable
+The current status of Mitchell is limited to front-end functionality only.
+It can check the syntax of an input source code file, construct an
+abstract syntax tree based on that input, and check the validity of types
+in that tree.  It cannot yet actually compile anythin to an executable
 state.
 
 
@@ -58,6 +58,9 @@ The following are features of the Mitchell language and compiler:
      and while loop construct.  Again, this is functional in style though
      not nearly as complicated.  The idea is keeping the syntax as simple
      as possible.
+
+   * Strict type checking promotes type safety and prevents various
+     classes of errors in programs.
 
 
 3. Build and Installation
@@ -99,6 +102,12 @@ compiler.  It's nothing you would want to install As the compiler becomes
 more featured, so will the build and installation process.  Additionally,
 there is currently no way to customize the build process for different
 options or build flags.
+
+3.3. Test Case Status
+---------------------
+Test cases which call standard library functions, use empty lists, or use
+mutually recursive modules will currently FAIL because they are not
+handled in the type checker.
 
 
 4. Other Documentation
