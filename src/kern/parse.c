@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.33 2005/01/07 02:39:42 chris Exp $
+ * $Id: parse.c,v 1.34 2005/01/09 20:28:54 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -126,24 +126,24 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
  * declarations of them here.
  */
 static absyn_expr_t *parse_branch_expr();
-static absyn_branch_lst_t *parse_branch_lst();
+static list_t *parse_branch_lst();
 static absyn_case_expr_t *parse_case_expr();
 static absyn_decl_t *parse_decl();
 static absyn_decl_expr_t *parse_decl_expr();
-static absyn_decl_lst_t *parse_decl_lst();
+static list_t *parse_decl_lst();
 static absyn_expr_t *parse_expr();
-static absyn_expr_lst_t *parse_expr_lst();
+static list_t *parse_expr_lst();
 static absyn_expr_t *parse_fun_call_or_id();
 static absyn_fun_decl_t *parse_fun_decl();
 static absyn_id_expr_t *parse_id();
-static absyn_id_lst_t *parse_id_lst();
+static list_t *parse_id_lst();
 static absyn_if_expr_t *parse_if_expr();
 static absyn_module_decl_t *parse_module_decl();
-static absyn_module_lst_t *parse_module_decl_lst();
-static absyn_record_assn_t *parse_record_assn_lst();
+static list_t *parse_module_decl_lst();
+static list_t *parse_record_assn_lst();
 static absyn_id_expr_t *parse_record_ref();
 static absyn_decl_t *parse_top_decl();
-static absyn_decl_lst_t *parse_top_decl_lst();
+static list_t *parse_top_decl_lst();
 static absyn_ty_t *parse_ty();
 static absyn_ty_decl_t *parse_ty_decl();
 static absyn_val_decl_t *parse_val_decl();
@@ -272,7 +272,7 @@ static void match (const unsigned int type)
  */
 ast_t *parse (const char *filename)
 {
-   absyn_module_lst_t *retval = NULL;
+   list_t *retval = NULL;
 
    if ((in = fopen (filename, "r")) == NULL)
    {
@@ -281,12 +281,7 @@ ast_t *parse (const char *filename)
    }
 
    tok = next_token (in);
-
-   if (in_set (tok, FIRST_SET[SET_MODULE_DECL_LST]))
-      retval = parse_module_decl_lst();
-   else
-      parse_error (tok, FIRST_SET[SET_MODULE_DECL_LST]);
-
+   retval = parse_module_decl_lst();
    match (ENDOFFILE);
 
    fclose (in);
@@ -351,37 +346,47 @@ static absyn_expr_t *parse_branch_expr()
  *              | branch-expr MAPSTO expr
  *              | branch-expr MAPSTO expr COMMA branch-lst
  */
-static absyn_branch_lst_t *parse_branch_lst()
+static list_t *parse_branch_lst()
 {
-   absyn_branch_lst_t *retval;
+   list_t *retval = NULL;
+   absyn_branch_lst_t *else_ele = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_branch_lst_t));
 
-   if (tok->type == ELSE)
-   {
-      match(ELSE);
-      retval->lineno = last_tok->lineno;
-      match(MAPSTO);
-      retval->branch = NULL;
-      retval->expr = parse_expr();
-      retval->next = NULL;
-   }
-   else
-   {
-      retval->branch = parse_branch_expr();
-      retval->lineno = retval->branch->lineno;
-      match(MAPSTO);
-      retval->expr = parse_expr();
+   while (1) {
+      absyn_branch_lst_t *new_ele;
 
-      if (tok->type == COMMA)
+      if (tok->type == ELSE)
       {
-         match(COMMA);
-         retval->next = parse_branch_lst();
+         MALLOC (else_ele, sizeof(absyn_branch_lst_t));
+
+         match(ELSE);
+         else_ele->lineno = last_tok->lineno;
+         match(MAPSTO);
+         else_ele->branch = NULL;
+         else_ele->expr = parse_expr();
       }
       else
-         retval->next = NULL;
+      {
+         MALLOC (new_ele, sizeof(absyn_branch_lst_t));
+
+         new_ele->branch = parse_branch_expr();
+         new_ele->lineno = new_ele->branch->lineno;
+         match(MAPSTO);
+         new_ele->expr = parse_expr();
+
+         retval = list_append (retval, new_ele);
+      }
+
+      if (in_set (tok, FOLLOW_SET[SET_BRANCH_LST]))
+         break;
+      else
+         match(COMMA);
    }
+
+   /* If we found an else branch, make sure it comes last in the list. */
+   if (else_ele != NULL)
+      retval = list_append (retval, else_ele);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -391,7 +396,7 @@ static absyn_branch_lst_t *parse_branch_lst()
 static absyn_case_expr_t *parse_case_expr()
 {
    absyn_case_expr_t *retval;
-   absyn_branch_lst_t *tmp, *prev_tmp;
+   absyn_branch_lst_t *last_branch;
 
    ENTERING (__FUNCTION__);
    MALLOC(retval, sizeof(absyn_case_expr_t));
@@ -402,33 +407,20 @@ static absyn_case_expr_t *parse_case_expr()
    match(IN);
 
    /* Gatber up all the branches into a list.  If there is a default one, it
-    * should be at the very end (as enforced by the grammar above).
+    * will be at the very end, as enforced by parse_branch_lst().  In this
+    * case, we need to pull it out of the list and put it in the default_expr
+    * slot of retval.
     */
    retval->branch_lst = parse_branch_lst();
-   match(END);
 
-   tmp = retval->branch_lst;
-   prev_tmp = NULL;
-
-   while (tmp != NULL)
+   last_branch = (list_tl(retval->branch_lst))->data;
+   if (last_branch->branch == NULL)
    {
-      /* No branch?  This must be it. */
-      if (tmp->branch == NULL)
-      {
-         retval->default_expr = tmp->expr;
-
-         /* Singleton list? */
-         if (prev_tmp != NULL)
-            prev_tmp->next = tmp->next;
-         else
-            retval->branch_lst = NULL;
-
-         break;
-      }
-
-      prev_tmp = tmp;
-      tmp = tmp->next;
+      retval->default_expr = last_branch->expr;
+      retval->branch_lst = list_remove_tl (retval->branch_lst);
    }
+   
+   match(END);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -496,23 +488,21 @@ static absyn_decl_expr_t *parse_decl_expr()
 /* decl-lst ::= decl decl-lst
  *            | decl
  */
-static absyn_decl_lst_t *parse_decl_lst()
+static list_t *parse_decl_lst()
 {
-   absyn_decl_lst_t *retval;
+   list_t *retval = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_decl_lst_t));
 
-   if (!in_set (tok, FIRST_SET[SET_DECL_LST]))
-      parse_error (tok, FIRST_SET[SET_DECL_LST]);
+   while (1) {
+      if (!in_set (tok, FIRST_SET[SET_DECL_LST]))
+         parse_error (tok, FIRST_SET[SET_DECL_LST]);
 
-   retval->decl = parse_decl();
-   retval->lineno = retval->decl->lineno;
+      retval = list_append (retval, parse_decl());
 
-   if (!in_set (tok, FOLLOW_SET[SET_DECL_LST]))
-      retval->next = parse_decl_lst();
-   else
-      retval->next = NULL;
+      if (in_set (tok, FOLLOW_SET[SET_DECL_LST]))
+         break;
+   }
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -606,23 +596,20 @@ static absyn_expr_t *parse_expr()
 /* expr-lst ::= expr COMMA expr-lst
  *            | expr
  */
-static absyn_expr_lst_t *parse_expr_lst()
+static list_t *parse_expr_lst()
 {
-   absyn_expr_lst_t *retval;
+   list_t *retval = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_expr_lst_t));
-   
-   retval->expr = parse_expr();
-   retval->lineno = retval->expr->lineno;
 
-   if (tok->type == COMMA)
-   {
-      match(COMMA);
-      retval->next = parse_expr_lst();
+   while (1) {
+      retval = list_append (retval, parse_expr());
+
+      if (in_set (tok, FOLLOW_SET[SET_EXPR_LST]))
+         break;
+      else
+         match(COMMA);
    }
-   else
-      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -761,33 +748,37 @@ static absyn_id_expr_t *parse_id()
 /* id-lst ::= IDENTIFIER COLON ty
  *          | IDENTIFIER COLON ty COMMA id-lst
  */
-static absyn_id_lst_t *parse_id_lst()
+static list_t *parse_id_lst()
 {
-   absyn_id_lst_t *retval;
-   absyn_id_expr_t *sym;
+   list_t *retval = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_id_lst_t));
-   MALLOC (sym, sizeof(absyn_id_expr_t));
 
-   match(IDENTIFIER);
-   retval->lineno = last_tok->lineno;
+   while (1) {
+      absyn_id_lst_t *new_ele;
+      absyn_id_expr_t *sym;
 
-   sym->symbol = last_tok->string;
-   sym->sub = NULL;
-   sym->lineno = last_tok->lineno;
-   retval->symbol = sym;
+      MALLOC (new_ele, sizeof(absyn_id_lst_t));
+      MALLOC (sym, sizeof(absyn_id_expr_t));
 
-   match(COLON);
-   retval->ty = parse_ty();
+      match(IDENTIFIER);
+      new_ele->lineno = last_tok->lineno;
 
-   if (tok->type == COMMA)
-   {
-      match(COMMA);
-      retval->next = parse_id_lst();
+      sym->symbol = last_tok->string;
+      sym->sub = NULL;
+      sym->lineno = last_tok->lineno;
+      new_ele->symbol = sym;
+
+      match(COLON);
+      new_ele->ty = parse_ty();
+
+      retval = list_append (retval, new_ele);
+
+      if (in_set (tok, FOLLOW_SET[SET_ID_LST]))
+         break;
+      else
+         match(COMMA);
    }
-   else
-      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -848,24 +839,20 @@ static absyn_module_decl_t *parse_module_decl()
 /* module-decl-lst ::= module-decl
  *                   | module-decl module-decl-lst
  */
-static absyn_module_lst_t *parse_module_decl_lst()
+static list_t *parse_module_decl_lst()
 {
-   absyn_module_lst_t *retval;
+   list_t *retval = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_module_lst_t));
 
-   if (in_set (tok, FIRST_SET[SET_MODULE_DECL]))
-   {
-      retval->module = parse_module_decl();
-      retval->lineno = retval->module->lineno;
-      retval->next = parse_module_decl_lst();
-   }
-   else
-   {
-      if (!in_set (tok, FOLLOW_SET[SET_MODULE_DECL_LST]))
-         parse_error (tok, FOLLOW_SET[SET_MODULE_DECL_LST]);
-      else retval = NULL;
+   while (1) {
+      if (!in_set (tok, FIRST_SET[SET_MODULE_DECL_LST]))
+         parse_error (tok, FIRST_SET[SET_MODULE_DECL_LST]);
+
+      retval = list_append (retval, parse_module_decl());
+
+      if (in_set (tok, FOLLOW_SET[SET_MODULE_DECL_LST]))
+         break;
    }
 
    LEAVING(__FUNCTION__);
@@ -875,33 +862,37 @@ static absyn_module_lst_t *parse_module_decl_lst()
 /* record-assn-lst ::= IDENTIFIER ASSIGN expr
  *                   | IDENTIFIER ASSIGN expr COMMA record-assn-lst
  */
-static absyn_record_assn_t *parse_record_assn_lst()
+static list_t *parse_record_assn_lst()
 {
-   absyn_record_assn_t *retval;
-   absyn_id_expr_t *sym;
+   list_t *retval = NULL;
    
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_record_assn_t));
-   MALLOC (sym, sizeof(absyn_id_expr_t));
 
-   match(IDENTIFIER);
-   retval->lineno = last_tok->lineno;
+   while (1) {
+      absyn_record_assn_t *new_ele;
+      absyn_id_expr_t *sym;
 
-   sym->symbol = last_tok->string;
-   sym->sub = NULL;
-   sym->lineno = last_tok->lineno;
+      MALLOC (new_ele, sizeof(absyn_record_assn_t));
+      MALLOC (sym, sizeof(absyn_id_expr_t));
 
-   retval->symbol = sym;
-   match(ASSIGN);
-   retval->expr = parse_expr();
+      match(IDENTIFIER);
+      new_ele->lineno = last_tok->lineno;
 
-   if (!in_set (tok, FOLLOW_SET[SET_RECORD_ASSN_LST]))
-   {
-      match(COMMA);
-      retval->next = parse_record_assn_lst();
+      sym->symbol = last_tok->string;
+      sym->sub = NULL;
+      sym->lineno = last_tok->lineno;
+
+      new_ele->symbol = sym;
+      match(ASSIGN);
+      new_ele->expr = parse_expr();
+
+      retval = list_append (retval, new_ele);
+
+      if (in_set (tok, FOLLOW_SET[SET_RECORD_ASSN_LST]))
+         break;
+      else
+         match(COMMA);
    }
-   else
-      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -971,23 +962,21 @@ static absyn_decl_t *parse_top_decl()
 /* top-decl-lst ::= top-decl top-decl-lst
  *                | top-decl
  */
-static absyn_decl_lst_t *parse_top_decl_lst()
+static list_t *parse_top_decl_lst()
 {
-   absyn_decl_lst_t *retval;
+   list_t *retval = NULL;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_decl_lst_t));
 
-   if (!in_set (tok, FIRST_SET[SET_TOP_DECL_LST]))
-      parse_error (tok, FIRST_SET[SET_TOP_DECL_LST]);
+   while (1) {
+      if (!in_set (tok, FIRST_SET[SET_TOP_DECL_LST]))
+         parse_error (tok, FIRST_SET[SET_TOP_DECL_LST]);
 
-   retval->decl = parse_top_decl();
-   retval->lineno = retval->decl->lineno;
+      retval = list_append (retval, parse_top_decl());
 
-   if (!in_set (tok, FOLLOW_SET[SET_TOP_DECL_LST]))
-      retval->next = (struct decl_lst_t *) parse_top_decl_lst();
-   else
-      retval->next = NULL;
+      if (in_set (tok, FOLLOW_SET[SET_TOP_DECL_LST]))
+         break;
+   }
 
    LEAVING(__FUNCTION__);
    return retval;

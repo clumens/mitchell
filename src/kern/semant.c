@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.28 2005/01/07 05:31:23 chris Exp $
+ * $Id: semant.c,v 1.29 2005/01/09 20:28:54 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,6 +31,7 @@
 #include "absyn.h"
 #include "basic_types.h"
 #include "error.h"
+#include "list.h"
 #include "memory.h"
 #include "symtab.h"
 
@@ -80,16 +81,16 @@ static tabstack_t *global = NULL;
 /* More mutually recursive functions for yet another tree walk. */
 static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
 static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
-static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
+static void check_decl_lst (list_t *lst, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
-static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
+static ty_t *check_expr_lst (list_t *lst, tabstack_t *stack);
 static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack);
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
-static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
-static ty_t *check_record_assn (absyn_record_assn_t *node, tabstack_t *stack);
+static void check_module_lst (list_t *lst, tabstack_t *stack);
+static ty_t *check_record_assn (list_t *lst, tabstack_t *stack);
 static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
 static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
@@ -473,8 +474,8 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
       case ABSYN_TY_RECORD:
       {
-         absyn_id_lst_t *cur_id;
          element_t *new_ele;
+         list_t *tmp;
 
          MALLOC (retval, sizeof(ty_t));
          retval->ty = TY_RECORD;
@@ -483,8 +484,10 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
          /* Store all the record elements in alphabetical order in the symbol,
           * since that will make various record operations easier later on.
           */
-         for (cur_id = node->record; cur_id != NULL; cur_id = cur_id->next)
+         for (tmp = node->record; tmp != NULL; tmp = tmp->next)
          {
+            absyn_id_lst_t *cur_id = tmp->data;
+
             MALLOC (new_ele, sizeof(element_t));
             new_ele->identifier = cur_id->symbol->symbol;
             new_ele->ty = ast_to_ty (cur_id->ty, stack);
@@ -516,7 +519,7 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
 static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 {
-   absyn_branch_lst_t *tmp = node->branch_lst;
+   list_t *tmp;
 
    /* Check the type of the test expression, which must currently be one of
     * the basic types.  All branch tests will also have to have the same type
@@ -535,33 +538,46 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
       exit(1);
    }
 
-   while (tmp != NULL)
+   for (tmp = node->branch_lst; tmp != NULL; tmp = tmp->next)
    {
-      /* Check the branch test-expr against the case's test-expr. */
-      tmp->branch->ty = check_expr (tmp->branch, stack);
+      absyn_branch_lst_t *b = tmp->data;
 
-      if (!equal_types (node->test->ty, tmp->branch->ty))
+      /* Check the branch test-expr against the case's test-expr. */
+      b->branch->ty = check_expr (b->branch, stack);
+
+      if (!equal_types (node->test->ty, b->branch->ty))
       {
-         TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
+         TYPE_ERROR (compiler_config.filename, b->branch->lineno,
                      "branch test must have the same type as the test-expr",
                      "branch test", ty_to_str (node->test->ty), "test-expr",
-                     ty_to_str (tmp->branch->ty));
+                     ty_to_str (b->branch->ty));
          exit(1);
       }
 
-      /* Check each branch-expr for consistency. */
-      node->ty = tmp->expr->ty = check_expr (tmp->expr, stack);
+      /* Check the branch's action expression. */
+      b->expr->ty = check_expr (b->expr, stack);
 
-      if (!equal_types (node->ty, tmp->expr->ty))
+      /* Check that all branch-exprs have the same type.  If this is the
+       * first branch-expr, we can skip this test.
+       */
+      if (tmp->prev != NULL)
       {
-         TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
-                     "inconsistent types in case branch exprs",
-                     "previous expr", ty_to_str (node->ty), "this expr",
-                     ty_to_str (tmp->expr->ty));
-         exit(1);
+         ty_t *prev_ty = ((absyn_branch_lst_t *) tmp->prev->data)->expr->ty;
+
+         if (!equal_types (b->expr->ty, prev_ty))
+         {
+            TYPE_ERROR (compiler_config.filename, b->expr->lineno,
+                        "inconsistent types in case branch exprs",
+                        "previous expr", ty_to_str (prev_ty), "this expr",
+                        ty_to_str (b->expr->ty));
+            exit(1);
+         }
       }
 
-      tmp = tmp->next;
+      /* Keep the entire case-expr's type updated so we don't have to think
+       * about it later.
+       */
+      node->ty = b->expr->ty;
    }
 
    /* If there is a default expression, make sure it has the same type as all
@@ -572,16 +588,18 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
    {
       node->default_expr->ty = check_expr (node->default_expr, stack);
 
-      /* If the default branch is the only possibility, we need to use its
-       * type as the type of the whole case-expr.
+      /* If there are branches besides just the default, we need to make sure
+       * the default has the same type as all the others.  If the default
+       * branch is the only possibility, we need to use its type as the type of
+       * the whole case-expr.
        */
       if (node->branch_lst != NULL)
       {
-         if (!equal_types (node->branch_lst->expr->ty, node->default_expr->ty))
+         if (!equal_types (node->ty, node->default_expr->ty))
          {
             TYPE_ERROR (compiler_config.filename, node->default_expr->lineno,
                         "default expr type does not match branch-expr types",
-                        "branch-expr", ty_to_str (node->branch_lst->expr->ty),
+                        "branch-expr", ty_to_str (node->ty),
                         "default-expr", ty_to_str (node->default_expr->ty));
             exit(1);
          }
@@ -603,12 +621,10 @@ static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
    return node->ty;
 }
 
-static void process_fun_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
-                               tabstack_t *stack)
+static void process_fun_block (list_t *start, list_t *end, tabstack_t *stack)
 {
-   absyn_id_lst_t   *formals_ast;
-   element_t        *tmp_ele;
-   absyn_decl_lst_t *tmp;
+   element_t   *tmp_ele;
+   list_t      *tmp, *ast_tmp;
 
    /* Round 1:  Add skeleton entries for these functions so they can
     * mutually call each other.  A skeleton entry for a function consists of
@@ -618,7 +634,7 @@ static void process_fun_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
     */
    for (tmp = start; tmp != end; tmp = tmp->next)
    {
-      absyn_fun_decl_t *fun_decl = tmp->decl->fun_decl;
+      absyn_fun_decl_t *fun_decl = ((absyn_decl_t *) tmp->data)->fun_decl;
       absyn_id_expr_t  *fun_name = fun_decl->symbol;
       symbol_t         *new_sym = NULL;
       list_t           *formals = NULL;
@@ -638,9 +654,11 @@ static void process_fun_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
        * be stored in the order seen so we can match them against the actual
        * parameters at function call time and check type against type.
        */
-      for (formals_ast = fun_decl->formals; formals_ast != NULL;
-           formals_ast = formals_ast->next)
+      for (ast_tmp = fun_decl->formals; ast_tmp != NULL;
+           ast_tmp = ast_tmp->next)
       {
+         absyn_id_lst_t *formals_ast = ast_tmp->data;
+
          MALLOC (tmp_ele, sizeof (element_t));
          tmp_ele->identifier = formals_ast->symbol->symbol;
          tmp_ele->ty = ast_to_ty (formals_ast->ty, stack);
@@ -667,20 +685,19 @@ static void process_fun_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
     * we made in round 1.
     */
    for (tmp = start; tmp != end; tmp = tmp->next)
-      check_fun_decl (tmp->decl->fun_decl, stack);
+      check_fun_decl (((absyn_decl_t *) tmp->data)->fun_decl, stack);
 }
 
-static void process_ty_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
-                              tabstack_t *stack)
+static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
 {
-   absyn_decl_lst_t *tmp;
+   list_t *tmp;
 
    /* Round 1:  Add skeleton entries for these types so they can mutually refer
     * to each other.
     */
    for (tmp = start ; tmp != end ; tmp = tmp->next)
    {
-      absyn_id_expr_t *ty_sym = tmp->decl->ty_decl->symbol;
+      absyn_id_expr_t *ty_sym = ((absyn_decl_t *) tmp->data)->ty_decl->symbol;
       symbol_t *new_sym = NULL;
 
       /* Skeleton entries have a NULL ty pointer, which will be a magic
@@ -707,42 +724,46 @@ static void process_ty_block (absyn_decl_lst_t *start, absyn_decl_lst_t *end,
     * made in round 1.
     */
    for (tmp = start; tmp != end; tmp = tmp->next)
-      check_ty_decl (tmp->decl->ty_decl, stack);
+      check_ty_decl (((absyn_decl_t *) tmp->data)->ty_decl, stack);
 }
 
-static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
+static void check_decl_lst (list_t *lst, tabstack_t *stack)
 {
-   absyn_decl_lst_t *start, *end;
-   absyn_decl_lst_t *tmp = node;
+   list_t *start, *end;
+   list_t *tmp = lst;
 
    while (tmp != NULL)
    {
-      switch (tmp->decl->type) {
+      absyn_decl_t *decl = tmp->data;
+
+      switch (decl->type) {
          case ABSYN_FUN_DECL:
             /* Set the bounds of this function block to [start, end) */
             start = end = tmp;
-            while (end != NULL && end->decl->type == ABSYN_FUN_DECL)
+            while (end != NULL &&
+                   ((absyn_decl_t *) end->data)->type == ABSYN_FUN_DECL)
                end = tmp = tmp->next;
 
             process_fun_block (start, end, stack);
             break;
 
          case ABSYN_MODULE_DECL:
-            check_module_decl (tmp->decl->module_decl, stack);
+            check_module_decl (decl->module_decl, stack);
             tmp = tmp->next;
             break;
 
          case ABSYN_TY_DECL:
             /* Set the bounds of this type block to [start, end) */
             start = end = tmp;
-            while (end != NULL && end->decl->type == ABSYN_TY_DECL)
+            while (end != NULL &&
+                   ((absyn_decl_t *) end->data)->type == ABSYN_TY_DECL)
                end = tmp = end->next;
 
             process_ty_block (start, end, stack);
             break;
 
          case ABSYN_VAL_DECL:
-            check_val_decl (tmp->decl->val_decl, stack);
+            check_val_decl (decl->val_decl, stack);
             tmp = tmp->next;
             break;
       }
@@ -808,34 +829,34 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
    return node->ty;
 }
 
-static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
+static ty_t *check_expr_lst (list_t *lst, tabstack_t *stack)
 {
-   absyn_expr_lst_t *tmp = node;
+   list_t *tmp;
    ty_t *expr_ty = NULL;
    ty_t *retval;
 
    /* Check that each expression in the list has the same type as the first
     * expression in the list.
     */
-   while (tmp != NULL)
+   for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
+      absyn_expr_t *node = tmp->data;
+
       if (expr_ty == NULL)
-         expr_ty = tmp->expr->ty = check_expr (tmp->expr, stack);
+         expr_ty = node->ty = check_expr (node, stack);
       else
       {
-         tmp->expr->ty = check_expr (tmp->expr, stack);
+         node->ty = check_expr (node, stack);
 
-         if (!equal_types (tmp->expr->ty, expr_ty))
+         if (!equal_types (node->ty, expr_ty))
          {
-            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
+            TYPE_ERROR (compiler_config.filename, node->lineno,
                         "inconsistent types in expression list",
                         "previous expr", ty_to_str (expr_ty),
-                        "this expr", ty_to_str (tmp->expr->ty));
+                        "this expr", ty_to_str (node->ty));
             exit(1);
          }
       }
-
-      tmp = tmp->next;
    }
 
    /* Now that we've verified all the expressions have the same type, create
@@ -851,8 +872,7 @@ static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
 static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
 {
    symbol_t *s;
-   absyn_expr_lst_t *arg_lst;
-   list_t *formal_lst;
+   list_t *arg_lst, *formal_lst;
 
    if ((s = lookup_id_global (node->identifier, SYM_FUNCTION, stack)) == NULL)
    {
@@ -885,6 +905,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
 
    while (1)
    {
+      absyn_expr_t *arg;
       element_t *ele;
 
       /* If both lists are at NULL, they were the same length and passed all
@@ -902,13 +923,15 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
        * along.
        */
       ele = (element_t *) formal_lst->data;
-      arg_lst->expr->ty = check_expr (arg_lst->expr, stack);
+      arg = (absyn_expr_t *) arg_lst->data;
 
-      if (!equal_types (arg_lst->expr->ty, ele->ty))
+      arg->ty = check_expr (arg, stack);
+
+      if (!equal_types (arg->ty, ele->ty))
       {
-         TYPE_ERROR (compiler_config.filename, arg_lst->lineno,
+         TYPE_ERROR (compiler_config.filename, arg->lineno,
                      "type of actual parameter does not match type of formal",
-                     "actual parameter", ty_to_str (arg_lst->expr->ty),
+                     "actual parameter", ty_to_str (arg->ty),
                      "formal parameter", ty_to_str (ele->ty));
          exit(1);
       }
@@ -929,10 +952,10 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
  */
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 {
-   absyn_id_lst_t  *formals_ast;
-   symbol_t        *fun_sym, *tmp_sym;
-   list_t          *formals = NULL;
-   ty_t            *body_ty;
+   list_t      *formals_ast;
+   symbol_t    *fun_sym, *tmp_sym;
+   list_t      *formals = NULL;
+   ty_t        *body_ty;
 
    /* Look up the symbol entry for the function.  This entry represents the
     * entire LHS for the symbol.
@@ -971,8 +994,9 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 
       if (symtab_add_entry (stack, tmp_sym) == -1)
       {
-         BAD_SYMBOL_ERROR (compiler_config.filename, formals_ast->lineno,
-                           formals_ast->symbol->symbol,
+         BAD_SYMBOL_ERROR (compiler_config.filename,
+                           ((absyn_id_lst_t *) formals_ast->data)->lineno,
+                           ((absyn_id_lst_t *) formals_ast->data)->symbol->symbol,
                            "duplicate formal parameter already exists");
          exit(1);
       }
@@ -1105,49 +1129,46 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    }
 }
 
-static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
+static void check_module_lst (list_t *lst, tabstack_t *stack)
 {
-   absyn_module_lst_t *tmp = node;
+   list_t *tmp;
 
-   while (tmp != NULL)
-   {
-      check_module_decl (tmp->module, stack);
-      tmp = tmp->next;
-   }
+   for (tmp = lst; tmp != NULL; tmp = tmp->next)
+      check_module_decl ((absyn_module_decl_t *) tmp->data, stack);
 }
 
 /* Convert an expression consisting of assignment to elements of a record
  * into a record type.  This is useful for initializing record values and
  * returning from a function.
  */
-static ty_t *check_record_assn (absyn_record_assn_t *node, tabstack_t *stack)
+static ty_t *check_record_assn (list_t *lst, tabstack_t *stack)
 {
    ty_t *retval;
-   absyn_record_assn_t *tmp = node;
-   element_t *new_ele;
+   list_t *tmp;
 
    MALLOC (retval, sizeof (ty_t));
    retval->ty = TY_RECORD;
    retval->record = NULL;
 
    /* Loop over all assignments in the record expression. */
-   while (tmp != NULL)
+   for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
+      absyn_record_assn_t *node = tmp->data;
+      element_t *new_ele;
+
       MALLOC (new_ele, sizeof(element_t));
-      new_ele->identifier = tmp->symbol->symbol;
-      new_ele->ty = check_expr (tmp->expr, stack);
+      new_ele->identifier = node->symbol->symbol;
+      new_ele->ty = check_expr (node->expr, stack);
 
       retval->record = list_insert_unique (retval->record, new_ele,
                                            __ele_to_ele_cmp);
       if (retval->record == NULL)
       {
-         BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
-                           tmp->symbol->symbol, "duplicate symbol already "
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                           node->symbol->symbol, "duplicate symbol already "
                            "exists in this record type");
          exit(1);
       }
-
-      tmp = tmp->next;
    }
 
    return retval;

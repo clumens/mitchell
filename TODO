@@ -12,7 +12,6 @@
    - proposal for C interface module
    - outline contents for runtime library
    - command line option to stop after a certain phase (preview-4)
-   - add in the generic list code everywhere (preview-4)
 - output:
    - add column numbers to everything for better error reporting
      (preview-4)

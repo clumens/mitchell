@@ -1,3 +1,9 @@
+current
+=======
+Internals:
+- Use generic linked list code throughout the AST.  This removes the
+  absyn_decl_lst_t, absyn_expr_lst_t, and absyn_module_lst_t structures.
+
 mitchell preview 3
 ==================
 Compiler frontend:
