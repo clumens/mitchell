@@ -6,7 +6,7 @@ OBJS = main.o tokenize.o
 all: mitchell
 
 mitchell: $(OBJS)
-	gcc $(CFLAGS) -o $@ $?
+	gcc $(CFLAGS) -o $@ $^
 
 clean:
 	-rm mitchell *.o
