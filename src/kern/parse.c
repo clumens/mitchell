@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.4 2004/10/16 22:43:31 chris Exp $
+ * $Id: parse.c,v 1.5 2004/10/16 23:23:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -548,20 +548,13 @@ static void parse_record_assn_lst()
    printf ("leaving %s\n", __FUNCTION__);
 }
 
-/* single-ty ::= LBRACK id-lst RBRACK
- *             | LBRACE id-lst RBRACE
+/* single-ty ::= LBRACE id-lst RBRACE
  *             | id
  */
 static void parse_single_ty()
 {
    printf ("entering %s\n", __FUNCTION__);
    switch (tok->type) {
-      case LBRACK:
-         match(LBRACK);
-         parse_id_lst();
-         match(RBRACK);
-         break;
-
       case LBRACE:
          match(LBRACE);
          parse_id_lst();
