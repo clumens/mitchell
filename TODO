@@ -1,9 +1,8 @@
 - documentation:
-   - polish grammar to a blinding finish
+   - lots and lots of documentation explaining syntax definition
    - add doxygen docs to all the source
 - output:
-   - internal deugging output framework (various levels of verbosity)
    - parser error messages can always be better
 - testing:
-   - comprehensive test cases for parser
+   - more test cases for parser
 - grammar:
