@@ -2,7 +2,7 @@
  * of the compiler.  For the most part, this configuration is set by the
  * command line options provided by the user.
  *
- * $Id: config.h,v 1.7 2005/02/12 16:26:16 chris Exp $
+ * $Id: config.h,v 1.8 2005/02/12 17:07:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,7 +24,8 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H 1
 
-typedef enum { LAST_PARSER = 1, LAST_TYPECHECK } last_phase_t;
+typedef enum { LAST_PARSER = 1, LAST_TYPECHECK, LAST_DESUGAR_CASE,
+               LAST_DESUGAR_DECL } last_phase_t;
 
 typedef struct {
    char *filename;                     /* the file we're compiling */

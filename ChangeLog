@@ -1,5 +1,7 @@
 current
 =======
+Compiler frontend:
+- Added additional options for -last-phase to stop during AST simplification.
 Grammar:
 - Strings may now be continued across multiple lines.  Put a backslash at
   the end of the first line, and another one before the first character you

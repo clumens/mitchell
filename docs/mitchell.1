@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.10 2005/01/17 23:47:03 chris Exp $
-.TH mitchell 1 "January 17, 2005" "mitchell preview 4"
+.\" $Id: mitchell.1,v 1.11 2005/02/12 17:07:37 chris Exp $
+.TH mitchell 1 "February 12, 2005" "mitchell preview 4"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -56,6 +56,10 @@ Stop after parsing and tokenizing.  It is not possible to stop after tokenizing,
 since that is not a separate phase.
 .IP typecheck
 Stop after the typechecking/semantic analysis phase.
+.IP desugar-case
+Stop after eliminating case-exprs from the abstract syntax tree.
+.IP desugar-decl
+Stop after promoting decl-exprs to functions in the abstract syntax tree.
 .RE
 .SS Internals Options
 These options control the internal workings of the mitchell compiler and
