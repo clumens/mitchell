@@ -1,6 +1,6 @@
 /* Basic mitchell types, defined in terms of C types.
  *
- * $Id: basic_types.h,v 1.5 2004/12/12 17:39:41 chris Exp $
+ * $Id: basic_types.h,v 1.6 2005/01/22 02:27:57 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,9 +24,9 @@
 
 #include <wchar.h>
 
-typedef long int     mint_t;
-typedef wchar_t      mstring_t;
-typedef unsigned int mbool_t;
+typedef unsigned long int  mint_t;
+typedef wchar_t            mstring_t;
+typedef unsigned int       mbool_t;
 
 #endif
 

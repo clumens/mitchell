@@ -1,6 +1,6 @@
 /* Compiler version information.
  *
- * $Id: version.h,v 1.1 2004/12/07 00:27:13 chris Exp $
+ * $Id: version.h,v 1.2 2005/01/22 02:27:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,7 +22,7 @@
 #ifndef _VERSION_H
 #define _VERSION_H 1
 
-#define MITCHELL_VERSION   "Preview 3"
+#define MITCHELL_VERSION   "Preview 4"
 
 #endif
 
