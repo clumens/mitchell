@@ -1,0 +1,116 @@
+
+
+                       Mitchell Language Reference
+
+                             by Chris Lumens
+
+
+Contents
+========
+1. Introduction
+2. Types
+   2.1. boolean
+   2.2. integer
+   2.3. string
+   2.4. ⊥
+   2.5. list
+   2.6. record
+
+
+1. Introduction
+===============
+This document is intended to be a reference to the Mitchell programming
+language.  It is not a tutorial, nor does it explain how to use the
+compiler.  It also assumes the reader already knows a programming language
+and so does not spend any time introducing programming in general.  This
+reference is not the authoritative definition of the language - see the
+semantics documents provided in the distribution for that.  In any
+discrepancies between the definition and this reference, the definition is
+correct.
+
+What this document does is explain the language in more simple and less
+mathematical terms to experienced programmers.  It is meant to serve as an
+introduction to the mitchell programming language.
+
+
+2. Types
+========
+Mitchell has very few types.  The most basic types are boolean, integer,
+string, and ⊥.  These types may be thought of as atomic - they don't break
+down into anything more simple.  Mitchell also defines two more
+complicated types:  lists and records.  In addition, modules may define
+their own types.
+
+2.1. boolean
+------------
+The boolean type expresses truth.  This type contains two values which use
+the following literals:
+
+   * f - False
+   * t - True
+
+Operations on boolean values will be handled by the Boolean module.
+
+2.2. integer
+------------
+The integer type holds non-negative 32-bit integers.  This allows the
+expressable range of numbers to be 0 - 4294967295.  There is no way to
+express negative numbers or numbers with decimal points, since these are
+not required in the implementation of a compiler.  Additionally, there is
+no way to express an integer in anything but base-10.
+
+Operations on integer values will be handled by the Integer module.
+
+2.3. string
+-----------
+The string type consists of any number of Unicode characters surrounded by
+double quote marks.  Strings may optionally be empty.  String literals may
+extend across multiple lines, in which case the newline is part of the
+string literal.  For convenience, string literals may also contain the
+following escape sequences:
+
+   * \n - Embed a newline into the string.
+   * \t - Embed a tab into the string.
+   * \\ - Embed a literal backslash into the string.
+   * \" - Embed a literal double quote into the string.
+   * \uXXXX - Embed the Unicode character given by the four hex digits
+              XXXX into the string.
+
+Strings may also be continued across multiple lines.  To do this, place a
+backslash at the end of a line inside the string, followed immediately by
+a newline.  Then on the following line, place a second backslash
+immediately before the first character from that line you would like to be
+included in the string.  For instance, the string:
+
+   ʋ str: string ← "This string spans\
+                    \ multiple lines"
+
+is converted into the following:
+
+   ʋ str: string ← "This string spans multiple lines"
+
+Operations on string values will be handled by the String module.
+
+2.4. ⊥
+------
+The ⊥ type (or "bottom") conveys no type information.  It should only be
+used as the return type of functions that do not return anything
+important.  For instance, a string printing function might not return any
+interesting return value so would have a return type of bottom.
+
+There are no valid operations on the bottom type.
+
+2.5. list
+---------
+The list type is not a basic type - it is composed out of another type.
+Essentially, the list type defines a collection of values of some other
+type.  All elements of a list must be of the same type - these are
+monomorphic lists, not like those found in Scheme.  Values in the list
+have no special initial ordering other than that they are stored in the
+order of assignment.  List literals consist of a comma-separated list of
+expressions surrounded by square brackets.
+
+Operations on lists will be handled by the List module.
+
+2.6. record
+-----------

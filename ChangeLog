@@ -7,6 +7,8 @@ Grammar:
 Internals:
 - Added a backlink_t type and a link of this type to every AST noded.  The
   backlink points at the parent node in the tree.
+Misc:
+- Added the beginnings of a language reference.
 
 mitchell preview 4
 ==================
