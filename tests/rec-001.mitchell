@@ -1,6 +1,6 @@
-# Testing record type generation.
-# Requires: preview 2
-# Expected: PASS
+# Description:  Testing record type generation.
+# Requires:  preview 2
+# Expected:  PASS
 
 ℳ Main ← decl
    ƒ rec1a: {a: integer, b: string} () ←
@@ -13,8 +13,7 @@
       {spiff ← {gar ← 1}}
 
    ƒ rec2b: {spiff: {gar: integer}} () ←
-      rec2a ({b ← {zoop ← "Greeblenicknicknick"}})
+      rec2a ({zoop ← "Greeblenicknicknick"})
 
    ƒ main: string () ← ""
 end
-

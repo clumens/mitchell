@@ -1,0 +1,12 @@
+# Description:  Passing a nested record as an argument when just a regular
+#               record is specified
+# Requires: preview 2
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ rec2a: integer (b: {zoop: string}) ←
+      1
+
+   ƒ rec2b: {spiff: {gar: integer}} () ←
+      rec2a ({b ← {zoop ← "Greeblenicknicknick"}})
+end
