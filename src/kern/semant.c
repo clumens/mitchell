@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.37 2005/02/12 16:26:19 chris Exp $
+ * $Id: semant.c,v 1.38 2005/02/20 03:11:38 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -226,6 +226,17 @@ wchar_t *ty_to_str (const ty_t *ty)
    }
 }
 
+/* Strip off any aliases present on a type. */
+ty_t *unalias (ty_t *ty)
+{
+   ty_t *retval = ty;
+
+   while (retval->ty == TY_ALIAS)
+      retval = retval->alias->info.ty;
+
+   return retval;
+}
+
 /* +================================================================+
  * | UTILITY FUNCTIONS                                              |
  * +================================================================+
@@ -240,17 +251,6 @@ static int __ele_to_ele_cmp (void *lst_data, void *user_data)
 static int __ele_to_str_cmp (void *lst_data, void *user_data)
 {
    return wcscmp (((element_t *) lst_data)->identifier, (wchar_t *) user_data);
-}
-
-/* Strip off any aliases present on a type. */
-static ty_t *unalias (ty_t *ty)
-{
-   ty_t *retval = ty;
-
-   while (retval->ty == TY_ALIAS)
-      retval = retval->alias->info.ty;
-
-   return retval;
 }
 
 /* Like equal_types, but check to see if ty is a specific type instead of
