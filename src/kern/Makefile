@@ -1,8 +1,8 @@
 CC = gcc
 CFLAGS = -O2 -Wall -I../include -g
 
-OBJS = absyn_printer.o main.o parse.o semant.o symtab.o symtab_printer.o \
-		 tokenize.o
+OBJS = absyn_printer.o list.o main.o parse.o semant.o symtab.o \
+		 symtab_printer.o tokenize.o
 
 all: mitchell
 
