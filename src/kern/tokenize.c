@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.15 2004/11/11 14:41:15 chris Exp $
+ * $Id: tokenize.c,v 1.16 2004/11/24 03:56:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -131,9 +131,9 @@ static void whitespace_state (FILE *f)
  * states.  Gather up all the characters until we see one that is not a
  * member of the current word state's set.
  */
-static mstring_t word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
+static mstring_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
 {
-   mstring_t   retval = NULL;
+   mstring_t  *retval = NULL;
    wint_t      ch;
    int         new_len = 2;
 
@@ -326,7 +326,7 @@ token_t *next_token (FILE *f)
 
             unget_char (ch, f);
 
-            str = (wchar_t *) word_state (f, word_member);
+            str = word_state (f, word_member);
 
             if (wcscmp (str, L"f") == 0)
             {

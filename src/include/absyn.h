@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.14 2004/11/21 05:36:36 chris Exp $
+ * $Id: absyn.h,v 1.15 2004/11/24 03:56:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -43,7 +43,7 @@ typedef enum { ABSYN_BOOLEAN, ABSYN_CASE, ABSYN_DECL, ABSYN_EXPR_LST,
 typedef struct absyn_id_expr_t {
    unsigned int lineno;
 
-   mstring_t symbol;
+   mstring_t *symbol;
    struct absyn_id_expr_t *sub;
 } absyn_id_expr_t;
 
@@ -104,7 +104,7 @@ typedef struct absyn_expr_t {
       absyn_id_expr_t *identifier;
       mbool_t boolean_expr;
       mint_t integer_expr;
-      mstring_t string_expr;
+      mstring_t *string_expr;
    };
 } absyn_expr_t;
 

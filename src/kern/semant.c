@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.8 2004/11/24 03:41:01 chris Exp $
+ * $Id: semant.c,v 1.9 2004/11/24 03:56:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,12 +34,12 @@
  * functions, modules, and types.  Keep this as absolutely small as possible.
  */
 static symbol_t base_env[] = {
-   { SYM_FUNVAL, (mstring_t *) L"f" },
-   { SYM_FUNVAL, (mstring_t *) L"t" },
-   { SYM_TYPE, (mstring_t *) L"⊥" },
-   { SYM_TYPE, (mstring_t *) L"boolean" },
-   { SYM_TYPE, (mstring_t *) L"integer" },
-   { SYM_TYPE, (mstring_t *) L"string" },
+   { SYM_FUNVAL, L"f" },
+   { SYM_FUNVAL, L"t" },
+   { SYM_TYPE, L"⊥" },
+   { SYM_TYPE, L"boolean" },
+   { SYM_TYPE, L"integer" },
+   { SYM_TYPE, L"string" },
    { SYM_TYPE, NULL }
 };
 
@@ -48,17 +48,17 @@ static symbol_t base_env[] = {
  * Of course, I'll need to figure that out before too long.
  */
 static symbol_t integer_env[] = {
-   { SYM_FUNVAL, (mstring_t *) L"+" },
-   { SYM_FUNVAL, (mstring_t *) L"-" },
-   { SYM_FUNVAL, (mstring_t *) L"*" },
-   { SYM_FUNVAL, (mstring_t *) L"<" },
-   { SYM_FUNVAL, (mstring_t *) L"=" },
-   { SYM_FUNVAL, (mstring_t *) L"mod" },
+   { SYM_FUNVAL, L"+" },
+   { SYM_FUNVAL, L"-" },
+   { SYM_FUNVAL, L"*" },
+   { SYM_FUNVAL, L"<" },
+   { SYM_FUNVAL, L"=" },
+   { SYM_FUNVAL, L"mod" },
    { SYM_TYPE, NULL }
 };
 
 static symbol_t boolean_env[] = {
-   { SYM_FUNVAL, (mstring_t *) L"or" },
+   { SYM_FUNVAL, L"or" },
    { SYM_TYPE, NULL }
 };
 
@@ -103,7 +103,7 @@ void check_program (ast_t *ast)
     */
    MALLOC (integer_symtab, sizeof (symbol_t))
    integer_symtab->kind = SYM_MODULE;
-   integer_symtab->name = (mstring_t *) wcsdup (L"Integer");
+   integer_symtab->name = wcsdup (L"Integer");
    integer_symtab->stack = enter_scope (integer_symtab->stack);
 
    symtab_add_entry (global, integer_symtab);
@@ -113,7 +113,7 @@ void check_program (ast_t *ast)
 
    MALLOC (boolean_symtab, sizeof (symbol_t))
    boolean_symtab->kind = SYM_MODULE;
-   boolean_symtab->name = (mstring_t *) wcsdup (L"Boolean");
+   boolean_symtab->name = wcsdup (L"Boolean");
    boolean_symtab->stack = enter_scope (boolean_symtab->stack);
 
    symtab_add_entry (global, boolean_symtab);
@@ -122,7 +122,7 @@ void check_program (ast_t *ast)
       symtab_add_entry (boolean_symtab->stack, &boolean_env[i]);
 
    check_module_lst (ast, global);
-   global = leave_scope (global, (mstring_t *) L"global");
+   global = leave_scope (global, L"global");
 }
 
 /* +================================================================+
@@ -133,28 +133,28 @@ void check_program (ast_t *ast)
 static void duplicate_name_error (absyn_id_expr_t *s, unsigned int lineno)
 {
    fprintf (stderr, "*** duplicate symbol referenced on line %d:  %ls\n",
-                    lineno, (wchar_t *) s->symbol);
+                    lineno, s->symbol);
    exit (1);
 }
 
 static void duplicate_symbol_error (symbol_t *s, unsigned int lineno)
 {
    fprintf (stderr, "*** duplicate symbol referenced on line %d:  %ls\n",
-                    lineno, (wchar_t *) s->name);
+                    lineno, s->name);
    exit (1);
 }
 
 static void invalid_name_error (absyn_id_expr_t *ns, unsigned int lineno)
 {
    fprintf (stderr, "*** error on line %d:  name includes "
-                    "namespace:  %ls\n", lineno, (wchar_t *) ns->symbol);
+                    "namespace:  %ls\n", lineno, ns->symbol);
    exit (1);
 }
 
 static void unknown_symbol_error (symbol_t *s, unsigned int lineno)
 {
    fprintf (stderr, "*** unknown symbol referenced on line %d:  %ls\n",
-                    lineno, (wchar_t *) s->name);
+                    lineno, s->name);
    exit (1);
 }
 
@@ -178,7 +178,7 @@ static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack)
       invalid_name_error (sym, sym->lineno);
 
    MALLOC (new, sizeof (symbol_t))
-   new->name = (mstring_t *) wcsdup ((wchar_t *) sym->symbol);
+   new->name = wcsdup (sym->symbol);
    new->kind = SYM_FUNVAL;
 
    if (symtab_add_entry (stack, new) == -1)
@@ -197,7 +197,7 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
       invalid_name_error (sym, sym->lineno);
 
    MALLOC (new, sizeof (symbol_t))
-   new->name = (mstring_t *) wcsdup ((wchar_t *) sym->symbol);
+   new->name = wcsdup (sym->symbol);
    new->kind = SYM_TYPE;
 
    if (symtab_add_entry (stack, new) == -1)
@@ -257,7 +257,7 @@ static void check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
    stack = enter_scope (stack);
    check_decl_lst (node->decl_lst, stack);
    check_expr (node->expr, stack);
-   stack = leave_scope (stack, (mstring_t *) L"decl-expr");
+   stack = leave_scope (stack, L"decl-expr");
 }
 
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
@@ -350,7 +350,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    
    /* Now check the function body with this augmented environment. */
    check_expr (node->body, stack);
-   stack = leave_scope (stack, (mstring_t *) node->symbol->symbol);
+   stack = leave_scope (stack, node->symbol->symbol);
 }
 
 /* Check that an identifier exists somewhere in the symbol table. */
@@ -362,7 +362,7 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
     */
    if (node->sub == NULL)
    {
-      symbol_t s = { SYM_FUNVAL, (mstring_t *) node->symbol };
+      symbol_t s = { SYM_FUNVAL, node->symbol };
 
       if (!symtab_entry_exists (stack, &s))
          unknown_symbol_error (&s, node->lineno);
@@ -380,7 +380,7 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
       {
          if (ns->sub != NULL)
          {
-            symbol_t s = { SYM_MODULE, (mstring_t *) ns->symbol };
+            symbol_t s = { SYM_MODULE, ns->symbol };
 
             /* Look up the next part of the namespace path in the current
              * module's top-level symbol table (the part that's going to
@@ -411,7 +411,7 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
          }
          else
          {
-            symbol_t s = { SYM_FUNVAL, (mstring_t *) ns->symbol };
+            symbol_t s = { SYM_FUNVAL, ns->symbol };
 
             /* Okay, now we're down to just the naked identifier.  Look in
              * the current symbol table (no looking through a stack of tables)
@@ -444,7 +444,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 
    /* Build symtab entry in lexical parent's table for this module. */
    new->kind = SYM_MODULE;
-   new->name = (mstring_t *) wcsdup ((wchar_t *) node->symbol->symbol);
+   new->name = wcsdup (node->symbol->symbol);
    new->stack = enter_scope (new->stack);
    
    /* Add the module's symbol table entry, with its pointer to initialized
@@ -457,7 +457,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    check_decl_lst (node->decl_lst, new->stack);
 
    if (compiler_config.debug.dump_symtabs)
-      symtab_dump (new->stack, (mstring_t *) node->symbol->symbol);
+      symtab_dump (new->stack, node->symbol->symbol);
 }
 
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
@@ -518,7 +518,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
    }
    else
    {
-      symbol_t s = { SYM_TYPE, (mstring_t *) node->identifier->symbol };
+      symbol_t s = { SYM_TYPE, node->identifier->symbol };
 
       /* First check the local symbol table stack (to take into account any
        * modules we might be inside of).  If that fails, also check the global

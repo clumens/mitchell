@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.7 2004/11/24 03:41:01 chris Exp $
+ * $Id: symtab.c,v 1.8 2004/11/24 03:56:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -79,8 +79,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       MALLOC ((*symtab)[row], sizeof (symtab_entry_t))
       MALLOC ((*symtab)[row]->symbol, sizeof (symbol_t))
       (*symtab)[row]->symbol->kind = sym->kind;
-      (*symtab)[row]->symbol->name =
-         (mstring_t *) wcsdup ((wchar_t *) sym->name);
+      (*symtab)[row]->symbol->name = wcsdup ((wchar_t *) sym->name);
       (*symtab)[row]->next = NULL;
 
       switch (sym->kind) {
@@ -102,7 +101,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       MALLOC (tmp->next, sizeof (symtab_entry_t))
       MALLOC (tmp->next->symbol, sizeof (symbol_t))
       tmp->next->symbol->kind = sym->kind;
-      tmp->next->symbol->name = (mstring_t *) wcsdup ((wchar_t *) sym->name);
+      tmp->next->symbol->name = wcsdup ((wchar_t *) sym->name);
       tmp->next->next = NULL;
 
       switch (sym->kind) {

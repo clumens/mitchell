@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.11 2004/10/23 19:34:08 chris Exp $
+ * $Id: tokens.h,v 1.12 2004/11/24 03:56:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -41,7 +41,7 @@ typedef struct {
 
    union {
       mint_t      integer;
-      mstring_t   string;
+      mstring_t  *string;
       mbool_t     boolean;
    };
 } token_t;
