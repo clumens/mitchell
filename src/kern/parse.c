@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.17 2004/10/29 04:04:14 chris Exp $
+ * $Id: parse.c,v 1.18 2004/10/29 14:22:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -166,6 +166,19 @@ static unsigned int in_set (const token_t *t, const int set[])
    return 0;
 }
 
+/* Print out the members of the set argument. */
+static void print_set (const int set[])
+{
+   unsigned int i;
+
+   printf ("{");
+
+   for (i = 0; set[i] != -1; i++)
+      printf (" %s", token_map[set[i]]);
+
+   printf (" }");
+}
+
 /* Describe a token more completely so the user has a better idea of what
  * the parse error is talking about.  An even better idea would be to print
  * out a bunch of the context around the error, but I'm not feeling that
@@ -204,10 +217,12 @@ static void describe_token (const token_t *t)
  * and what we actually got.  Elaborate on what we got a little bit if
  * it was something special to give the user a little more context, too.
  */
-static void parse_error(const token_t *t, const char *accepted)
+static void parse_error(const token_t *t, const int accepted[])
 {
    fprintf (stderr, "*** parse error on line %d:\n", t->lineno);
-   fprintf (stderr, "*** expected token from set {%s}, but got ", accepted);
+   fprintf (stderr, "*** expected token from set ");
+   print_set (accepted);
+   fprintf (stderr, ", but got ");
    describe_token(t);
    fprintf (stderr, " instead\n");
    exit(1);
@@ -220,6 +235,8 @@ static void parse_error(const token_t *t, const char *accepted)
  */
 static void match (const unsigned int type)
 {
+   int temp_set[2] = { type, -1 };
+
    if (tok == NULL)
    {
       fprintf (stderr, "*** parse error:  premature end of input file\n");
@@ -242,7 +259,7 @@ static void match (const unsigned int type)
       }
    }
    else
-      parse_error (tok, token_map[type]);
+      parse_error (tok, temp_set);
 }
 
 /* Main parser entry point - open the file, read the first token, and try
@@ -264,7 +281,7 @@ ast_t *parse (const char *filename)
    if (in_set (tok, FIRST_SET[15]))
       retval = parse_module_decl_lst();
    else
-      parse_error (tok, "MODULE");
+      parse_error (tok, FIRST_SET[15]);
 
    match (ENDOFFILE);
 
@@ -314,11 +331,11 @@ static absyn_expr_t *parse_branch_expr()
          break;
 
       default:
-         parse_error (tok, "BOOLEAN IDENTIFIER INTEGER STRING");
+         parse_error (tok, FIRST_SET[0]);
    }
 
    if (!in_set (tok, FOLLOW_SET[0]))
-      parse_error (tok, "MAPSTO");
+      parse_error (tok, FOLLOW_SET[0]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -396,11 +413,11 @@ static absyn_decl_t *parse_decl()
          break;
 
       default:
-         parse_error (tok, "FUNCTION TYPE VAL");
+         parse_error (tok, FIRST_SET[3]);
    }
 
    if (!in_set (tok, FOLLOW_SET[3]))
-      parse_error (tok, "END FUNCTION IN TYPE VAL");
+      parse_error (tok, FOLLOW_SET[3]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -435,7 +452,7 @@ static absyn_decl_lst_t *parse_decl_lst()
    MALLOC (retval, sizeof(absyn_decl_lst_t))
 
    if (!in_set (tok, FIRST_SET[5]))
-      parse_error (tok, "FUNCTION TYPE VAL");
+      parse_error (tok, FIRST_SET[5]);
 
    retval->decl = parse_decl();
 
@@ -518,8 +535,7 @@ static absyn_expr_t *parse_expr()
          break;
 
       default:
-         parse_error (tok, "BOOLEAN CASE DECL IDENTIFIER IF INTEGER LBRACE "
-                           "LBRACK STRING");
+         parse_error (tok, FIRST_SET[6]);
    }
 
    LEAVING(__FUNCTION__);
@@ -746,7 +762,7 @@ static absyn_module_decl_t *parse_module_decl()
    match (END);
 
    if (!in_set (tok, FOLLOW_SET[14]))
-      parse_error (tok, "ENDOFFILE MODULE");
+      parse_error (tok, FOLLOW_SET[14]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -770,7 +786,7 @@ static absyn_module_lst_t *parse_module_decl_lst()
    else
    {
       if (!in_set (tok, FOLLOW_SET[15]))
-         parse_error (tok, "MODULE");
+         parse_error (tok, FOLLOW_SET[15]);
       else retval = NULL;
    }
 
@@ -806,11 +822,11 @@ static absyn_proto_t *parse_proto()
          break;
 
       default:
-         parse_error (tok, "FUNCTION TYPE VAL");
+         parse_error (tok, FIRST_SET[16]);
    }
 
    if (!in_set (tok, FOLLOW_SET[16]))
-      parse_error (tok, "FUNCTION IN TYPE VAL");
+      parse_error (tok, FOLLOW_SET[16]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -827,7 +843,7 @@ static absyn_proto_lst_t *parse_proto_lst()
    MALLOC (retval, sizeof(absyn_proto_lst_t))
 
    if (!in_set (tok, FIRST_SET[17]))
-      parse_error (tok, "FUNCTION TYPE VAL");
+      parse_error (tok, FIRST_SET[17]);
 
    retval->proto = parse_proto();
 
@@ -895,7 +911,7 @@ static absyn_ty_t *parse_single_ty()
          break;
 
       default:
-         parse_error (tok, "IDENTIFIER LBRACE");
+         parse_error (tok, FIRST_SET[19]);
    }
 
    LEAVING(__FUNCTION__);
