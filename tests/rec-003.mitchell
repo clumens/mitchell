@@ -1,0 +1,11 @@
+# Description:  Record element access
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ rec ← { name: string, pos: { x: integer, y: integer } }
+
+   ʋ rec: rec ← { name ← "one", pos ← { x ← 1, y ← 2 } }
+
+   ʋ name: string ← rec|name
+   ʋ y: integer ← rec|pos|a
+end
