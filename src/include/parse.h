@@ -1,7 +1,9 @@
-/* The main file of the mitchell kernel, which controls the entire
- * compilation process.
+/* This file defines the public interface to the parser, which takes the token
+ * stream produced by the tokenizer and matches it to the language's grammer.
+ * This is done for both validation of the input file and for building the
+ * abstract syntax tree.
  *
- * $Id: main.c,v 1.8 2004/10/15 14:59:55 chris Exp $
+ * $Id: parse.h,v 1.1 2004/10/15 14:59:54 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -20,26 +22,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#include <locale.h>
-#include <stdio.h>
-#include <stdlib.h>
+#ifndef _PARSE_H
+#define _PARSE_H 1
 
-#include "parse.h"
+/* Parse the file provided by the caller.  Currently returns nothing. */
+void parse (const char *filename);
 
-int main (int argc, char **argv)
-{
-   /* Grab locale information from the environment. */
-   setlocale (LC_ALL, "");
-
-   if (argc != 2)
-   {
-      fprintf (stderr, "usage: %s <file>\n", argv[0]);
-      exit(1);
-   }
-
-   parse (argv[1]);
-
-   return 0;
-}
+#endif
 
 /* vim: set tags=../tags: */
