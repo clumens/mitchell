@@ -1,3 +1,30 @@
+/* Type checking rules for the Mitchell language.  This document describes
+ * how a conformant mitchell compiler will perform type checking on a
+ * program.  The exact rules are provided in the first section, while
+ * explanation and examples are provided in the second.  In the event of
+ * any discrepancy between the rules and the explanation, the rules are
+ * always correct.
+ *
+ * $Id: typing,v 1.3 2004/11/24 23:00:35 chris Exp $
+ */
+
+/* mitchell - the bootstrapping compiler
+ * Copyright (C) 2004 Chris Lumens
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
+
 Typing Rules
 ============
 ⊢ t : boolean     [true-expr]
