@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.21 2004/12/02 05:52:07 chris Exp $
+ * $Id: main.c,v 1.22 2004/12/07 00:27:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,6 +34,7 @@
 #include "memory.h"
 #include "parse.h"
 #include "semant.h"
+#include "version.h"
 
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
@@ -89,7 +90,8 @@ static void help (const char *progname)
 
 static void version (const char *progname)
 {
-   printf ("%s version Preview 2\n(C) 2004 Chris Lumens\n", progname);
+   printf ("%s version %s\n(C) 2004 Chris Lumens\n", MITCHELL_VERSION,
+           progname);
    exit (0);
 }
 
