@@ -6,7 +6,7 @@ OBJS = absyn_printer.o main.o parse.o tokenize.o
 all: mitchell
 
 mitchell: $(OBJS)
-	gcc $(CFLAGS) -o $@ $^ -lgc
+	gcc $(CFLAGS) -o $@ $^ -lgc -ldl
 
 clean:
-	-rm *.o mitchell
+	-rm -f *.o mitchell
