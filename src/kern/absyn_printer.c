@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.20 2005/01/09 20:28:54 chris Exp $
+ * $Id: absyn_printer.c,v 1.21 2005/01/16 06:28:17 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -95,7 +95,7 @@ static void print_branch_lst_t (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_branch_lst_t *node = lst->data;
+      absyn_branch_lst_t *node = tmp->data;
 
       fprintf (out, "\n%*sbranch_lst_t", local_indent, "");
       print_expr_t (node->branch, local_indent+1);
@@ -155,7 +155,7 @@ static void print_decl_lst (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_decl_t *node = lst->data;
+      absyn_decl_t *node = tmp->data;
 
       fprintf (out, "\n%*sdecl_lst_t", local_indent, "");
       print_decl_t (node, local_indent+1);
@@ -229,7 +229,7 @@ static void print_expr_lst (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_expr_t *node = lst->data;
+      absyn_expr_t *node = tmp->data;
 
       fprintf (out, "\n%*sexpr_lst_t", local_indent, "");
       print_expr_t (node, local_indent+1);
@@ -260,7 +260,7 @@ static void print_id_lst_t (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_id_lst_t *id = lst->data;
+      absyn_id_lst_t *id = tmp->data;
 
       fprintf (out, "\n%*sid_lst_t", local_indent, "");
       print_id_expr_t (id->symbol, local_indent+1);
@@ -291,7 +291,7 @@ static void print_module_lst (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_module_decl_t *node = lst->data;
+      absyn_module_decl_t *node = tmp->data;
 
       fprintf (out, "\n%*smodule_lst_t", local_indent, "");
       print_module_decl_t (node, local_indent+1);
@@ -306,7 +306,7 @@ static void print_record_assn_t (list_t *lst, unsigned int indent)
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
-      absyn_record_assn_t *node = lst->data;
+      absyn_record_assn_t *node = tmp->data;
 
       fprintf (out, "\n%*srecord_lst", local_indent, "");
       print_id_expr_t (node->symbol, local_indent+1);
