@@ -4,7 +4,9 @@
    - explain the somewhat complicated scoping rules
 - grammar:
    - visibility declarations (are these really needed?)
-   - Mike still doesn't like the word "decl"
+   - remove DECL from module-decl (post-preview-3)
+   - provide an escape mechanism for strings - way to insert literal
+     double quotes, tabs, escapes for colors, etc. (post-preview-3)
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis
