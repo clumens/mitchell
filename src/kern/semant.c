@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.16 2004/12/02 05:22:04 chris Exp $
+ * $Id: semant.c,v 1.17 2004/12/02 05:40:12 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -306,11 +306,10 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
          if (!equal_types (branch_ty, test_ty))
          {
-            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
-            fprintf (stderr, "\tbranch test must have the same type as the "
-                             "case's test-expr\n");
-            fprintf (stderr, "\tbranch test type: %s\n\ttest-expr type: %s\n",
-                             ty_to_str(branch_ty), ty_to_str(test_ty));
+            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
+                        "branch test must have the same type as case's test",
+                        "branch test", ty_to_str(branch_ty), "test-expr",
+                        ty_to_str(test_ty));
             exit(1);
          }
       }
@@ -320,10 +319,10 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
          if (!equal_types (branch_ty, t))
          {
-            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
-            fprintf (stderr, "\tinconsistent types in case expression\n");
-            fprintf (stderr, "\tprevious test type: %s\n\tthis test type: "
-                             "%s\n", ty_to_str (branch_ty), ty_to_str(t));
+            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
+                        "inconsistent types in case expression",
+                        "previous test", ty_to_str (branch_ty), "this test",
+                        ty_to_str(t));
             exit(1);
          }
       }
@@ -341,10 +340,10 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
          if (!equal_types (expr_ty, t))
          {
-            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno);
-            fprintf (stderr, "\tinconsistent types in case branch exprs\n");
-            fprintf (stderr, "\tprevious expr type: %s\n\tthis expr type: "
-                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
+            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
+                        "inconsistent types in case branch exprs",
+                        "previous expr", ty_to_str (expr_ty), "this expr",
+                        ty_to_str(t));
             exit(1);
          }
       }
@@ -364,10 +363,10 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
          if (!equal_types (expr_ty, t))
          {
-            TYPE_ERROR (compiler_config.filename, node->default_expr->lineno);
-            fprintf (stderr, "\tinconsistent types in case branch exprs\n");
-            fprintf (stderr, "\tprevious expr type: %s\n\tdefault-expr type: "
-                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
+            TYPE_ERROR (compiler_config.filename, node->default_expr->lineno,
+                        "inconsistent types in case branch exprs",
+                        "previous expr", ty_to_str (expr_ty), "default-expr",
+                        ty_to_str(t));
             exit(1);
          }
       }
@@ -497,10 +496,10 @@ static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
 
          if (!equal_types (expr_ty, t))
          {
-            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno);
-            fprintf (stderr, "\tinconsistent types in expression list\n");
-            fprintf (stderr, "\tprevious expr type: %s\n\tthis expr type: "
-                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
+            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
+                        "inconsistent types in expression list",
+                        "previous expr", ty_to_str (expr_ty), "this expr",
+                        ty_to_str(t));
             exit(1);
          }
       }
@@ -632,9 +631,9 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
    tmp1 = check_expr (node->test_expr, stack);
    if (!equal_types (tmp1, &bool_ty))
    {
-      TYPE_ERROR (compiler_config.filename, node->lineno);
-      fprintf (stderr, "\tif-expr test must return boolean type\n");
-      fprintf (stderr, "\tif-expr type: %s\n", ty_to_str (tmp1));
+      TYPE_ERROR (compiler_config.filename, node->lineno,
+                  "if-expr test must return boolean type", "if-expr",
+                  ty_to_str (tmp1), "expected", "boolean");
       exit(1);
    }
    
@@ -643,10 +642,9 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
 
    if (!equal_types (tmp1, tmp2))
    {
-      TYPE_ERROR (compiler_config.filename, node->else_expr->lineno);
-      fprintf (stderr, "\tthen-expr and else-expr must have the same type\n");
-      fprintf (stderr, "\tthen-expr type: %s\n\telse-expr type: %s\n",
-                       ty_to_str (tmp1), ty_to_str(tmp2));
+      TYPE_ERROR (compiler_config.filename, node->else_expr->lineno,
+                  "then-expr and else-expr must have the same type",
+                  "then-expr", ty_to_str(tmp1), "else-expr", ty_to_str(tmp2));
       exit(1);
    }
 
@@ -660,8 +658,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    if (node->symbol->sub != NULL)
    {
       BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                        node->symbol->symbol,
-                        "symbol may not contain a namespace");
+                        node->symbol->symbol, "name may not contain a dot");
       exit(1);
    }
 
@@ -826,11 +823,10 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
 
    if (!equal_types (val_ty, expr_ty))
    {
-      TYPE_ERROR (compiler_config.filename, node->lineno);
-      fprintf (stderr, "\ttype of value initializer does not match value's "
-                       "declared type\n");
-      fprintf (stderr, "\tdeclared type: %s\n\tinitializer type: %s\n",
-                       ty_to_str (val_ty), ty_to_str(expr_ty));
+      TYPE_ERROR (compiler_config.filename, node->lineno,
+                  "type of value initializer does not match value's type",
+                  "declared", ty_to_str (val_ty), "initializer",
+                  ty_to_str(expr_ty));
       exit(1);
    }
 

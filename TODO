@@ -14,6 +14,7 @@
    - outline contents for runtime library (long-term project)
 - output:
    - parser error messages can always be better (context, replacements, etc)
+   - add column numbers to everything for better error reporting
 - symbol table:
    - functions need to store a list of the types of their formal
      parameters
