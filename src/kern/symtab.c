@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.8 2004/11/24 03:56:04 chris Exp $
+ * $Id: symtab.c,v 1.9 2004/11/30 03:30:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -71,7 +71,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
    if (symtab == NULL)
       return 0;
 
-   if (table_entry_exists (symtab, sym))
+   if (table_entry_exists (symtab, sym->name, sym->kind))
       return -1;
    
    if ((*symtab)[row] == NULL)
@@ -79,6 +79,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       MALLOC ((*symtab)[row], sizeof (symtab_entry_t))
       MALLOC ((*symtab)[row]->symbol, sizeof (symbol_t))
       (*symtab)[row]->symbol->kind = sym->kind;
+      (*symtab)[row]->symbol->ty = sym->ty;
       (*symtab)[row]->symbol->name = wcsdup ((wchar_t *) sym->name);
       (*symtab)[row]->next = NULL;
 
@@ -101,6 +102,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       MALLOC (tmp->next, sizeof (symtab_entry_t))
       MALLOC (tmp->next->symbol, sizeof (symbol_t))
       tmp->next->symbol->kind = sym->kind;
+      tmp->next->symbol->ty = sym->ty;
       tmp->next->symbol->name = wcsdup ((wchar_t *) sym->name);
       tmp->next->next = NULL;
 
@@ -119,7 +121,8 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
 }
 
 /* Lookup an entry in the given symbol table. */
-symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind)
+symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
+                              unsigned int kind)
 {
    unsigned int row = hash (name, kind);
    symtab_entry_t *tmp;
@@ -136,9 +139,10 @@ symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind)
 }
 
 /* Does the given string exist in the symbol table?  Return success or not. */
-unsigned int table_entry_exists (symtab_t *symtab, symbol_t *sym)
+unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
+                                 unsigned int kind)
 {
-   return lookup_entry (symtab, sym->name, sym->kind) == NULL ? 0 : 1;
+   return table_lookup_entry (symtab, name, kind) == NULL ? 0 : 1;
 }
 
 /* +================================================================+
@@ -188,24 +192,35 @@ int symtab_add_entry (tabstack_t *tabstack, symbol_t *sym)
    return table_add_entry (tabstack->symtab, sym);
 }
 
-unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *sym)
+symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name,
+                               unsigned int kind)
 {
    tabstack_t *tmp = tabstack;
+   symbol_t *retval;
 
    while (tmp != NULL)
    {
-      if (table_entry_exists (tmp->symtab, sym) == 1)
-         return 1;
+      retval = table_lookup_entry  (tmp->symtab, name, kind);
+      if (retval != NULL)
+         return retval;
 
       tmp = tmp->upper;
    }
 
-   return 0;
+   return NULL;
 }
 
-unsigned int symtab_entry_exists_local (tabstack_t *tabstack, symbol_t *sym)
+unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name,
+                                  unsigned int kind)
 {
-   return table_entry_exists (tabstack->symtab, sym);
+   return (symtab_lookup_entry (tabstack, name, kind) == NULL) ?
+      0 : 1;
+}
+
+unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name,
+                                        unsigned int kind)
+{
+   return table_entry_exists (tabstack->symtab, name, kind);
 }
 
 /* vim: set tags=../tags: */

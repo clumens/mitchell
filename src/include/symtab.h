@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.5 2004/11/24 03:40:58 chris Exp $
+ * $Id: symtab.h,v 1.6 2004/11/30 03:30:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -42,6 +42,7 @@ typedef enum { SYM_FUNVAL, SYM_MODULE, SYM_TYPE } subtable_t;
 
 typedef struct symbol_t {
    subtable_t kind;
+   ty_t      *ty;
    mstring_t *name;
 
    union {
@@ -61,10 +62,12 @@ typedef struct symtab_entry_t {
 typedef symtab_entry_t *symtab_t[SYMTAB_ROWS];
 
 /* Manipulation functions for a single symbol table. */
-symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind);
+symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
+                              unsigned int kind);
 symtab_t *symtab_new ();
 int table_add_entry (symtab_t *symtab, symbol_t *symbol);
-unsigned int table_entry_exists (symtab_t *symtab, symbol_t *symbol);
+unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
+                                 unsigned int kind);
 
 /* Symbol table nesting for scope. */
 typedef struct tabstack_t {
@@ -79,8 +82,12 @@ typedef struct tabstack_t {
 tabstack_t *enter_scope (tabstack_t *tabstack);
 tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name);
 int symtab_add_entry (tabstack_t *tabstack, symbol_t *symbol);
-unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *symbol);
-unsigned int symtab_entry_exists_local (tabstack_t *tabstack, symbol_t *symbol);
+symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name,
+                               unsigned int kind);
+unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name,
+                                  unsigned int kind);
+unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name,
+                                        unsigned int kind);
 
 /* Functions to dump the symbol tables. */
 void symtab_dump (tabstack_t *tabstack, mstring_t *scope_name);

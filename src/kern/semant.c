@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.11 2004/11/30 02:13:10 chris Exp $
+ * $Id: semant.c,v 1.12 2004/11/30 03:30:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,13 +37,13 @@
  * functions, modules, and types.  Keep this as absolutely small as possible.
  */
 static symbol_t base_env[] = {
-   { SYM_FUNVAL, L"f" },
-   { SYM_FUNVAL, L"t" },
-   { SYM_TYPE, L"⊥" },
-   { SYM_TYPE, L"boolean" },
-   { SYM_TYPE, L"integer" },
-   { SYM_TYPE, L"string" },
-   { SYM_TYPE, NULL }
+   { SYM_FUNVAL, NULL, L"f" },
+   { SYM_FUNVAL, NULL, L"t" },
+   { SYM_TYPE, NULL, L"⊥" },
+   { SYM_TYPE, NULL, L"boolean" },
+   { SYM_TYPE, NULL, L"integer" },
+   { SYM_TYPE, NULL, L"string" },
+   { SYM_TYPE, NULL, NULL }
 };
 
 /* XXX: These are temporary environments to allow me to keep working on stuff
@@ -51,18 +51,18 @@ static symbol_t base_env[] = {
  * Of course, I'll need to figure that out before too long.
  */
 static symbol_t integer_env[] = {
-   { SYM_FUNVAL, L"+" },
-   { SYM_FUNVAL, L"-" },
-   { SYM_FUNVAL, L"*" },
-   { SYM_FUNVAL, L"<" },
-   { SYM_FUNVAL, L"=" },
-   { SYM_FUNVAL, L"mod" },
-   { SYM_TYPE, NULL }
+   { SYM_FUNVAL, NULL, L"+" },
+   { SYM_FUNVAL, NULL, L"-" },
+   { SYM_FUNVAL, NULL, L"*" },
+   { SYM_FUNVAL, NULL, L"<" },
+   { SYM_FUNVAL, NULL, L"=" },
+   { SYM_FUNVAL, NULL, L"mod" },
+   { SYM_TYPE, NULL, NULL }
 };
 
 static symbol_t boolean_env[] = {
-   { SYM_FUNVAL, L"or" },
-   { SYM_TYPE, NULL }
+   { SYM_FUNVAL, NULL, L"or" },
+   { SYM_TYPE, NULL, NULL }
 };
 
 /* The global symbol table stack - always points to the outermost symbol table
@@ -83,7 +83,7 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
 static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack);
-static void check_ty (absyn_ty_t *node, tabstack_t *stack);
+static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
 static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
 
@@ -431,12 +431,10 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
     */
    if (node->sub == NULL)
    {
-      symbol_t s = { SYM_FUNVAL, node->symbol };
-
-      if (!symtab_entry_exists (stack, &s))
+      if (!symtab_entry_exists (stack, node->symbol, SYM_FUNVAL))
       {
-         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, s.name,
-                           "unknown symbol referenced");
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                           node->symbol, "unknown symbol referenced");
          exit(1);
       }
    }
@@ -453,7 +451,7 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
       {
          if (ns->sub != NULL)
          {
-            symbol_t s = { SYM_MODULE, ns->symbol };
+            symbol_t s = { SYM_MODULE, NULL, ns->symbol };
 
             /* Look up the next part of the namespace path in the current
              * module's top-level symbol table (the part that's going to
@@ -462,7 +460,7 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
              */
             symbol_t *retval;
 
-            if ((retval = lookup_entry (tbl, s.name, s.kind)) == NULL)
+            if ((retval = table_lookup_entry (tbl, s.name, s.kind)) == NULL)
             {
                BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno, s.name,
                                  "unknown symbol referenced");
@@ -483,16 +481,14 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
          }
          else
          {
-            symbol_t s = { SYM_FUNVAL, ns->symbol };
-
             /* Okay, now we're down to just the naked identifier.  Look in
              * the current symbol table (no looking through a stack of tables)
              * to resolve the identifier.
              */
-            if (!table_entry_exists (tbl, &s))
+            if (!table_entry_exists (tbl, ns->symbol, SYM_FUNVAL))
             {
-               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno, s.name,
-                                 "unknown symbol referenced");
+               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno,
+                                 ns->symbol, "unknown symbol referenced");
                exit(1);
             }
             else
@@ -590,7 +586,7 @@ static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
 }
 
 /* TODO:  something about is_list */
-static void check_ty (absyn_ty_t *node, tabstack_t *stack)
+static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
 {
    /* Records are a little bit complicated. */
    if (node->is_record)
@@ -637,19 +633,21 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
    }
    else
    {
-      symbol_t s = { SYM_TYPE, node->identifier->symbol };
-
       /* First check the local symbol table stack (to take into account any
        * modules we might be inside of).  If that fails, also check the global
        * symbol table for those basic types.
        */
-      if (!symtab_entry_exists (stack, &s) && !symtab_entry_exists (global, &s))
+      if (!symtab_entry_exists (stack, node->identifier->symbol, SYM_TYPE) &&
+          !symtab_entry_exists (global, node->identifier->symbol, SYM_TYPE))
       {
-         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, s.name,
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                           node->identifier->symbol,
                            "unknown symbol referenced");
          exit(1);
       }
    }
+
+   return NULL;
 }
 
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
