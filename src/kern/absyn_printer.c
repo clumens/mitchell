@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.28 2005/03/29 05:52:55 chris Exp $
+ * $Id: absyn_printer.c,v 1.29 2005/04/06 02:22:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -561,8 +561,11 @@ static void print_val_decl_t (absyn_val_decl_t *node, unsigned int il)
    fprintf (out, "\n%*ssymbol =", INDENT(il+1), "");
    print_id_expr_t (node->symbol, il+2);
 
-   fprintf (out, "\n%*sty_decl =", INDENT(il+1), "");
-   print_ty_t (node->ty_decl, il+2);
+   if (node->ty_decl != NULL)
+   {
+      fprintf (out, "\n%*sty_decl =", INDENT(il+1), "");
+      print_ty_t (node->ty_decl, il+2);
+   }
 
    fprintf (out, "\n%*sinit =", INDENT(il+1), "");
    print_expr_t (node->init, il+2);

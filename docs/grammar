@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.17 2005/03/29 05:52:43 chris Exp $
+ * $Id: grammar,v 1.18 2005/04/06 02:22:17 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -113,6 +113,7 @@ record-assn-lst ::= IDENTIFIER ASSIGN expr
 
 /* Values {{{ */
 val-decl ::= VAL IDENTIFIER COLON ty ASSIGN expr
+           | VAL IDENTIFIER ASSIGN expr
 
 id ::= IDENTIFIER
      | IDENTIFIER DOT id

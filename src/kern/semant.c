@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.39 2005/03/29 05:52:56 chris Exp $
+ * $Id: semant.c,v 1.40 2005/04/06 02:22:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1653,16 +1653,27 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    symbol_t *new_sym;
    ty_t *val_ty, *expr_ty;
 
-   val_ty = ast_to_ty (node->ty_decl, stack);
    expr_ty = node->init->ty = check_expr (node->init, stack);
 
-   if (!equal_types (val_ty, expr_ty))
+   /* An explicit type is not required on the val decl.  If no type is given,
+    * the value has the type of the initializer expression and we don't need
+    * to worry about checking (of course).  If a type is given, it must match
+    * the type of the initializing expression.
+    */
+   if (node->ty_decl == NULL)
+      val_ty = expr_ty;
+   else
    {
-      TYPE_ERROR (cconfig.filename, node->lineno, node->column,
-                  "type of value initializer does not match value's type",
-                  "declared", ty_to_str (val_ty), "initializer",
-                  ty_to_str (expr_ty));
-      exit(1);
+      val_ty = ast_to_ty (node->ty_decl, stack);
+
+      if (!equal_types (val_ty, expr_ty))
+      {
+         TYPE_ERROR (cconfig.filename, node->lineno, node->column,
+                     "type of value initializer does not match value's type",
+                     "declared", ty_to_str (val_ty), "initializer",
+                     ty_to_str (expr_ty));
+         exit(1);
+      }
    }
    
    MALLOC (new_sym, sizeof (symbol_t));

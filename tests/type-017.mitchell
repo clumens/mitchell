@@ -1,0 +1,6 @@
+# Description:  Infer type of value from initializing expression
+# Expected:  PASS
+
+ℳ Main ← decl
+   ʋ x ← 47
+end

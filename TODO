@@ -9,7 +9,6 @@
    - allow some sort of list pattern matching as a stop-gap for real
      pattern matching throughout
    - tagged discriminated union support
-   - make type specifier on value declarations optional
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis (preview-5)

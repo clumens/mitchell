@@ -8,6 +8,9 @@ Grammar:
   want included in the string on the next line.  (Patch from Mike.)
 - Expressions may be surrounded by parentheses.
 - Added support for creating, handling, and raising exceptions.
+- Value declarations no longer require a type annotation, since this can be
+  inferred from the initializing expression.  One may still be provided for
+  clarity.
 Internals:
 - Added a backlink_t type and a link of this type to every AST noded.  The
   backlink points at the parent node in the tree.
