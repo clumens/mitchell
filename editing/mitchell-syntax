@@ -1,0 +1,67 @@
+" Add this to your $HOME/.vim/syntax (or global vim syntax file directory)
+" to get vim to understand and highlight mitchell source files.
+
+" Vim syntax file
+" Language:    Mitchell
+" Filenames:   *.mitchell
+" Maintainers: Chris Lumens <chris@bangmoney.org>
+
+" For version 5.x: Clear all syntax items
+" For version 6.x: Quit when a syntax file was already loaded
+if version < 600
+  syntax clear
+elseif exists("b:current_syntax")
+  finish
+endif
+
+" Mitchell is case sensitive.
+syntax case match
+
+" Error on unmatched delimiters.
+syntax match   mitBraceErr /}/
+syntax match   mitBrackErr /]/
+syntax match   mitParenErr /)/
+
+syntax region  mitEncl     transparent start=/{/ end=/}/ contains=ALLBUT,mitBraceErr
+syntax region  mitEncl     transparent start=/\[/ end=/\]/ contains=ALLBUT,mitBrackErr
+syntax region  mitEncl     transparent start=/(/ end=/)/ contains=ALLBUT,mitParenErr
+
+" Keywords
+syntax keyword mitKeyword  ← case decl else end ƒ if in → ℳ then τ ʋ
+
+" Comments
+syntax region  mitComment  start=/#/ end=/$/ contains=mitComment,mitTodo
+syntax keyword mitTodo     contained TODO FIXME XXX
+
+" Basic Types
+syntax keyword mitBoolean  t f
+syntax match   mitNumber   /\<-\=\d\+\>/
+syntax region  mitString   start=/\"/ end=/\"/
+syntax keyword mitType     boolean integer list string
+
+" Define the default highlighting.
+" For version 5.7 and earlier: only when not done already
+" For version 5.8 and later: only when an item doesn't have highlighting yet
+if version >= 508 || !exists("did_mitchell_syntax_inits")
+  if version < 508
+    let did_mitchell_syntax_inits = 1
+    command -nargs=+ HiLink hi link <args>
+  else
+    command -nargs=+ HiLink hi def link <args>
+  endif
+
+  HiLink mitBoolean     Boolean
+  HiLink mitBraceErr    Error
+  HiLink mitBrackErr    Error
+  HiLink mitComment     Comment
+  HiLink mitKeyword     Keyword
+  HiLink mitNumber      Number
+  HiLink mitParenErr    Error
+  HiLink mitString      String
+  HiLink mitTodo        Todo
+  HiLink mitType        Type
+
+  delcommand HiLink
+endif
+
+let b:current_syntax = "mitchell"
