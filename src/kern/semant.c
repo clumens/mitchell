@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.1 2004/11/14 17:16:53 chris Exp $
+ * $Id: semant.c,v 1.2 2004/11/18 03:06:27 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -59,6 +59,18 @@ void check_program (ast_t *ast)
    check_module_lst (ast);
    global = leave_scope (global);
 }
+
+static void unknown_symbol_error (symbol_t *s, unsigned int lineno)
+{
+   fprintf (stderr, "*** unknown symbol referenced on line %d:  %ls\n",
+                    lineno, (wchar_t *) s->name);
+   exit (1);
+}
+
+/* +================================================================+
+ * | TYPE CHECKING FUNCTIONS - ONE PER AST NODE TYPE                |
+ * +================================================================+
+ */
 
 /* Check for duplicate branches. */
 static void check_branch_lst (absyn_branch_lst_t *node)
@@ -150,12 +162,7 @@ static void check_expr (absyn_expr_t *node)
             s->kind = SYM_FUNVAL;
 
             if (!symtab_entry_exists (global, s))
-            {
-               fprintf (stderr, "referenced unknown symbol: %ls\n",
-                                (wchar_t *) s->name);
-               fprintf (stderr, "exiting.\n");
-               exit (1);
-            }
+               unknown_symbol_error (s, node->lineno);
             break;
          }
 

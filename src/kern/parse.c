@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.22 2004/11/13 00:01:38 chris Exp $
+ * $Id: parse.c,v 1.23 2004/11/18 03:06:27 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -307,6 +307,8 @@ static absyn_expr_t *parse_branch_expr()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_expr_t))
 
+   retval->lineno = tok->lineno;
+
    switch (tok->type) {
       case BOOLEAN:
          match(BOOLEAN);
@@ -356,6 +358,7 @@ static absyn_branch_lst_t *parse_branch_lst()
    if (tok->type == ELSE)
    {
       match(ELSE);
+      retval->lineno = last_tok->lineno;
       match(MAPSTO);
       retval->branch = NULL;
       retval->expr = (struct absyn_expr_t *) parse_expr();
@@ -364,6 +367,7 @@ static absyn_branch_lst_t *parse_branch_lst()
    else
    {
       retval->branch = (struct absyn_expr_t *) parse_branch_expr();
+      retval->lineno = retval->branch->lineno;
       match(MAPSTO);
       retval->expr = (struct absyn_expr_t *) parse_expr();
 
@@ -390,6 +394,7 @@ static absyn_case_expr_t *parse_case_expr()
    MALLOC(retval, sizeof(absyn_case_expr_t))
 
    match(CASE);
+   retval->lineno = last_tok->lineno;
    retval->test = (struct absyn_expr_t *) parse_expr();
    match(IN);
 
@@ -437,6 +442,8 @@ static absyn_decl_t *parse_decl()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_decl_t))
 
+   retval->lineno = tok->lineno;
+
    switch (tok->type) {
       case FUNCTION:
          retval->type = ABSYN_FUN_DECL;
@@ -473,6 +480,7 @@ static absyn_decl_expr_t *parse_decl_expr()
    MALLOC (retval, sizeof(absyn_decl_expr_t))
 
    match(DECL);
+   retval->lineno = last_tok->lineno;
    retval->decl_lst = (struct absyn_decl_lst_t *) parse_decl_lst();
    match(IN);
    retval->expr = (struct absyn_expr_t *) parse_expr();
@@ -496,6 +504,7 @@ static absyn_decl_lst_t *parse_decl_lst()
       parse_error (tok, FIRST_SET[SET_DECL_LST]);
 
    retval->decl = parse_decl();
+   retval->lineno = retval->decl->lineno;
 
    if (!in_set (tok, FOLLOW_SET[SET_DECL_LST]))
       retval->next = (struct decl_lst_t *) parse_decl_lst();
@@ -522,6 +531,8 @@ static absyn_expr_t *parse_expr()
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_expr_t))
+
+   retval->lineno = tok->lineno;
 
    switch (tok->type) {
       case BOOLEAN:
@@ -594,6 +605,7 @@ static absyn_expr_lst_t *parse_expr_lst()
    MALLOC (retval, sizeof(absyn_expr_lst_t))
    
    retval->expr = parse_expr();
+   retval->lineno = retval->expr->lineno;
 
    if (tok->type == COMMA)
    {
@@ -620,6 +632,8 @@ static absyn_expr_t *parse_fun_call_or_id()
    MALLOC (retval, sizeof(absyn_expr_t))
 
    tmp = parse_id();
+
+   retval->lineno = tmp->lineno;
 
    if (tok->type == LPAREN)
    {
@@ -663,9 +677,13 @@ static absyn_fun_decl_t *parse_fun_decl()
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(FUNCTION);
+   retval->lineno = last_tok->lineno;
+
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
+
    retval->symbol = sym;
 
    match(COLON);
@@ -702,6 +720,7 @@ static absyn_id_expr_t *parse_id()
    MALLOC (retval, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
+   retval->lineno = last_tok->lineno;
    retval->symbol = last_tok->string;
 
    if (tok->type == DOT)
@@ -727,8 +746,11 @@ static absyn_id_lst_t *parse_id_lst()
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
+   retval->lineno = last_tok->lineno;
+
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
    retval->symbol = sym;
 
    match(COLON);
@@ -755,6 +777,7 @@ static absyn_if_expr_t *parse_if_expr()
    MALLOC(retval, sizeof(absyn_if_expr_t))
 
    match(IF);
+   retval->lineno = last_tok->lineno;
    retval->test_expr = (struct absyn_expr_t *) parse_expr();
    match(THEN);
    retval->then_expr = (struct absyn_expr_t *) parse_expr();
@@ -776,9 +799,13 @@ static absyn_module_decl_t *parse_module_decl()
    MALLOC (sym, sizeof (absyn_id_expr_t))
 
    match (MODULE);
+   retval->lineno = last_tok->lineno;
+
    match (IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
+   
    retval->symbol = sym;
 
    match (ASSIGN);
@@ -806,6 +833,7 @@ static absyn_module_lst_t *parse_module_decl_lst()
    if (in_set (tok, FIRST_SET[SET_MODULE_DECL]))
    {
       retval->module = parse_module_decl();
+      retval->lineno = retval->module->lineno;
       retval->next = (struct absyn_module_lst_t *) parse_module_decl_lst();
    }
    else
@@ -832,8 +860,12 @@ static absyn_record_lst_t *parse_record_assn_lst()
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
+   retval->lineno = last_tok->lineno;
+
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
+
    retval->symbol = sym;
    match(ASSIGN);
    retval->expr = (struct absyn_expr_t *) parse_expr();
@@ -864,10 +896,12 @@ static absyn_ty_t *parse_single_ty()
       case IDENTIFIER:
          retval->is_record = 0;
          retval->identifier = parse_id();
+         retval->lineno = retval->identifier->lineno;
          break;
 
       case LBRACE:
          match(LBRACE);
+         retval->lineno = last_tok->lineno;
          retval->is_record = 1;
          retval->record = parse_id_lst();
          match(RBRACE);
@@ -894,6 +928,7 @@ static absyn_decl_t *parse_top_decl()
       case MODULE:
          MALLOC (retval, sizeof (absyn_decl_t))
          retval->type = ABSYN_MODULE_DECL;
+         retval->lineno = tok->lineno;
          retval->module_decl = parse_module_decl();
          break;
 
@@ -901,6 +936,7 @@ static absyn_decl_t *parse_top_decl()
       case TYPE:
       case VAL:
          retval = parse_decl();
+         retval->lineno = tok->lineno;
          break;
 
       default:
@@ -928,6 +964,7 @@ static absyn_decl_lst_t *parse_top_decl_lst()
       parse_error (tok, FIRST_SET[SET_TOP_DECL_LST]);
 
    retval->decl = parse_top_decl();
+   retval->lineno = retval->decl->lineno;
 
    if (!in_set (tok, FOLLOW_SET[SET_TOP_DECL_LST]))
       retval->next = (struct decl_lst_t *) parse_top_decl_lst();
@@ -970,9 +1007,13 @@ static absyn_ty_decl_t *parse_ty_decl()
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(TYPE);
+   retval->lineno = last_tok->lineno;
+
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
+
    retval->symbol = sym;
 
    match(ASSIGN);
@@ -993,9 +1034,13 @@ static absyn_val_decl_t *parse_val_decl()
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(VAL);
+   retval->lineno = last_tok->lineno;
+
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->ns = NULL;
+   sym->lineno = last_tok->lineno;
+
    retval->symbol = sym;
 
    match(COLON);
