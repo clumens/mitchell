@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.c,v 1.1 2005/02/08 04:28:32 chris Exp $
+ * $Id: str.c,v 1.2 2005/02/08 05:24:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,13 +37,16 @@ wchar_t *build_wcsstr (int nargs, ...)
    va_list ap;
    unsigned int i;
    wchar_t *retval = NULL;
+   wchar_t *init = NULL;
 
    if (nargs == 0)
       return NULL;
 
    va_start (ap, nargs);
+   init = va_arg (ap, wchar_t *);
 
-   retval = wcsdup(va_arg(ap, wchar_t *));
+   MALLOC(retval, WCSLEN(init));
+   retval = wcscpy (retval, init);
 
    for (i = 1; i < nargs; i++)
    {
