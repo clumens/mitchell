@@ -2,6 +2,8 @@
 # Expected:  PASS
 
 ℳ Main ← decl
+   ƒ asdf: boolean () ← t
+
    ƒ foo: integer () ←
       case Main.asdf() in
          t → case "something" in

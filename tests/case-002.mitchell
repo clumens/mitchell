@@ -1,7 +1,9 @@
 # Description:  Basic branch-expr possibilities
-# Expected:  PASS
+# Expected:  FAIL
 
 ℳ Main ← decl
+   ƒ asdf: string () ← "asdf"
+
    ƒ foo: integer () ←
       case Main.asdf() in
          X.Y → 1,
