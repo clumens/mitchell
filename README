@@ -30,7 +30,7 @@ remain constant.
 The current status of Mitchell is limited to front-end functionality only.
 It can check the syntax of an input source code file, construct an
 abstract syntax tree based on that input, and check the validity of types
-in that tree.  It cannot yet actually compile anythin to an executable
+in that tree.  It cannot yet actually compile anything to an executable
 state.
 
 
