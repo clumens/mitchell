@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.16 2005/01/07 05:31:23 chris Exp $
+ * $Id: symtab.c,v 1.17 2005/01/22 01:17:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,11 +34,20 @@
 static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
 {
    unsigned int len = strlen ((char *) str);
-   unsigned int i;
+   unsigned int i, g;
    unsigned int h = (kind == SYM_VALUE ? SYM_FUNCTION : kind);
 
    for (i = 0; i < len; i++)
-      h += (int) str[i];
+   {
+      h = (h << 4) + (int) str[i];
+      g = h & 0xf0000000;
+
+      if (g != 0)
+      {
+         h ^= g >> 24;
+         h ^= g;
+      }
+   }
 
    return h % SYMTAB_ROWS;
 }
