@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.12 2004/10/24 01:32:44 chris Exp $
+ * $Id: main.c,v 1.13 2004/10/24 16:04:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -140,6 +140,8 @@ int main (int argc, char **argv)
 
    handle_arguments (argc, argv);
    ast = parse (compiler_config.filename);
+
+   print_absyn (ast);
 
    return 0;
 }
