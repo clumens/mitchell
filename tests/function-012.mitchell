@@ -1,5 +1,5 @@
 # Description:  Function return value does not match declared type
-# Expected:  PASS
+# Expected:  FAIL
 
 ℳ Main ← decl
    τ rec ← { a: integer }
