@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.4 2004/11/21 05:34:51 chris Exp $
+ * $Id: symtab.h,v 1.5 2004/11/24 03:40:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -60,16 +60,11 @@ typedef struct symtab_entry_t {
  */
 typedef symtab_entry_t *symtab_t[SYMTAB_ROWS];
 
-/* Manipulation functions for a single symbol table.  These probably don't
- * need to be used by anyone.
- */
+/* Manipulation functions for a single symbol table. */
+symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind);
 symtab_t *symtab_new ();
 int table_add_entry (symtab_t *symtab, symbol_t *symbol);
-void table_dump (symtab_t *symtab);
 unsigned int table_entry_exists (symtab_t *symtab, symbol_t *symbol);
-
-/* This one should be useful all over the place. */
-symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind);
 
 /* Symbol table nesting for scope. */
 typedef struct tabstack_t {
@@ -82,11 +77,14 @@ typedef struct tabstack_t {
  * functions above.
  */
 tabstack_t *enter_scope (tabstack_t *tabstack);
-tabstack_t *leave_scope (tabstack_t *tabstack);
+tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name);
 int symtab_add_entry (tabstack_t *tabstack, symbol_t *symbol);
-void symtab_dump (tabstack_t *tabstack);
 unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *symbol);
 unsigned int symtab_entry_exists_local (tabstack_t *tabstack, symbol_t *symbol);
+
+/* Functions to dump the symbol tables. */
+void symtab_dump (tabstack_t *tabstack, mstring_t *scope_name);
+void table_dump (symtab_t *symtab, mstring_t *scope_name);
 
 #endif
 

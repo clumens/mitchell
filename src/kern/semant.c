@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.7 2004/11/23 02:48:56 chris Exp $
+ * $Id: semant.c,v 1.8 2004/11/24 03:41:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -122,7 +122,7 @@ void check_program (ast_t *ast)
       symtab_add_entry (boolean_symtab->stack, &boolean_env[i]);
 
    check_module_lst (ast, global);
-   global = leave_scope (global);
+   global = leave_scope (global, (mstring_t *) L"global");
 }
 
 /* +================================================================+
@@ -257,7 +257,7 @@ static void check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
    stack = enter_scope (stack);
    check_decl_lst (node->decl_lst, stack);
    check_expr (node->expr, stack);
-   stack = leave_scope (stack);
+   stack = leave_scope (stack, (mstring_t *) L"decl-expr");
 }
 
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
@@ -350,7 +350,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    
    /* Now check the function body with this augmented environment. */
    check_expr (node->body, stack);
-   stack = leave_scope (stack);
+   stack = leave_scope (stack, (mstring_t *) node->symbol->symbol);
 }
 
 /* Check that an identifier exists somewhere in the symbol table. */
@@ -455,6 +455,9 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 
    /* Check the guts of the module against the module's new environment. */
    check_decl_lst (node->decl_lst, new->stack);
+
+   if (compiler_config.debug.dump_symtabs)
+      symtab_dump (new->stack, (mstring_t *) node->symbol->symbol);
 }
 
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)

@@ -2,7 +2,7 @@
  * of the compiler.  For the most part, this configuration is set by the
  * command line options provided by the user.
  *
- * $Id: config.h,v 1.2 2004/10/26 04:36:16 chris Exp $
+ * $Id: config.h,v 1.3 2004/11/24 03:40:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,7 @@ typedef struct {
 
       unsigned int dump_absyn;         /* dump the abstract syntax or not? */
       char *absyn_outfile;             /* if dump_absyn is set, the dest */
+      unsigned int dump_symtabs;       /* dump the symbol tables or not? */
    } debug;
 } compiler_config_t;
 

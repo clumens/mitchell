@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.6 2004/11/21 05:34:53 chris Exp $
+ * $Id: symtab.c,v 1.7 2004/11/24 03:41:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -26,6 +26,7 @@
 #include <wchar.h>
 
 #include "basic_types.h"
+#include "config.h"
 #include "memory.h"
 #include "symtab.h"
 
@@ -118,36 +119,6 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
    return 1;
 }
 
-void table_dump (symtab_t *symtab)
-{
-   symtab_entry_t *tmp;
-   unsigned int i;
-
-   for (i = 0; i < SYMTAB_ROWS; i++)
-   {
-      tmp = (*symtab)[i];
-      
-      if (tmp != NULL)
-      {
-         printf ("row %2d:\t", i);
-
-         while (tmp != NULL)
-         {
-            switch (tmp->symbol->kind) {
-               case SYM_FUNVAL: printf ("FUNVAL("); break;
-               case SYM_MODULE: printf ("MODULE("); break;
-               case SYM_TYPE: printf ("TYPE("); break;
-            }
-            
-            printf ("%ls), ", (wchar_t *) tmp->symbol->name);
-            tmp = tmp->next;
-         }
-
-         printf ("NULL\n");
-      }
-   }
-}
-
 /* Lookup an entry in the given symbol table. */
 symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind)
 {
@@ -204,8 +175,11 @@ tabstack_t *enter_scope (tabstack_t *tabstack)
 /* Leave the innermost level of scope by popping the table off the top of the
  * stack and destroying it.  Returns a pointer to the new stack.
  */
-tabstack_t *leave_scope (tabstack_t *tabstack)
+tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name)
 {
+   if (compiler_config.debug.dump_symtabs)
+      table_dump (tabstack->symtab, scope_name);
+
    tabstack = tabstack->upper;
    return tabstack;
 }
@@ -213,18 +187,6 @@ tabstack_t *leave_scope (tabstack_t *tabstack)
 int symtab_add_entry (tabstack_t *tabstack, symbol_t *sym)
 {
    return table_add_entry (tabstack->symtab, sym);
-}
-
-void symtab_dump (tabstack_t *tabstack)
-{
-   tabstack_t *tmp = tabstack;
-
-   while (tmp != NULL)
-   {
-      table_dump (tmp->symtab);
-      printf ("==================================================\n");
-      tmp = tmp->upper;
-   }
 }
 
 unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *sym)

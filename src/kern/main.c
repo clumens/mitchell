@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.18 2004/11/14 17:16:52 chris Exp $
+ * $Id: main.c,v 1.19 2004/11/24 03:41:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,7 +36,8 @@
 
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
-               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN } config_vals_t;
+               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN,
+               OPT_IDUMP_SYMTABS } config_vals_t;
 
 /* The command line arguments we accept. */
 static char *shortopts = "hv";
@@ -50,13 +51,15 @@ static struct option longopts[] = {
    /* Internal compiler options */
    { "Idebug-parser", 1, NULL, OPT_IDEBUG_PARSER },
    { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
+   { "Idump-symtabs", 0, NULL, OPT_IDUMP_SYMTABS },
 
    { 0, 0, 0, 0 }
 };
 
 /* Stash all the command line arguments in here. */
 compiler_config_t compiler_config = { .debug.parser_debug = 0,
-                                      .debug.dump_absyn = 0 };
+                                      .debug.dump_absyn = 0,
+                                      .debug.dump_symtabs = 0};
 
 static void help_internal_debug ()
 {
@@ -65,6 +68,8 @@ static void help_internal_debug ()
            " and parser\n");
    printf ("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file',"
            " or <infile>.ast\n\t\t\tby default\n");
+   printf ("-Idump-symtabs\t\tDump the symbol tables on exit from a level of "
+           "scope\n");
 }
 
 static void verbose_help (const char *progname)
@@ -132,6 +137,10 @@ static void handle_arguments (int argc, char **argv)
                compiler_config.debug.absyn_outfile = strdup(optarg);
             else
                compiler_config.debug.absyn_outfile = NULL;
+            break;
+
+         case OPT_IDUMP_SYMTABS:
+            compiler_config.debug.dump_symtabs = 1;
             break;
 
          /* getopt already told us what was wrong so only print the help. */
