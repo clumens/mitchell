@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.5 2004/10/13 02:47:24 chris Exp $
+ * $Id: tokenize.c,v 1.6 2004/10/13 14:02:37 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,7 +33,8 @@
 
 #include "tokens.h"
 
-static wchar_t *reserved = L"#()[],\"ƒ";
+static unsigned int lineno = 1;
+static wchar_t *reserved = L"←:,.ɕƒ[(→ℳ])τʋ#\"";
 
 #define MALLOC(ptr, size) \
    if (((ptr) = malloc(size)) == NULL) \
@@ -180,36 +181,91 @@ token_t *next_token (FILE *f)
          return NULL;
       else if (iswspace (ch))
       {
+         /* Update line number for proper error reporting. */
+         if (ch == L'\n')
+            lineno++;
+
          whitespace_state (f);
          continue;
       }
 
       switch (ch) {
+         case L'←':
+            retval->lineno = lineno;
+            retval->type = ASSIGN;
+            return retval;
+
+         case L':':
+            retval->lineno = lineno;
+            retval->type = COLON;
+            return retval;
+
+         case L',':
+            retval->lineno = lineno;
+            retval->type = COMMA;
+            return retval;
+
+         case L'ɕ':
+            retval->lineno = lineno;
+            retval->type = CONST;
+            return retval;
+
+         case L'.':
+            retval->lineno = lineno;
+            retval->type = DOT;
+            return retval;
+
+         case L'ƒ':
+            retval->lineno = lineno;
+            retval->type = FUNCTION;
+            return retval;
+
+         case L'[':
+            retval->lineno = lineno;
+            retval->type = LBRACK;
+            return retval;
+
+         case L'(':
+            retval->lineno = lineno;
+            retval->type = LPAREN;
+            return retval;
+
+         case L'→':
+            retval->lineno = lineno;
+            retval->type = MAPSTO;
+            return retval;
+
+         case L'ℳ':
+            retval->lineno = lineno;
+            retval->type = MODULE;
+            return retval;
+
+         case L']':
+            retval->lineno = lineno;
+            retval->type = RBRACK;
+            return retval;
+
+         case L')':
+            retval->lineno = lineno;
+            retval->type = RPAREN;
+            return retval;
+
+         case L'τ':
+            retval->lineno = lineno;
+            retval->type = TYPE;
+            return retval;
+
+         case L'ʋ':
+            retval->lineno = lineno;
+            retval->type = VAR;
+            return retval;
+
          case L'#':
             comment_state (f);
             continue;
 
-         case L'(':
-            retval->type = LPAREN;
-            return retval;
-
-         case L')':
-            retval->type = RPAREN;
-            return retval;
-
-         case L'[':
-            retval->type = LBRACK;
-            return retval;
-
-         case L']':
-            retval->type = RBRACK;
-            return retval;
-
-         case L',':
-            retval->type = COMMA;
-            return retval;
-
          case L'"':
+            retval->lineno = lineno;
             retval->type = STRING;
             retval->string = word_state (f, string_member);
 
@@ -217,10 +273,6 @@ token_t *next_token (FILE *f)
              * one more time and throw it away.
              */
             read_char (f);
-            return retval;
-
-         case L'ƒ':
-            retval->type = FUNCTION;
             return retval;
 
          case L'0' ... L'9':
@@ -237,6 +289,7 @@ token_t *next_token (FILE *f)
                exit (1);
             }
 
+            retval->lineno = lineno;
             retval->type = INTEGER;
             retval->integer = n;
             return retval;
@@ -265,12 +318,48 @@ token_t *next_token (FILE *f)
                retval->type = BOOLEAN;
                retval->boolean = 1;
             }
+            else if (wcscmp (str, L"case") == 0)
+            {
+               free (str);
+               retval->type = CASE;
+            }
+            else if (wcscmp (str, L"decl") == 0)
+            {
+               free (str);
+               retval->type = DECL;
+            }
+            else if (wcscmp (str, L"else") == 0)
+            {
+               free (str);
+               retval->type = ELSE;
+            }
+            else if (wcscmp (str, L"end") == 0)
+            {
+               free (str);
+               retval->type = END;
+            }
+            else if (wcscmp (str, L"if") == 0)
+            {
+               free (str);
+               retval->type = IF;
+            }
+            else if (wcscmp (str, L"in") == 0)
+            {
+               free (str);
+               retval->type = IN;
+            }
+            else if (wcscmp (str, L"then") == 0)
+            {
+               free (str);
+               retval->type = THEN;
+            }
             else
             {
                retval->type = IDENTIFIER;
                retval->string = str;
             }
 
+            retval->lineno = lineno;
             return retval;
          }
       }

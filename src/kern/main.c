@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.4 2004/10/13 02:47:24 chris Exp $
+ * $Id: main.c,v 1.5 2004/10/13 14:02:37 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -50,55 +50,52 @@ int main (int argc, char **argv)
    while ((t = next_token (in)) != NULL)
    {
       switch (t->type) {
-         case LPAREN:
-            printf ("LPAREN\n");
-            break;
-
-         case RPAREN:
-            printf ("RPAREN\n");
-            break;
-
-         case LBRACK:
-            printf ("LBRACK\n");
-            break;
-
-         case RBRACK:
-            printf ("RBRACK\n");
-            break;
-
-         case COMMA:
-            printf ("COMMA\n");
-            break;
-
-         case DBLQUOTE:
-            printf ("DBLQUOTE\n");
-            break;
+         case ASSIGN: printf ("ASSIGN "); break;
+         case CASE: printf ("CASE "); break;
+         case COLON: printf ("COLON "); break;
+         case COMMA: printf ("COMMA "); break;
+         case CONST: printf ("CONST "); break;
+         case DBLQUOTE: printf ("DBLQUOTE "); break;
+         case DECL: printf ("DECL "); break;
+         case DOT: printf ("DOT "); break;
+         case ELSE: printf ("ELSE "); break;
+         case END: printf ("END "); break;
+         case FUNCTION: printf ("FUNCTION "); break;
+         case IF: printf ("IF "); break;
+         case IN: printf ("IN "); break;
+         case LBRACK: printf ("LBRACK "); break;
+         case LPAREN: printf ("LPAREN "); break;
+         case MAPSTO: printf ("MAPSTO "); break;
+         case MODULE: printf ("MODULE "); break;
+         case RBRACK: printf ("RBRACK "); break;
+         case RPAREN: printf ("RPAREN "); break;
+         case THEN: printf ("THEN "); break;
+         case TYPE: printf ("TYPE "); break;
+         case VAR: printf ("VAR "); break;
 
          case IDENTIFIER:
-            printf ("IDENTIFIER: |%ls|\n", t->string);
+            printf ("IDENTIFIER(%ls) ", t->string);
             free (t->string);
             break;
 
          case INTEGER:
-            printf ("INTEGER: |%li|\n", t->integer);
+            printf ("INTEGER(%li) ", t->integer);
             break;
 
          case STRING:
-            printf ("STRING: |%ls|\n", t->string);
+            printf ("STRING(%ls) ", t->string);
             free (t->string);
             break;
 
          case BOOLEAN:
-            printf ("BOOLEAN: |%s|\n", t->boolean == 1 ? "true" : "false");
-            break;
-
-         case FUNCTION:
-            printf ("FUNCTION\n");
+            printf ("BOOLEAN(%s) ", t->boolean == 1 ? "true" : "false");
             break;
       }
 
       free (t);
    }
+
+   printf ("\n");
 
    fclose (in);
    return 0;
