@@ -1,0 +1,9 @@
+# Description:  Type of actual arguments do not match formal parameters
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ asdf: integer (a: integer, b: string, c: boolean) ←
+      a
+
+   ʋ val: integer ← asdf (47, 47, f)
+end

@@ -1,0 +1,14 @@
+# Description:  Functions that accept aliased parameters
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ bool2 ← bool
+   τ bool ← boolean
+
+   ƒ one: boolean (b: bool) ← b
+   ƒ two: bool2 (b: boolean) ← f
+   ƒ three: bool (b: bool2) ← f
+
+   ʋ a: bool ← one(f)
+   ʋ b: boolean ← two(t)
+end

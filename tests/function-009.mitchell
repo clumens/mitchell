@@ -1,0 +1,12 @@
+# Description:  Functions that return simple types
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ i: integer () ← 47
+   ƒ b: boolean () ← t
+   ƒ s: string () ← "something"
+
+   ʋ ival: integer ← i()
+   ʋ bval: boolean ← b()
+   ʋ sval: string ← s()
+end

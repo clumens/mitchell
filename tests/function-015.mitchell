@@ -1,0 +1,15 @@
+# Description:  Function return values as arguments
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ one: boolean (x: integer) ←
+      case x in
+         1 → t,
+         47 → f,
+         else → t
+      end
+
+   ƒ two: integer () ← 17
+
+   ʋ val: boolean ← one (two())
+end
