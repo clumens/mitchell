@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.22 2005/01/14 03:07:16 chris Exp $
+ * $Id: tokenize.c,v 1.23 2005/01/19 03:32:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -83,10 +83,9 @@ static __inline__ wint_t read_char (FILE *f)
 
    if (errno == EILSEQ)
    {
-      USAGE_ERROR (compiler_config.filename,
-                   "fgetwc returned EILSEQ.  Please check that $LANG is set "
-                   "to a UTF-8 aware\n\tlocale and that mitchell was compiled "
-                   "with gcc-3.4 or more recent.\n\tExiting.");
+      ERROR ("fgetwc returned EILSEQ.  Please check that $LANG is set to a "
+             "UTF-8 aware\n\tlocale and that mitchell was compiled with "
+             "gcc-3.4 or more recent.\n\tExiting.");
       fclose (f);
       exit (1);
    }
@@ -107,10 +106,9 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
 {
    if (ungetwc (ch, f) == WEOF && errno == EILSEQ)
    {
-      USAGE_ERROR (compiler_config.filename,
-                   "ungetwc returned EILSEQ.  Please check that $LANG is set "
-                   "to a UTF-8 aware\n\tlocale and that mitchell was compiled "
-                   "with gcc-3.4 or more recent.\n\tExiting.");
+      ERROR ("ungetwc returned EILSEQ.  Please check that $LANG is set to a "
+             "UTF-8 aware\n\tlocale and that mitchell was compiled with "
+             "gcc-3.4 or more recent.\n\tExiting.");
       fclose (f);
       exit (1);
    }

@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.7 2005/01/17 23:47:19 chris Exp $
+ * $Id: error.h,v 1.8 2005/01/19 03:31:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,6 +33,12 @@
 #define COULD_NOT_OPEN_ERROR(file, mode) \
    fprintf (stderr, "%s Error:  could not open file for %s\n", (file), (mode))
 
+#define ERROR(msg) \
+   fprintf (stderr, "Error:  %s\n", (msg))
+
+#define ERROR_IN_FILE(file, line, column, msg) \
+   fprintf (stderr, "%s:%d.%d Error:  %s\n", (file), (line), (column), (msg))
+
 #define FCLOSE_ERROR(file) \
    fprintf (stderr, "%s Error:  could not close file\n", (file))
 
@@ -52,9 +58,6 @@
    fprintf (stderr, "%s:%d.%d Error:  type check error: %s\n" \
                     "\t%s type: %ls\n\t%s type: %ls\n", (file), (line), \
                     (column), msg, ty1_msg, (ty1), ty2_msg, (ty2))
-
-#define USAGE_ERROR(file, msg) \
-   fprintf (stderr, "%s Error:\n\t%s\n", (file), (msg))
 
 /* Warnings, which do not stop compilation. */
 #define NONEXHAUSTIVE_MATCH_WARNING(file, line, column) \

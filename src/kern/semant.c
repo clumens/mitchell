@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.33 2005/01/17 23:48:07 chris Exp $
+ * $Id: semant.c,v 1.34 2005/01/19 03:32:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -943,7 +943,12 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
       if (arg_lst == NULL && formal_lst == NULL)
          break;
       else if (!(arg_lst != NULL && formal_lst != NULL))
-         return 0;
+      {
+         ERROR_IN_FILE (compiler_config.filename, node->lineno, node->column,
+                        "number of actual parameters does not match number "
+                        "of formals");
+         exit(1);
+      }
 
       /* If the argument does not have the same type as the formal in the
        * same position, fail.  Otherwise, we cycle around to the next one.

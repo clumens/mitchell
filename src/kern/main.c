@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.25 2005/01/17 23:48:07 chris Exp $
+ * $Id: main.c,v 1.26 2005/01/19 03:32:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -148,7 +148,8 @@ static void handle_arguments (int argc, char **argv)
          case OPT_LAST_PHASE:
             if (!optarg)
             {
-               USAGE_ERROR ("<none>", "-last-phase requires an argument.  See "                             "the man page for details.");
+               ERROR ("-last-phase requires an argument.  See the man page "
+                      "for details.");
                exit(1);
             }
 
@@ -158,8 +159,8 @@ static void handle_arguments (int argc, char **argv)
                compiler_config.last_phase = LAST_TYPECHECK;
             else
             {
-               USAGE_ERROR ("<none>", "Invalid option supplied to "
-                            "-last-phase.  See the man page for details.");
+               ERROR ("Invalid option supplied to -last-phase.  See the man "
+                      "page for details.");
                exit(1);
             }
 
@@ -168,8 +169,8 @@ static void handle_arguments (int argc, char **argv)
                compiler_config.debug.parser_debug = atoi(optarg);
             else
             {
-               USAGE_ERROR ("<none>", "-Idebug-parser requires an argument.  "
-                            "See the man page for details.");
+               ERROR ("-Idebug-parser requires an argument.  See the man page "
+                      "for details.");
                exit(1);
             }
 
@@ -250,13 +251,11 @@ int main (int argc, char **argv)
     */
    if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
    {
-      USAGE_ERROR("<none>",
-                  "Your current locale is not UTF-8 aware.  The mitchell "
-                  "compiler requires\n\tthe proper environment settings to be "
-                  "able to read source files.  You\n\twill need to set your "
-                  "$LANG or $LC_ALL environment variables to a locale\n\t"
-                  "which is UTF-8 aware.  A good setting for $LANG might be "
-                  "en_US-UTF-8.\n\tExiting.");
+      ERROR("Your current locale is not UTF-8 aware.  The mitchell compiler "
+            "requires\n\tthe proper environment settings to be able to read "
+            "source files.  You\n\twill need to set your $LANG or $LC_ALL "
+            "environment variables to a locale\n\twhich is UTF-8 aware.  A "
+            "good setting for $LANG might be en_US-UTF-8.\n\tExiting.");
       exit(1);
    }
 
