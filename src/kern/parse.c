@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.3 2004/10/16 05:19:01 chris Exp $
+ * $Id: parse.c,v 1.4 2004/10/16 22:43:31 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -386,7 +386,9 @@ static void parse_fun_decl()
    printf ("leaving %s\n", __FUNCTION__);
 }
 
-/* fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN */
+/* fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
+ *                  | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN
+ */
 static void parse_fun_decl_proto()
 {
    printf ("entering %s\n", __FUNCTION__);
@@ -395,8 +397,17 @@ static void parse_fun_decl_proto()
    match(COLON);
    parse_ty();
    match(LPAREN);
-   parse_id_lst();
-   match(RPAREN);
+
+   if (tok != NULL && tok->type == RPAREN)
+   {
+      match(RPAREN);
+   }
+   else
+   {
+      parse_id_lst();
+      match(RPAREN);
+   }
+
    printf ("leaving %s\n", __FUNCTION__);
 }
 
