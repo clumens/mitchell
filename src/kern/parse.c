@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.36 2005/01/17 04:51:43 chris Exp $
+ * $Id: parse.c,v 1.37 2005/01/19 04:29:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -354,7 +354,6 @@ static absyn_expr_t *parse_branch_expr()
 static list_t *parse_branch_lst()
 {
    list_t *retval = NULL;
-   absyn_branch_lst_t *else_ele = NULL;
 
    ENTERING (__FUNCTION__);
 
@@ -363,14 +362,22 @@ static list_t *parse_branch_lst()
 
       if (tok->type == ELSE)
       {
-         MALLOC (else_ele, sizeof(absyn_branch_lst_t));
+         MALLOC (new_ele, sizeof(absyn_branch_lst_t));
 
          match(ELSE);
-         else_ele->lineno = last_tok->lineno;
-         else_ele->column = last_tok->column;
+         new_ele->lineno = last_tok->lineno;
+         new_ele->column = last_tok->column;
          match(MAPSTO);
-         else_ele->branch = NULL;
-         else_ele->expr = parse_expr();
+         new_ele->branch = NULL;
+         new_ele->expr = parse_expr();
+
+         /* The else branch has to come last. */
+         if (!in_set (tok, FOLLOW_SET[SET_BRANCH_LST]))
+            parse_error (tok, FOLLOW_SET[SET_BRANCH_LST]);
+
+         retval = list_append (retval, new_ele);
+         LEAVING(__FUNCTION__);
+         return retval;
       }
       else
       {
@@ -390,10 +397,6 @@ static list_t *parse_branch_lst()
       else
          match(COMMA);
    }
-
-   /* If we found an else branch, make sure it comes last in the list. */
-   if (else_ele != NULL)
-      retval = list_append (retval, else_ele);
 
    LEAVING(__FUNCTION__);
    return retval;
