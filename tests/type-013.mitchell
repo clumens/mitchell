@@ -1,0 +1,7 @@
+# Description:  An infinite loop of types
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ a ← b
+   τ b ← a
+end

@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.35 2005/01/20 23:59:52 chris Exp $
+ * $Id: semant.c,v 1.36 2005/01/22 01:04:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,10 +38,10 @@
 /* This is the base environment, containing all the predefined values,
  * functions, modules, and types.  Keep this as absolutely small as possible.
  */
-static ty_t boolean_ty = { TY_BOOLEAN };
-static ty_t bottom_ty = { TY_BOTTOM };
-static ty_t integer_ty = { TY_INTEGER };
-static ty_t string_ty = { TY_STRING };
+static ty_t boolean_ty = { TY_BOOLEAN, TY_FINITE };
+static ty_t bottom_ty = { TY_BOTTOM, TY_FINITE };
+static ty_t integer_ty = { TY_INTEGER, TY_FINITE };
+static ty_t string_ty = { TY_STRING, TY_FINITE };
 
 static symbol_t base_env[] = {
    { SYM_VALUE, L"f", .info.ty=&boolean_ty },
@@ -505,12 +505,52 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
             }
          }
 
-         return retval;
          break;
       }
    }
 
+   retval->is_finite = TY_UNVISITED;
    return retval;
+}
+
+/* Check that a type does not form an infinite loop.  All the basic types are
+ * defined to not form a loop, providing us with a base case.  Then, all other
+ * types must be shown to ground out into something that also does not form
+ * a loop.
+ */
+static ty_finite ty_is_finite (ty_t *ty)
+{
+   ty->is_finite = TY_VISITED;
+
+   switch (ty->ty) {
+      case TY_BOOLEAN:
+      case TY_BOTTOM:
+      case TY_INTEGER:
+      case TY_STRING:
+         ty->is_finite = TY_FINITE;
+         break;
+
+      case TY_ALIAS:
+         if (ty->alias->info.ty->is_finite == TY_VISITED)
+            ty->is_finite = TY_NOT_FINITE;
+         else
+            ty->is_finite = ty_is_finite (ty->alias->info.ty);
+         break;
+
+      case TY_LIST:
+         if (ty->list_base_ty->is_finite == TY_VISITED)
+            ty->is_finite = TY_NOT_FINITE;
+         else
+            ty->is_finite = ty_is_finite (ty->list_base_ty);
+         break;
+
+      /* Just assume records are okay for now. */
+      case TY_RECORD:
+         ty->is_finite = TY_FINITE;
+         break;
+   }
+
+   return ty->is_finite;
 }
 
 /* +================================================================+
@@ -764,6 +804,21 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
     */
    for (tmp = start; tmp != end; tmp = tmp->next)
       check_ty_decl (((absyn_decl_t *) tmp->data)->ty_decl, stack);
+
+   /* Round 3: Now that we have types completely filled in, make sure none of
+    * the type definitions form infinite loops.
+    */
+   for (tmp = start; tmp != end; tmp = tmp->next)
+   {
+      absyn_ty_decl_t *ty_decl = ((absyn_decl_t *) tmp->data)->ty_decl;
+
+      if (ty_is_finite (ty_decl->ty) == TY_NOT_FINITE)
+      {
+         TYPE_LOOP_ERROR (compiler_config.filename, ty_decl->lineno,
+                          ty_decl->column, ty_decl->symbol->symbol);
+         exit(1);
+      }
+   }
 }
 
 static void check_decl_lst (list_t *lst, tabstack_t *stack)
@@ -1311,7 +1366,7 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 {
    symbol_t        *new = NULL;
    absyn_id_expr_t *lhs = node->symbol;
-   ty_t            *rhs = ast_to_ty (node->ty, stack);
+   ty_t            *rhs = ast_to_ty (node->ty_decl, stack);
 
    if (rhs == NULL)
    {
@@ -1324,7 +1379,7 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
    MALLOC(new, sizeof(symbol_t));
    new->kind = SYM_TYPE;
    new->name = lhs->symbol;
-   new->info.ty = rhs;
+   node->ty = new->info.ty = rhs;
 
    /* Now obliterate the skeleton entry for this symbol with the real thing. */
    if (table_update_entry (stack->symtab, lhs->symbol, SYM_TYPE, new) != 1)
@@ -1341,7 +1396,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    symbol_t *new_sym;
    ty_t *val_ty, *expr_ty;
 
-   val_ty = ast_to_ty (node->ty, stack);
+   val_ty = ast_to_ty (node->ty_decl, stack);
    expr_ty = check_expr (node->init, stack);
 
    if (!equal_types (val_ty, expr_ty))
@@ -1357,7 +1412,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
 
    new_sym->kind = SYM_VALUE;
    new_sym->name = node->symbol->symbol;
-   new_sym->info.ty = val_ty;
+   node->ty = new_sym->info.ty = val_ty;
    
    if (symtab_add_entry (stack, new_sym) == -1)
    {

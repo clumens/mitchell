@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.10 2005/01/07 05:31:21 chris Exp $
+ * $Id: symtab.h,v 1.11 2005/01/22 01:04:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -92,6 +92,9 @@ typedef struct tabstack_t {
 typedef enum { TY_ALIAS, TY_BOOLEAN, TY_BOTTOM, TY_INTEGER, TY_LIST,
                TY_RECORD, TY_STRING } ty_kind;
 
+/* Used for determining whether a type is part of an infinite loop or not. */
+typedef enum { TY_NOT_FINITE, TY_UNVISITED, TY_VISITED, TY_FINITE } ty_finite;
+
 typedef struct {
    mstring_t *identifier;
    struct ty_t *ty;
@@ -99,11 +102,12 @@ typedef struct {
 
 typedef struct ty_t {
    ty_kind ty;
+   ty_finite is_finite;
 
    union {
       symbol_t      *alias;               /* TY_ALIAS */
       struct ty_t   *list_base_ty;        /* TY_LIST */
-      list_t        *record;              /* TY_RECORD */
+      list_t        *record;              /* TY_RECORD - list of element_t */
    };
 } ty_t;
 

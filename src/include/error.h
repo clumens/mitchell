@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.8 2005/01/19 03:31:58 chris Exp $
+ * $Id: error.h,v 1.9 2005/01/22 01:04:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -53,6 +53,11 @@
 
 #define PARSE_ERROR(file, line, column) \
    fprintf (stderr, "%s:%d.%d Error:  parse error\n", (file), (line), (column))
+
+#define TYPE_LOOP_ERROR(file, line, column, ty) \
+   fprintf (stderr, "%s:%d.%d Error:  type check error: symbol is in an " \
+                    "infinite type loop:  %ls\n", (file), (line), (column), \
+                    (ty))
 
 #define TYPE_ERROR(file, line, column, msg, ty1_msg, ty1, ty2_msg, ty2) \
    fprintf (stderr, "%s:%d.%d Error:  type check error: %s\n" \

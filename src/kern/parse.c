@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.37 2005/01/19 04:29:33 chris Exp $
+ * $Id: parse.c,v 1.38 2005/01/22 01:04:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1104,7 +1104,7 @@ static absyn_ty_decl_t *parse_ty_decl()
    retval->symbol = sym;
 
    match(ASSIGN);
-   retval->ty = parse_ty();
+   retval->ty_decl = parse_ty();
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -1133,7 +1133,7 @@ static absyn_val_decl_t *parse_val_decl()
    retval->symbol = sym;
 
    match(COLON);
-   retval->ty = parse_ty();
+   retval->ty_decl = parse_ty();
 
    match(ASSIGN);
    retval->init = parse_expr();

@@ -10,10 +10,12 @@ Grammar:
 Internals:
 - Use generic linked list code throughout the AST.  This removes the
   absyn_decl_lst_t, absyn_expr_lst_t, and absyn_module_lst_t structures.
+- Changed ty to ty_decl in absyn_ty_decl_t and absyn_val_decl_t.
 Semantics:
 - Deal with case-exprs where there is no default:  if the branches are
   integers or strings, throw an error; if the branches are booleans, throw a
   warning.
+- Detect infinite loops in types.
 
 mitchell preview 3
 ==================

@@ -14,7 +14,6 @@
    - debug option for dumping type-annotated AST
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
-   - detect infinite loops of types (preview-4)
    - better hashing function (preview-4)
 - testing:
    - more test cases for parser
