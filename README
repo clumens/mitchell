@@ -56,8 +56,21 @@ The following are features of the Mitchell language and compiler:
      as possible.
 
 
-3. Installation
-===============
+3. Build and Installation
+=========================
+
+3.1. Requirements
+-----------------
+The following components are required to build the mitchell compiler:
+
+   * gcc-3.4.x - Required to have the proper wide character support
+                 http://gcc.gnu.org
+
+   * Boehm GC library - Garbage collection library for C
+                        http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+
+3.2. Building 
+-------------
 Building the Mitchell compiler is easy:
 
    # make
