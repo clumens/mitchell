@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.1 2004/11/24 20:45:38 chris Exp $
+ * $Id: error.h,v 1.2 2004/11/30 02:13:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,6 +38,9 @@
 
 #define PARSE_ERROR(file, line) \
    fprintf (stderr, "%s:%d Error:  parse error\n", (file), (line))
+
+#define TYPE_ERROR(file, line) \
+   fprintf (stderr, "%s:%d Error:  type check error\n", (file), (line))
 
 #define USAGE_ERROR(file, msg) \
    fprintf (stderr, "%s Error:\n\t%s\n", (file), (msg))

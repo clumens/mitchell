@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.11 2004/11/24 20:45:40 chris Exp $
+ * $Id: absyn_printer.c,v 1.12 2004/11/30 02:13:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -153,7 +153,7 @@ static void print_expr_t (absyn_expr_t *node, unsigned int indent)
 {
    fprintf (out, "\n%*sexpr_t", indent, "");
 
-   switch (node->type)
+   switch (node->kind)
    {
       case ABSYN_BOOLEAN:
          fprintf (out, "\n%*sBOOLEAN(%s)", indent+1, "",

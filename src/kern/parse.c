@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.25 2004/11/24 20:45:40 chris Exp $
+ * $Id: parse.c,v 1.26 2004/11/30 02:13:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -315,24 +315,24 @@ static absyn_expr_t *parse_branch_expr()
    switch (tok->type) {
       case BOOLEAN:
          match(BOOLEAN);
-         retval->type = ABSYN_BOOLEAN;
+         retval->kind = ABSYN_BOOLEAN;
          retval->boolean_expr = last_tok->boolean;
          break;
 
       case IDENTIFIER:
-         retval->type = ABSYN_ID;
+         retval->kind = ABSYN_ID;
          retval->identifier = parse_id();
          break;
 
       case INTEGER:
          match(INTEGER);
-         retval->type = ABSYN_INTEGER;
+         retval->kind = ABSYN_INTEGER;
          retval->integer_expr = last_tok->integer;
          break;
 
       case STRING:
          match(STRING);
-         retval->type = ABSYN_STRING;
+         retval->kind = ABSYN_STRING;
          retval->string_expr = last_tok->string;
          break;
 
@@ -540,17 +540,17 @@ static absyn_expr_t *parse_expr()
    switch (tok->type) {
       case BOOLEAN:
          match(BOOLEAN);
-         retval->type = ABSYN_BOOLEAN;
+         retval->kind = ABSYN_BOOLEAN;
          retval->boolean_expr = last_tok->boolean;
          break;
 
       case CASE:
-         retval->type = ABSYN_CASE;
+         retval->kind = ABSYN_CASE;
          retval->case_expr = parse_case_expr();
          break;
 
       case DECL:
-         retval->type = ABSYN_DECL;
+         retval->kind = ABSYN_DECL;
          retval->decl_expr = parse_decl_expr();
          break;
 
@@ -559,33 +559,33 @@ static absyn_expr_t *parse_expr()
          break;
 
       case IF:
-         retval->type = ABSYN_IF;
+         retval->kind = ABSYN_IF;
          retval->if_expr = parse_if_expr();
          break;
 
       case INTEGER:
          match(INTEGER);
-         retval->type = ABSYN_INTEGER;
+         retval->kind = ABSYN_INTEGER;
          retval->integer_expr = last_tok->integer;
          break;
 
       case LBRACE:
          match(LBRACE);
-         retval->type = ABSYN_RECORD_LST;
+         retval->kind = ABSYN_RECORD_LST;
          retval->record_assn_lst = parse_record_assn_lst();
          match(RBRACE);
          break;
 
       case LBRACK:
          match(LBRACK);
-         retval->type = ABSYN_EXPR_LST;
+         retval->kind = ABSYN_EXPR_LST;
          retval->expr_lst = (struct absyn_expr_lst_t *) parse_expr_lst();
          match(RBRACK);
          break;
 
       case STRING:
          match(STRING);
-         retval->type = ABSYN_STRING;
+         retval->kind = ABSYN_STRING;
          retval->string_expr = last_tok->string;
          break;
 
@@ -640,7 +640,7 @@ static absyn_expr_t *parse_fun_call_or_id()
 
    if (tok->type == LPAREN)
    {
-      retval->type = ABSYN_FUN_CALL;
+      retval->kind = ABSYN_FUN_CALL;
       retval->fun_call_expr.identifier = tmp;
 
       match(LPAREN);
@@ -659,7 +659,7 @@ static absyn_expr_t *parse_fun_call_or_id()
    }
    else
    {
-      retval->type = ABSYN_ID;
+      retval->kind = ABSYN_ID;
       retval->identifier = tmp;
    }
 

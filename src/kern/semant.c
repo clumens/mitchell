@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.10 2004/11/24 20:45:40 chris Exp $
+ * $Id: semant.c,v 1.11 2004/11/30 02:13:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,6 +28,7 @@
 #include <wchar.h>
 
 #include "absyn.h"
+#include "basic_types.h"
 #include "error.h"
 #include "memory.h"
 #include "symtab.h"
@@ -70,16 +71,15 @@ static symbol_t boolean_env[] = {
 static tabstack_t *global = NULL;
 
 /* More mutually recursive functions for yet another tree walk. */
-static void check_branch_lst (absyn_branch_lst_t *node, tabstack_t *stack);
-static void check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
+static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
 static void check_decl (absyn_decl_t *node, tabstack_t *stack);
-static void check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
+static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
-static void check_expr (absyn_expr_t *node, tabstack_t *stack);
+static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
-static void check_id (absyn_id_expr_t *node, tabstack_t *stack);
-static void check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
+static /* ty_t * */ void check_id (absyn_id_expr_t *node, tabstack_t *stack);
+static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
 static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack);
@@ -189,31 +189,104 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
    }
 }
 
+static unsigned int equal_types (ty_t *left, ty_t *right)
+{
+   return (left->ty == right->ty ? 1 : 0);
+}
+
 /* +================================================================+
  * | TYPE CHECKING FUNCTIONS - ONE PER AST NODE TYPE                |
  * +================================================================+
  */
 
-/* TODO: Check for duplicate branches. */
-static void check_branch_lst (absyn_branch_lst_t *node, tabstack_t *stack)
+static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 {
-   absyn_branch_lst_t *tmp = node;
+   absyn_branch_lst_t *tmp = node->branch_lst;
+   ty_t *test_ty = NULL;
+   ty_t *branch_ty = NULL;
+   ty_t *expr_ty = NULL;
+   ty_t *t;
 
+   /* Save the type of the test-expr for comparison against every branch. */
+   test_ty = check_expr (node->test, stack);
+
+   /* Check the branches.  We don't want a separate function for this for type
+    * checking purposes.
+    */
    while (tmp != NULL)
    {
-      check_expr (tmp->branch, stack);
-      check_expr (tmp->expr, stack);
+      /* Compare each branch test to the first one, so if there is no first
+       * one then we have to set it.  All branch tests must have the same
+       * type.  This type must also be the same as the test-expr.  We'll only
+       * compare the first branch's type to the test's type, since transitivity
+       * will take care of the rest.
+       */
+      if (branch_ty == NULL)
+      {
+         branch_ty = check_expr (tmp->branch, stack);
+
+         if (!equal_types (branch_ty, test_ty))
+         {
+            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
+            fprintf (stderr, "\tbranch test must have the same type as the "
+                             "case's test-expr\n");
+            exit(1);
+         }
+      }
+      else
+      {
+         t = check_expr (tmp->branch, stack);
+
+         if (!equal_types (branch_ty, t))
+         {
+            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
+            fprintf (stderr, "\tinconsistent types in case expression\n");
+            exit(1);
+         }
+      }
+
+      /* Compare each branch expression to the first one, so if there is no
+       * first one then we have to set it.  All branch expressions must have
+       * the same type, and this is the type that the whole case expression
+       * will return.
+       */
+      if (expr_ty == NULL)
+         expr_ty = check_expr (tmp->expr, stack);
+      else
+      {
+         t = check_expr (tmp->expr, stack);
+
+         if (!equal_types (expr_ty, t))
+         {
+            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno);
+            fprintf (stderr, "\tinconsistent types in case branch exprs\n");
+            exit(1);
+         }
+      }
+
       tmp = tmp->next;
    }
-}
 
-static void check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
-{
-   check_expr (node->test, stack);
-   check_branch_lst (node->branch_lst, stack);
-
+   /* If there is a default expression, make sure it has the same type as
+    * all the previous expressions.  It could also be the only branch, so take
+    * care of that possibility as well.
+    */
    if (node->default_expr != NULL)
-      check_expr (node->default_expr, stack);
+   {
+      if (expr_ty != NULL)
+      {
+         t = check_expr (node->default_expr, stack);
+
+         TYPE_ERROR (compiler_config.filename, node->default_expr->lineno);
+         fprintf (stderr, "\tinconsistent types in case branch exprs\n");
+         exit(1);
+      }
+      else
+         expr_ty = check_expr (node->default_expr, stack);
+   }
+
+   node->ty = expr_ty;
+   return expr_ty;
 }
 
 static void check_decl (absyn_decl_t *node, tabstack_t *stack)
@@ -237,12 +310,15 @@ static void check_decl (absyn_decl_t *node, tabstack_t *stack)
    }
 }
 
-static void check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
+static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
 {
    stack = enter_scope (stack);
    check_decl_lst (node->decl_lst, stack);
    check_expr (node->expr, stack);
    stack = leave_scope (stack, L"decl-expr");
+
+   node->ty = node->expr->ty;
+   return node->ty;
 }
 
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
@@ -256,18 +332,20 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
    }
 }
 
-static void check_expr (absyn_expr_t *node, tabstack_t *stack)
+static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
 {
-   switch (node->type) {
+   switch (node->kind) {
       case ABSYN_BOOLEAN:
+         MALLOC (node->ty, sizeof (ty_t))
+         node->ty->ty = TY_BOOLEAN;
          break;
 
       case ABSYN_CASE:
-         check_case_expr (node->case_expr, stack);
+         node->ty = check_case_expr (node->case_expr, stack);
          break;
 
       case ABSYN_DECL:
-         check_decl_expr (node->decl_expr, stack);
+         node->ty = check_decl_expr (node->decl_expr, stack);
          break;
 
       case ABSYN_EXPR_LST:
@@ -285,10 +363,12 @@ static void check_expr (absyn_expr_t *node, tabstack_t *stack)
          break;
 
       case ABSYN_IF:
-         check_if_expr (node->if_expr, stack);
+         node->ty = check_if_expr (node->if_expr, stack);
          break;
 
       case ABSYN_INTEGER:
+         MALLOC (node->ty, sizeof (ty_t))
+         node->ty->ty = TY_INTEGER;
          break;
 
       case ABSYN_RECORD_LST:
@@ -296,8 +376,12 @@ static void check_expr (absyn_expr_t *node, tabstack_t *stack)
          break;
 
       case ABSYN_STRING:
+         MALLOC (node->ty, sizeof (ty_t))
+         node->ty->ty = TY_STRING;
          break;
    }
+
+   return node->ty;
 }
 
 static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
@@ -418,11 +502,30 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
    }
 }
 
-static void check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
+static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
 {
-   check_expr (node->test_expr, stack);
-   check_expr (node->then_expr, stack);
-   check_expr (node->else_expr, stack);
+   ty_t *tmp1, *tmp2;
+   ty_t bool_ty = { TY_BOOLEAN };
+
+   tmp1 = check_expr (node->test_expr, stack);
+   if (!equal_types (tmp1, &bool_ty))
+   {
+      TYPE_ERROR (compiler_config.filename, node->lineno);
+      fprintf (stderr, "\tif-expr test must return boolean type\n");
+      exit(1);
+   }
+   
+   tmp1 = check_expr (node->then_expr, stack);
+   tmp2 = check_expr (node->else_expr, stack);
+
+   if (!equal_types (tmp1, tmp2))
+   {
+      TYPE_ERROR (compiler_config.filename, node->else_expr->lineno);
+      fprintf (stderr, "\tthen-expr and else-expr must have the same type\n");
+      exit(1);
+   }
+
+   return tmp1;
 }
 
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
@@ -499,6 +602,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
        * to be in some sort of namespace.
        */
       for (tmp = cur; tmp != NULL; tmp = tmp->next)
+      {
          if (tmp->symbol->sub != NULL)
          {
             BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
@@ -506,6 +610,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
                               "symbol may not contain a namespace");
             exit(1);
          }
+      }
 
       /* Step 2.  Check all record identifiers for proper typing and no
        * duplicates.
@@ -517,6 +622,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
 
          /* Now make sure there's no other record member with the same name. */
          for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
+         {
             if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
             {
                BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
@@ -524,6 +630,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
                                  "already exists in this scope");
                exit(1);
             }
+         }
 
          cur = cur->next;
       }

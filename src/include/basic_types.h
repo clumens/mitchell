@@ -1,6 +1,6 @@
 /* Basic mitchell types, defined in terms of C types.
  *
- * $Id: basic_types.h,v 1.2 2004/11/24 03:56:03 chris Exp $
+ * $Id: basic_types.h,v 1.3 2004/11/30 02:13:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,17 @@
 typedef long int     mint_t;
 typedef wchar_t      mstring_t;
 typedef unsigned int mbool_t;
+
+/* These are obvious except for a couple:
+ *    TY_ALIAS is when you make a new name for an existing type,
+ *    TY_BOTTOM is the type for when there's no other type (⊥)
+ */
+typedef enum { TY_ALIAS, TY_BOOLEAN, TY_BOTTOM, TY_INTEGER, TY_LIST,
+               TY_RECORD, TY_STRING } ty_kind;
+
+typedef struct ty_t {
+   ty_kind ty;
+} ty_t;
 
 #endif
 

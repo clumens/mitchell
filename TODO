@@ -8,9 +8,10 @@
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis
+   - proposal for C interface module (to make the runtime possible)
+   - outline contents for runtime library (long-term project)
 - output:
-   - parser error messages can always be better
-   - all error messages should have the same form
+   - parser error messages can always be better (context, replacements, etc)
 - symbol table:
    - functions need to store a list of the types of their formal
      parameters
