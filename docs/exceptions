@@ -1,0 +1,147 @@
+general discussion
+==================
+Exceptions in mitchell are implemented as a special kind of type.  New
+exception types are created with a type declaration.  Then, new values may
+be created of that exception type.  These exception values are first-class
+citizens in mitchell.  They may be passed as arguments and used as return
+values.  Being exceptions, they may also be raised and handled.
+
+All new exception types created must be created as records.  This is
+because exceptions will be manipulated in two different ways.  First, the
+exception value may be passed to special functions in an Exception module.
+Second, values in the exception may be used in the handler for whatever
+purposes.  To keep the two cases distinct and make the typing easier, I am
+enforcing a rather arbitrary rule in the grammar that all exception types
+must be viewed as records.
+
+The runtime will need to know function names, line numbers, and file names
+for where functions occur.  This information is (mostly) present in the
+AST and is preserved in the simplified AST, though it needs to be audited
+for correctness.  We'll have to make sure this information gets carried
+into the IR.
+
+A default set of exceptions will need to be provided by the runtime
+library with clearly defined uses.
+
+I'm still not sure what to do about how to deal with raising and handling
+exceptions from the runtime perspective, but we're not to that point yet.
+
+
+raising exceptions
+==================
+Syntax:
+
+   naked-expr ::= ...
+                | RAISE expr
+
+   sym-ref ::= ...
+             | id { record-assn-lst }
+
+Typing:
+
+   Raising an exception is a special case in the type checker.  Since this
+   immediately transfers control to the handler (whether that is provided
+   after the expression containing the raise, in a calling function, or
+   in the default handler) there is no return value from the expression.
+
+   The raise expression itself returns no type, but the type checker will
+   assume it has whatever type the enclosing expression is expecting.
+
+   The literal exception value expression has the exception type as given by
+   id.  The assignments in record-assn-lst will be type checked, and the
+   entire expression will be checked against the definition of id in the
+   exception subtable.
+
+Discussion:
+
+
+handling exceptions
+===================
+Syntax:
+
+   expr ::= ...
+          | ( naked-expr ) handler
+          | naked-expr handler
+
+   exn-handler ::= HANDLE exn-lst END
+
+   exn-lst ::= id IDENTIFIER MAPSTO expr
+             | id IDENTIFIER MAPSTO expr COMMA exn-lst
+             | ELSE IDENTIFIER MAPSTO expr
+
+Typing:
+
+   Exception handlers may potentially provide the return value from a
+   function.  They may also occur anywhere an expression may be used.
+   Therefore, exception handlers must be type checked.  Each individual
+   handler in handler-lst must return the same type and this type must
+   match that of the expression raising the exception.  Anything else is
+   a type check error.
+
+   Each handler in the list creates its own level of scope with a single new
+   binding automatically provided.  The exact type of this binding depends
+   on the type of handler being provided.  In the specific case, this binding
+   creates a record value with the name given by the IDENTIFIER of the
+   exception type given by the id.  The handler's expr may then
+   reference this record and its elements.  In the default handler case, the
+   binding creates a single value of the exception type and with the name
+   given by the IDENTIFIER.
+
+   In either case, the value may be passed to the Exception module functions
+   for processing.  In the specific case, elements of the record may be
+   accessed.  The bindings created on the left hand side of the handler are
+   only valid on the right hand side.
+
+Discussion:
+
+   The handler itself consists of a list of exception names and an
+   expression to handle them, similar in syntax to a case-expr.  An optional
+   default may also be provided which will handle any exception not
+   explicitly given a handler.  This default will also handle any unhandled
+   exceptions being propagated up from the expression.  There is an
+   implicitly defined top-level exception handler that will handle any
+   exceptions not caught somewhere in the program.  The only action taken
+   will be reporting a backtrace and terminating execution.
+
+   Handlers must know the types of the exceptions they are handling, so
+   the exception must be declared within a scope visible from all its
+   handlers.  It is recommended that all exceptions be declared at a
+   top-level module scope for this reason.
+
+
+creating new exceptions
+=======================
+Syntax:
+
+   ty ::= ...
+        | EXN IDENTIFIER { id-lst }
+
+Typing:
+
+   This creates a new exception type in the type subtable.  The IDENTIFIER must
+   follow the same rules regarding uniqueness as type names.  So, the symbol
+   table is divided into the following subtables: values/functions, modules,
+   and types/exceptions.
+
+
+implementation
+==============
+Exceptions will consist of more than just the list of bindings created by
+the new exception.  Internally, a raised exception must carry with it some
+additional information that will be useful in debugging.  At the least, an
+exception must include a string representation of the exception's name and
+a list of strings for the backtrace.  This list will be added to at each
+stack frame that the exception propagates up through and must identify the
+function, file name, and line number within that file.  All this
+information will be kept hidden within the compiler.
+
+Access to the hidden information will be provided by an Exception module.
+This module will include functions to extract and format the strings so
+they may be displayed.  This provides a mechanism for handling exception
+reporting when the compiler is bootstrapped.
+
+An additional benefit of this hidden information is that in default
+exception handlers, something is still known.  At the very least, the name
+of the exception and a backtrace may be provided.  The default handler
+will still not know whatever extra visible information the exception
+carries, there will still be something to report.

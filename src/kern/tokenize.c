@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.25 2005/02/12 16:26:20 chris Exp $
+ * $Id: tokenize.c,v 1.26 2005/03/29 05:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -43,17 +43,18 @@
  * order of the token_val_t structure in tokens.h.
  */
 const char *token_map[] = {
-   "BOOLEAN", "IDENTIFIER", "INTEGER", "LIST", "STRING",
+   "BOOLEAN", "EXN", "IDENTIFIER", "INTEGER", "LIST", "STRING",
 
    "ASSIGN", "BOTTOM", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
-   "FUNCTION", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO", "MODULE",
-   "PIPE", "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAL",
+   "FUNCTION", "HANDLE", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO",
+   "MODULE", "PIPE", "RAISE", "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE",
+   "VAL",
    
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
 static unsigned int column = 0;
-static wchar_t *reserved = L"←⊥:,.ƒ{[(→ℳ|}])τʋ#\"";
+static wchar_t *reserved = L"←⊥:,.ℰƒ{[(→ℳ|}])τʋ#\"";
 
 /* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
@@ -356,6 +357,12 @@ token_t *next_token (FILE *f)
             retval->type = DOT;
             return retval;
 
+         case L'ℰ':
+            retval->lineno = lineno;
+            retval->column = column;
+            retval->type = EXN;
+            return retval;
+
          case L'ƒ':
             retval->lineno = lineno;
             retval->column = column;
@@ -493,12 +500,16 @@ token_t *next_token (FILE *f)
                retval->type = ELSE;
             else if (wcscmp (str, L"end") == 0)
                retval->type = END;
+            else if (wcscmp (str, L"handle") == 0)
+               retval->type = HANDLE;
             else if (wcscmp (str, L"if") == 0)
                retval->type = IF;
             else if (wcscmp (str, L"in") == 0)
                retval->type = IN;
             else if (wcscmp (str, L"list") == 0)
                retval->type = LIST;
+            else if (wcscmp (str, L"raise") == 0)
+               retval->type = RAISE;
             else if (wcscmp (str, L"then") == 0)
                retval->type = THEN;
             else

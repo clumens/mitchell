@@ -1,6 +1,6 @@
 /* Semantic analysis - symbol table management, type checking, etc.
  *
- * $Id: semant.h,v 1.5 2005/02/20 03:11:34 chris Exp $
+ * $Id: semant.h,v 1.6 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler

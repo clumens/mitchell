@@ -1,0 +1,8 @@
+# Description:  Multiple handlers for one expression
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Exn ← ℰ { msg: string }
+
+   ʋ len: integer ← (raise Exn { msg ← "x" }) handle Exn e → 0, else e → 47 end
+end

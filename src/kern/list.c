@@ -2,7 +2,7 @@
  * that can store any type of data.  The list nodes do not need to be
  * homogenous, as each node simply stores a pointer to the data.
  *
- * $Id: list.c,v 1.4 2005/02/02 13:38:57 chris Exp $
+ * $Id: list.c,v 1.5 2005/03/29 05:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler

@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.29 2005/02/12 16:26:16 chris Exp $
+ * $Id: absyn.h,v 1.30 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,9 +33,10 @@
     extern "C" {
 #endif
 
-typedef enum { LINK_BRANCH_LST, LINK_CASE_EXPR, LINK_DECL, LINK_DECL_EXPR,
-               LINK_EXPR, LINK_FUN_CALL, LINK_FUN_DECL, LINK_ID_EXPR,
-               LINK_ID_LST, LINK_IF_EXPR, LINK_MODULE_DECL, LINK_RECORD_ASSN,
+typedef enum { LINK_BRANCH_LST, LINK_CASE_EXPR, LINK_DECL, LINK_EXN,
+               LINK_EXN_HANDLER, LINK_EXN_LST, LINK_DECL_EXPR, LINK_EXPR,
+               LINK_FUN_CALL, LINK_FUN_DECL, LINK_ID_EXPR, LINK_ID_LST,
+               LINK_IF_EXPR, LINK_MODULE_DECL, LINK_RAISE, LINK_RECORD_ASSN,
                LINK_RECORD_REF, LINK_TY, LINK_TY_DECL,
                LINK_VAL_DECL } link_type;
 
@@ -50,9 +51,9 @@ typedef struct {
  * +================================================================+
  */
 
-typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL,
+typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL, ABSYN_EXN,
                ABSYN_EXPR_LST, ABSYN_FUN_CALL, ABSYN_ID, ABSYN_IF,
-               ABSYN_INTEGER, ABSYN_RECORD_ASSN, ABSYN_RECORD_REF,
+               ABSYN_INTEGER, ABSYN_RAISE, ABSYN_RECORD_ASSN, ABSYN_RECORD_REF,
                ABSYN_STRING } expr_type;
 
 typedef struct absyn_id_expr_t {
@@ -124,12 +125,22 @@ typedef struct {
    list_t *arg_lst;                       /* list of absyn_expr_t */
 } absyn_fun_call_t;
 
+typedef struct {
+   unsigned int lineno, column;
+   backlink_t *parent;
+   ty_t *ty;
+
+   absyn_id_expr_t *identifier;
+   list_t *values;                        /* list of absyn_record_assn_t */
+} absyn_exn_expr_t;
+
 typedef struct absyn_expr_t {
    unsigned int lineno, column;
    backlink_t *parent;
 
    expr_type kind;
    ty_t *ty;
+   struct absyn_exn_handler_t *exn_handler;
 
    union {
       list_t *expr_lst;                   /* list of absyn_expr_t */
@@ -140,11 +151,37 @@ typedef struct absyn_expr_t {
       absyn_fun_call_t *fun_call_expr;
       absyn_id_expr_t *identifier;
       absyn_record_ref_t *record_ref;
+      struct absyn_expr_t *raise_expr;
       mbool_t boolean_expr;
       mint_t integer_expr;
       mstring_t *string_expr;
+      absyn_exn_expr_t  *exn_expr;
    };
 } absyn_expr_t;
+
+/* +================================================================+
+ * | EXCEPTION AST TYPES                                            |
+ * +================================================================+
+ */
+
+typedef struct absyn_exn_lst_t {
+   unsigned int lineno, column;
+   backlink_t *parent;
+   ty_t *ty;
+
+   absyn_id_expr_t *exn_id;
+   mstring_t *id;
+   absyn_expr_t *expr;
+} absyn_exn_lst_t;
+
+typedef struct absyn_exn_handler_t {
+   unsigned int lineno, column;
+   backlink_t *parent;
+   ty_t *ty;
+
+   list_t *handler_lst;                   /* list of absyn_exn_lst_t */
+   absyn_exn_lst_t *default_handler;
+} absyn_exn_handler_t;
 
 /* +================================================================+
  * | TYPE AST TYPES                                                 |
@@ -162,12 +199,14 @@ typedef struct absyn_id_lst_t {
 typedef struct absyn_ty_t {
    unsigned int lineno, column;
    backlink_t *parent;
-   enum { ABSYN_TY_BOTTOM, ABSYN_TY_ID, ABSYN_TY_LIST, ABSYN_TY_RECORD } kind;
+   enum { ABSYN_TY_BOTTOM, ABSYN_TY_EXN, ABSYN_TY_ID, ABSYN_TY_LIST,
+          ABSYN_TY_RECORD } kind;
 
    union {
       absyn_id_expr_t   *identifier;
       list_t            *record;          /* list of absyn_id_lst_t */
       struct absyn_ty_t *list;
+      list_t            *exn;             /* list of absyn_id_lst_t */
    };
 } absyn_ty_t;
 

@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.16 2005/01/17 04:51:08 chris Exp $
+ * $Id: grammar,v 1.17 2005/03/29 05:52:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -35,25 +35,31 @@ module-decl-lst ::= module-decl
 
 
 /* Expressions {{{ */
-expr ::= LBRACK expr-lst RBRACK
-       | LBRACE record-assn-lst RBRACE
-       | case-expr
-       | decl-expr
-       | if-expr
-       | sym-ref
-       | INTEGER
-       | STRING
-       | BOOLEAN
-       | BOTTOM
+expr ::= LPAREN naked-expr RPAREN
+       | LPAREN naked-expr RPAREN exn-handler
+       | naked-expr
+       | naked-expr exn-handler
+
+naked-expr ::= LBRACK expr-lst RBRACK
+             | LBRACE record-assn-lst RBRACE
+             | case-expr
+             | decl-expr
+             | if-expr
+             | sym-ref
+             | RAISE expr
+             | INTEGER
+             | STRING
+             | BOOLEAN
+             | BOTTOM
 
 branch-expr ::= id
               | INTEGER
               | STRING
               | BOOLEAN
 
-branch-lst ::= ELSE MAPSTO expr
-             | branch-expr MAPSTO expr
+branch-lst ::= branch-expr MAPSTO expr
              | branch-expr MAPSTO expr COMMA branch-lst
+             | ELSE MAPSTO expr
 
 case-expr ::= CASE expr IN branch-lst END
 
@@ -61,6 +67,12 @@ if-expr ::= IF expr THEN expr ELSE expr
 
 expr-lst ::= expr COMMA expr-lst
            | expr
+
+exn-lst ::= id IDENTIFIER MAPSTO expr
+          | id IDENTIFIER MAPSTO expr COMMA exn-lst
+          | ELSE IDENTIFIER MAPSTO expr
+
+exn-handler ::= HANDLE exn-lst END
 /* }}} */
 
 
@@ -86,6 +98,7 @@ decl-expr ::= DECL decl-lst IN expr END
 ty-decl ::= TYPE IDENTIFIER ASSIGN ty
 
 ty ::= BOTTOM
+     | EXN LBRACE id-lst RBRACE
      | LIST ty
      | LBRACE id-lst RBRACE
      | id
@@ -104,8 +117,8 @@ val-decl ::= VAL IDENTIFIER COLON ty ASSIGN expr
 id ::= IDENTIFIER
      | IDENTIFIER DOT id
 
-record-ref ::= IDENTIFIER PIPE record-ref
-             | IDENTIFIER
+record-ref ::= PIPE IDENTIFIER
+             | PIPE IDENTIFIER record-ref
 /* }}} */
 
 
@@ -113,14 +126,15 @@ record-ref ::= IDENTIFIER PIPE record-ref
 fun-decl ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN ASSIGN expr
            | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN ASSIGN expr
 
-fun-call-or-id ::= id LPAREN expr-lst RPAREN
-                 | id LPAREN RPAREN
-                 | id
+arg-lst ::= LPAREN RPAREN
+          | LPAREN expr-lst RPAREN
 
-sym-ref ::= fun-call-or-id
-          | fun-call-or-id PIPE record-ref
+sym-ref ::= id
+          | id record-ref
+          | id arg-lst
+          | id arg-lst record-ref
+          | id LBRACE record-assn-lst RBRACE
 /* }}} */
-
 
 /* Terminals {{{ */
 ASSIGN ::= ←
@@ -144,7 +158,11 @@ ELSE ::= else
 
 END ::= end
 
+EXN ::= ℰ
+
 FUNCTION ::= ƒ
+
+HANDLE ::= handle
 
 IF ::= if
 
@@ -165,6 +183,8 @@ MAPSTO ::= →
 MODULE ::= ℳ
 
 PIPE ::= |
+
+RAISE ::= raise
 
 RBRACE ::= }
 

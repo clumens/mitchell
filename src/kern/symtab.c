@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.18 2005/02/12 16:26:19 chris Exp $
+ * $Id: symtab.c,v 1.19 2005/03/29 05:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,8 +34,14 @@
 static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
 {
    unsigned int len = strlen ((char *) str);
-   unsigned int i, g;
-   unsigned int h = (kind == SYM_VALUE ? SYM_FUNCTION : kind);
+   unsigned int g, h, i;
+
+   if (kind == SYM_VALUE)
+      h = SYM_FUNCTION;
+   else if (kind == SYM_EXN)
+      h = SYM_TYPE;
+   else
+      h = kind;
 
    for (i = 0; i < len; i++)
    {
@@ -52,13 +58,14 @@ static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
    return h % SYMTAB_ROWS;
 }
 
-/* Functions and values live in the same namespace, so take some care making
- * sure they're the same.
+/* Our tables are a little overloaded with what's equal to what, so take that
+ * into consideration.
  */
 static inline unsigned int equal_kinds (const subtable_t a, const subtable_t b)
 {
-   if ((a == SYM_VALUE || a == SYM_FUNCTION) &&
-       (b == SYM_VALUE || b == SYM_FUNCTION))
+   if (((a == SYM_VALUE || a == SYM_FUNCTION) &&
+        (b == SYM_VALUE || b == SYM_FUNCTION)) ||
+       ((a == SYM_EXN || a == SYM_TYPE) && (b == SYM_EXN || b == SYM_TYPE)))
       return 1;
    else
       return a == b;
@@ -115,6 +122,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             (*symtab)[row]->symbol->info.function = sym->info.function;
             break;
 
+         case SYM_EXN:
          case SYM_TYPE:
          case SYM_VALUE:
             (*symtab)[row]->symbol->info.ty = sym->info.ty;
@@ -146,6 +154,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             tmp->next->symbol->info.function = sym->info.function;
             break;
 
+         case SYM_EXN:
          case SYM_TYPE:
          case SYM_VALUE:
             tmp->next->symbol->info.ty = sym->info.ty;
@@ -209,8 +218,11 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
       }
 
       /* cur now points at the entry we need to revise.  Overwite its
-       * contents with that of the new data.
+       * contents with that of the new data.  Also overwrite the kind field
+       * since we're allowed to change that too.
        */
+      cur->symbol->kind = newsym->kind;
+
       switch (newsym->kind) {
          case SYM_MODULE:
             cur->symbol->info.stack = newsym->info.stack;
@@ -220,6 +232,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             cur->symbol->info.function = newsym->info.function;
             break;
 
+         case SYM_EXN:
          case SYM_TYPE:
          case SYM_VALUE:
             cur->symbol->info.ty = newsym->info.ty;

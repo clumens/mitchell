@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.38 2005/02/20 03:11:38 chris Exp $
+ * $Id: semant.c,v 1.39 2005/03/29 05:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,7 +22,6 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #define _GNU_SOURCE
-#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -82,6 +81,9 @@ static tabstack_t *global = NULL;
 static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
 static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (list_t *lst, tabstack_t *stack);
+static ty_t *check_exn_expr (absyn_exn_expr_t *node, tabstack_t *stack);
+static ty_t *check_exn_handler (absyn_exn_handler_t *node, tabstack_t *stack);
+static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static ty_t *check_expr_lst (list_t *lst, tabstack_t *stack);
 static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack);
@@ -146,12 +148,14 @@ wchar_t *ty_to_str (const ty_t *ty)
     * strings must match the order of the ty_kind enumeration in symtab.h.
     */
    static wchar_t *ty_map[] = {
-      L"alias", L"boolean", L"⊥", L"integer", L"list", L"record", L"string" };
+      L"alias", L"any", L"boolean", L"⊥", L"exn", L"integer", L"list",
+      L"record", L"string" };
 
    if (ty == NULL)
       return NULL;
 
    switch (ty->ty) {
+      case TY_ANY:
       case TY_BOOLEAN:
       case TY_BOTTOM:
       case TY_INTEGER:
@@ -177,6 +181,7 @@ wchar_t *ty_to_str (const ty_t *ty)
          break;
       }
 
+      case TY_EXN:
       case TY_RECORD:
       {
          wchar_t *retval, *tmp;
@@ -184,10 +189,18 @@ wchar_t *ty_to_str (const ty_t *ty)
          element_t *ele;
 
          /* First, the brace indicating a record type. */
-         MALLOC(retval, sizeof(wchar_t)*2);
-         retval = wcscpy (retval, L"{");
+         if (ty->ty == TY_EXN)
+         {
+            MALLOC(retval, sizeof(wchar_t)*5);
+            retval = wcscpy (retval, L"EXN{");
+         }
+         else
+         {
+            MALLOC(retval, sizeof(wchar_t)*2);
+            retval = wcscpy (retval, L"{");
+         }
 
-         for (lst = ty->record; lst != NULL; lst = lst->next)
+         for (lst = ty->elts; lst != NULL; lst = lst->next)
          {
             ele = (element_t *) lst->data;
 
@@ -220,10 +233,14 @@ wchar_t *ty_to_str (const ty_t *ty)
          break;
       }
 
+#ifndef NEW_TYPES
       default:
-         return NULL;
-         break;
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad ty->ty");
+         exit(1);
+#endif
    }
+
+   return NULL;
 }
 
 /* Strip off any aliases present on a type. */
@@ -283,6 +300,10 @@ static unsigned int equal_types (ty_t *aliased_left, ty_t *aliased_right)
    left = unalias (aliased_left);
    right = unalias (aliased_right);
 
+   /* If either type is TY_ANY, they're equal. */
+   if (left->ty == TY_ANY || right->ty == TY_ANY)
+      return 1;
+
    switch (left->ty) {
       /* Two list types are equal if their base types are equal. */
       case TY_LIST:
@@ -292,13 +313,23 @@ static unsigned int equal_types (ty_t *aliased_left, ty_t *aliased_right)
             return 0;
 
       /* Two record types are equal if they have identical lists of elements,
-       * each with identical types.  No fancy subtyping here.
+       * each with identical types.  No fancy subtyping here.  The same rules
+       * apply for exceptions, which are basically just dressed up records.
        */
+      case TY_EXN:
       case TY_RECORD:
       {
-         list_t *left_lst = left->record;
-         list_t *right_lst = right->record;
+         list_t *left_lst, *right_lst;
          element_t *left_ele, *right_ele;
+
+         /* Records and exceptions are not equal, though. */
+         if (left->ty == right->ty)
+         {
+            left_lst = left->elts;
+            right_lst = right->elts;
+         }
+         else
+            return 0;
 
          while (1)
          {
@@ -374,11 +405,6 @@ static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind,
 
             if (entry == NULL)
                return NULL;
-
-            /* Really, this should never happen (kiss of death, I know). */
-            assert (entry != NULL);
-            assert (entry->info.stack != NULL);
-            assert (entry->info.stack->symtab != NULL);
 
             /* Traverse down into the next module's symbol table and strip off
              * one layer of the namespace path from the ID to set up for
@@ -472,19 +498,33 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
          retval->list_base_ty = ast_to_ty (node->list, stack);
          break;
 
+      /* These two are so similar that they can be one case, with a little
+       * caution taken.
+       */
+      case ABSYN_TY_EXN:
       case ABSYN_TY_RECORD:
       {
          element_t *new_ele;
          list_t *tmp;
 
          MALLOC (retval, sizeof(ty_t));
-         retval->ty = TY_RECORD;
-         retval->record = NULL;
+         retval->elts = NULL;
+
+         if (node->kind == ABSYN_TY_EXN)
+         {
+            retval->ty = TY_EXN;
+            tmp = node->exn;
+         }
+         else
+         {
+            retval->ty = TY_RECORD;
+            tmp = node->record;
+         }
 
          /* Store all the record elements in alphabetical order in the symbol,
           * since that will make various record operations easier later on.
           */
-         for (tmp = node->record; tmp != NULL; tmp = tmp->next)
+         for ( /* initialized above */ ; tmp != NULL; tmp = tmp->next)
          {
             absyn_id_lst_t *cur_id = tmp->data;
 
@@ -493,9 +533,9 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
             new_ele->ty = ast_to_ty (cur_id->ty, stack);
 
             /* Two elements with the same name are not allowed. */
-            retval->record = list_insert_unique (retval->record, new_ele,
-                                                 __ele_to_ele_cmp);
-            if (retval->record == NULL)
+            retval->elts = list_insert_unique (retval->elts, new_ele,
+                                               __ele_to_ele_cmp);
+            if (retval->elts == NULL)
             {
                BAD_SYMBOL_ERROR (cconfig.filename, cur_id->lineno,
                                  cur_id->column, cur_id->symbol->symbol,
@@ -507,6 +547,12 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
          break;
       }
+
+#ifndef NEW_GRAMMAR
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+         exit(1);
+#endif
    }
 
    retval->is_finite = TY_UNVISITED;
@@ -523,6 +569,7 @@ static ty_finite ty_is_finite (ty_t *ty)
    ty->is_finite = TY_VISITED;
 
    switch (ty->ty) {
+      case TY_ANY:
       case TY_BOOLEAN:
       case TY_BOTTOM:
       case TY_INTEGER:
@@ -544,10 +591,17 @@ static ty_finite ty_is_finite (ty_t *ty)
             ty->is_finite = ty_is_finite (ty->list_base_ty);
          break;
 
-      /* Just assume records are okay for now. */
+      /* Just assume these are okay for now. */
+      case TY_EXN:
       case TY_RECORD:
          ty->is_finite = TY_FINITE;
          break;
+
+#ifndef NEW_TYPES
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad ty->ty");
+         exit(1);
+#endif
    }
 
    return ty->is_finite;
@@ -622,7 +676,7 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
    }
 
    /* If there is a default expression, make sure it has the same type as all
-    * the previous experssions.  If could also be the only branch, so take
+    * the previous expressions.  If could also be the only branch, so take
     * care of that possibility as well.
     */
    if (node->default_expr != NULL)
@@ -670,7 +724,7 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
       {
          NONEXHAUSTIVE_MATCH_WARNING (cconfig.filename, node->lineno,
                                       node->column);
-         WARNINGS_AS_ERRORS;
+         WARNINGS_AS_ERRORS();
       }
    }
 
@@ -769,7 +823,8 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
       /* You're not allowed to make a type that overrides anything in the global
        * scope, since that scope contains our base types.
        */
-      if (lookup_id (ty_sym, SYM_TYPE, global) != NULL)
+      if (lookup_id (ty_sym, SYM_TYPE, global) != NULL ||
+          lookup_id (ty_sym, SYM_EXN, global) != NULL)
       {
          BAD_SYMBOL_ERROR (cconfig.filename, ty_sym->lineno,
                            ty_sym->column, ty_sym->symbol,
@@ -778,7 +833,10 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
       }
 
       /* Skeleton entries have a NULL ty pointer, which will be a magic
-       * value later on indicating the entry can be overwritten.
+       * value later on indicating the entry can be overwritten.  Since we
+       * don't yet know what's on the right hand side, we can't tell whether
+       * to set kind to SYM_EXN or SYM_TYPE.  Just use SYM_TYPE for now and
+       * have check_ty_decl change it as appropriate.
        */
       MALLOC (new_sym, sizeof(symbol_t));
       new_sym->kind = SYM_TYPE;
@@ -858,8 +916,170 @@ static void check_decl_lst (list_t *lst, tabstack_t *stack)
             check_val_decl (decl->val_decl, stack);
             tmp = tmp->next;
             break;
+
+#ifndef NEW_GRAMMAR
+         default:
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad decl->type");
+            exit(1);
+#endif
       }
    }
+}
+
+static ty_t *check_exn_expr (absyn_exn_expr_t *node, tabstack_t *stack)
+{
+   symbol_t *sym;
+   ty_t *values_ty;
+
+   /* Look up the type of node->identifier to make sure it's an exception. */
+   if ((sym = lookup_id_global (node->identifier, SYM_EXN, stack)) == NULL)
+   {
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
+                        node->identifier->symbol, "unknown symbol referenced");
+      exit(1);
+   }
+
+   /* Exceptions and types are in the same namespace. */
+   if (sym->kind != SYM_EXN)
+   {
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
+                        node->identifier->symbol, "symbol is not an exception");
+      exit(1);
+   }
+
+   /* Type check node->values as an absyn_record_assn_t.  We have to change the
+    * return value, since it's going to be a TY_RECORD and we really want a
+    * TY_EXN for equal_types to work.
+    */
+   values_ty = check_record_assn (node->values, stack);
+   values_ty->ty = TY_EXN;
+
+   /* Make sure the values in node->values match the list in the returned
+    * type from earlier.
+    */
+   if (!equal_types (sym->info.ty, values_ty))
+   {
+      TYPE_ERROR (cconfig.filename, node->lineno, node->column,
+                  "type of stated exn does not match list of assignments",
+                  "exn type", ty_to_str (sym->info.ty),
+                  "assignment list", ty_to_str (values_ty));
+      exit(1);
+   }
+
+   node->ty = sym->info.ty;
+   return sym->info.ty;
+}
+
+static ty_t *check_exn_handler (absyn_exn_handler_t *node, tabstack_t *stack)
+{
+   list_t *tmp;
+
+   /* Check each handler in the list.  The types of all handler exprs must be
+    * the same, as this will be the type of the exception handler in general.
+    */
+   for (tmp = node->handler_lst; tmp != NULL; tmp = tmp->next)
+   {
+      absyn_exn_lst_t *e = tmp->data;
+
+      if (node->ty == NULL)
+      {
+         node->ty = check_exn_lst (e, stack);
+      }
+      else
+      {
+         ty_t *tmp = check_exn_lst (e, stack);
+
+         if (!equal_types (node->ty, tmp))
+         {
+            TYPE_ERROR (cconfig.filename, e->lineno, e->column,
+                        "inconsistent types in exn handlers",
+                        "first exn handler", ty_to_str (node->ty),
+                        "this exn handler", ty_to_str (tmp));
+            exit(1);
+         }
+      }
+   }
+
+   /* If there is a default handler, make sure it has the same type as all the
+    * previous exception handlers.  It could also be the only handler, so take
+    * care of that possibility as well.
+    */
+   if (node->default_handler != NULL)
+   {
+      if (node->handler_lst != NULL)
+      {
+         node->default_handler->ty = check_exn_lst (node->default_handler,
+                                                    stack);
+
+         if (!equal_types (node->ty, node->default_handler->ty))
+         {
+            TYPE_ERROR (cconfig.filename, node->default_handler->lineno,
+                        node->default_handler->column,
+                        "default exn handler does not match previous handlers",
+                        "first exn handler", ty_to_str (node->ty),
+                        "default exn handler",
+                        ty_to_str (node->default_handler->ty));
+            exit(1);
+         }
+      }
+      else
+         node->ty = check_exn_lst (node->default_handler, stack);
+   }
+
+   return node->ty;
+}
+
+static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
+{
+   symbol_t *sym, *new_sym;
+
+   /* First, look up the type of the exn_id.  Default exception handlers have
+    * no exn_id since they are bound to no particular exn, so watch out for
+    * that.
+    */
+   if (node->exn_id != NULL)
+   {
+      if ((sym = lookup_id_global (node->exn_id, SYM_EXN, stack)) == NULL)
+      {
+         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
+                           node->exn_id->symbol, "unknown symbol referenced");
+         exit(1);
+      }
+
+      /* Exceptions and types are in the same namespace. */
+      if (sym->kind != SYM_EXN)
+      {
+         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
+                           node->exn_id->symbol, "symbol is not an exception");
+         exit(1);
+      }
+   }
+   else
+      sym = NULL;
+
+   /* Create a new environment, augmented with a binding for the id and the
+    * type we just looked up.
+    */
+   MALLOC (new_sym, sizeof (symbol_t));
+
+   new_sym->kind = SYM_EXN;
+   new_sym->name = node->id;
+   new_sym->info.ty = sym == NULL ? NULL : sym->info.ty;
+
+   stack = enter_scope (stack);
+
+   if (symtab_add_entry (stack, new_sym) == -1)
+   {
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->id,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
+
+   /* Check the type of the handler expression in that new environment. */
+   node->ty = node->expr->ty = check_expr (node->expr, stack);
+   
+   stack = leave_scope (stack, L"exn-handler");
+   return node->ty;
 }
 
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
@@ -883,6 +1103,10 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty = check_decl_expr (node->decl_expr, stack);
          break;
 
+      case ABSYN_EXN:
+         node->ty = check_exn_expr (node->exn_expr, stack);
+         break;
+
       case ABSYN_EXPR_LST:
          node->ty = check_expr_lst (node->expr_lst, stack);
          break;
@@ -904,6 +1128,12 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty->ty = TY_INTEGER;
          break;
 
+      case ABSYN_RAISE:
+         MALLOC (node->ty, sizeof (ty_t));
+         node->ty->ty = TY_ANY;
+         check_expr (node->raise_expr, stack);
+         break;
+
       case ABSYN_RECORD_ASSN:
          node->ty = check_record_assn (node->record_assn_lst, stack);
          break;
@@ -916,6 +1146,32 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_STRING;
          break;
+
+#ifndef NEW_GRAMMAR
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+         exit(1);
+#endif
+   }
+
+   /* If there's an exception handler attached to this expression, it better
+    * have the same type as the expression itself.
+    */
+   if (node->exn_handler != NULL)
+   {
+      node->exn_handler->ty = check_exn_handler (node->exn_handler, stack);
+
+      if (!equal_types (node->ty, node->exn_handler->ty))
+      {
+         TYPE_ERROR (cconfig.filename, node->exn_handler->lineno,
+                     node->exn_handler->column,
+                     "type of exn handler does not match type of expression",
+                     "expr", ty_to_str (node->ty), "exn handler",
+                     ty_to_str (node->exn_handler->ty));
+         exit(1);
+      }
+
+      node->ty = node->exn_handler->ty;
    }
 
    return node->ty;
@@ -1091,10 +1347,10 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 
       if (symtab_add_entry (stack, tmp_sym) == -1)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename,
-                           ((absyn_id_lst_t *) formals_ast->data)->lineno,
-                           ((absyn_id_lst_t *) formals_ast->data)->column,
-                           ((absyn_id_lst_t *) formals_ast->data)->symbol->symbol,
+         absyn_id_lst_t *id_lst = (absyn_id_lst_t *) formals_ast->data;
+
+         BAD_SYMBOL_ERROR (cconfig.filename, id_lst->lineno, id_lst->column,
+                           id_lst->symbol->symbol,
                            "duplicate formal parameter already exists");
          exit(1);
       }
@@ -1247,7 +1503,7 @@ static ty_t *check_record_assn (list_t *lst, tabstack_t *stack)
 
    MALLOC (retval, sizeof (ty_t));
    retval->ty = TY_RECORD;
-   retval->record = NULL;
+   retval->elts = NULL;
 
    /* Loop over all assignments in the record expression. */
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
@@ -1259,9 +1515,9 @@ static ty_t *check_record_assn (list_t *lst, tabstack_t *stack)
       new_ele->identifier = node->symbol->symbol;
       new_ele->ty = check_expr (node->expr, stack);
 
-      retval->record = list_insert_unique (retval->record, new_ele,
-                                           __ele_to_ele_cmp);
-      if (retval->record == NULL)
+      retval->elts = list_insert_unique (retval->elts, new_ele,
+                                         __ele_to_ele_cmp);
+      if (retval->elts == NULL)
       {
          BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
                            node->symbol->symbol, "duplicate symbol already "
@@ -1288,22 +1544,23 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
       case ABSYN_ID:
       {
          symbol_t *sym = NULL;
+         absyn_id_expr_t *id = node->rec->identifier;
 
-         if ((sym = lookup_id_global (node->rec->identifier, SYM_VALUE,
-                                      stack)) == NULL)
+         if ((sym = lookup_id_global (id, SYM_VALUE, stack)) == NULL &&
+             (sym = lookup_id_global (id, SYM_EXN, stack)) == NULL)
          {
-            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno,
-                              node->column, node->rec->identifier->symbol,
+            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
+                              id->symbol,
                               "unknown symbol referenced in record expression");
             exit(1);
          }
 
          sym_ty = unalias (sym->info.ty);
 
-         if (!is_ty_kind (sym_ty, TY_RECORD))
+         if (!is_ty_kind (sym_ty, TY_RECORD) && !is_ty_kind (sym_ty, TY_EXN))
          {
             BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                              sym->name, "symbol is not a record");
+                              sym->name, "symbol does not allow member access");
             exit(1);
          }
 
@@ -1335,7 +1592,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
    for (tmp = node->element; tmp != NULL; tmp = tmp->sub)
    {
       /* Find the current element in the record symbol's list. */
-      list_t *l = list_find (sym_ty->record, tmp->symbol, __ele_to_str_cmp);
+      list_t *l = list_find (sym_ty->elts, tmp->symbol, __ele_to_str_cmp);
 
       if (l == NULL)
       {
@@ -1354,14 +1611,16 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
 
 /* Check the right hand side of a type declaration and add that new type
  * information into the symbol table.  The skeleton entry representing the
- * left hand side was already added in by check_decl.  We just need to
- * overwrite it with complete type information.
+ * left hand side was already added in by process_ty_block.  We just need to
+ * overwrite it with complete type information.  Exceptions make this only
+ * slightly more complicated.
  */
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 {
    symbol_t        *new = NULL;
    absyn_id_expr_t *lhs = node->symbol;
    ty_t            *rhs = ast_to_ty (node->ty_decl, stack);
+   subtable_t       sub = rhs->ty == TY_EXN ? SYM_EXN : SYM_TYPE;
 
    if (rhs == NULL)
    {
@@ -1372,11 +1631,14 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 
    /* Make a new symbol from the pieces we've assembled. */
    MALLOC(new, sizeof(symbol_t));
-   new->kind = SYM_TYPE;
+   new->kind = sub;
    new->name = lhs->symbol;
    node->ty = new->info.ty = rhs;
 
-   /* Now obliterate the skeleton entry for this symbol with the real thing. */
+   /* Now obliterate the skeleton entry for this symbol with the real thing.
+    * Note that process_ty_block set everything to be a type, even things that
+    * are really exceptions.
+    */
    if (table_update_entry (stack->symtab, lhs->symbol, SYM_TYPE, new) != 1)
    {
       BAD_SYMBOL_ERROR (cconfig.filename, lhs->lineno, lhs->column,
@@ -1392,7 +1654,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    ty_t *val_ty, *expr_ty;
 
    val_ty = ast_to_ty (node->ty_decl, stack);
-   expr_ty = check_expr (node->init, stack);
+   expr_ty = node->init->ty = check_expr (node->init, stack);
 
    if (!equal_types (val_ty, expr_ty))
    {

@@ -1,0 +1,8 @@
+# Description:  Simple handler
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Exn ← ℰ { msg: string }
+
+   ʋ len: string ← (raise Exn { msg ← "asdf" }) handle Exn e → e|msg end
+end

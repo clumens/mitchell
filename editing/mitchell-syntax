@@ -24,7 +24,8 @@ syntax region  mitEncl     transparent start=/\[/ end=/\]/ contains=ALLBUT,mitBr
 syntax region  mitEncl     transparent start=/(/ end=/)/ contains=ALLBUT,mitParenErr
 
 " Keywords
-syntax keyword mitKeyword  ← case decl else end ƒ if in → ℳ then τ ʋ
+syntax keyword mitKeyword  ← case decl else end ƒ handle if in → ℳ raise
+syntax keyword mitKeyword  then τ ʋ
 
 " Comments
 syntax region  mitComment  start=/#/ end=/$/ contains=mitComment,mitTodo
@@ -34,7 +35,7 @@ syntax keyword mitTodo     contained TODO FIXME XXX
 syntax keyword mitBoolean  t f
 syntax match   mitNumber   /\<-\=\d\+\>/
 syntax region  mitString   start=/\"/ end=/\"/
-syntax keyword mitType     ⊥ boolean integer list string
+syntax keyword mitType     ⊥ boolean ℰ integer list string
 
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already

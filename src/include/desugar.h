@@ -3,7 +3,7 @@
  * is only a single entry point into the desugaring process as it deals with
  * the order of the passes internally.
  *
- * $Id: desugar.h,v 1.2 2005/02/12 16:26:16 chris Exp $
+ * $Id: desugar.h,v 1.3 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler

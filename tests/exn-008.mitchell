@@ -1,0 +1,11 @@
+# Description:  Exceptions as expression return values
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Exn ← ℰ { x: integer }
+
+   ʋ A: Exn ← Exn { x ← 1 }
+   ʋ B: Exn ← Exn { x ← 0 }
+
+   ʋ x: integer ← (if t then raise A else raise B) handle Exn e → e|x end
+end

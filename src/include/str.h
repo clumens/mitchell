@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.h,v 1.1 2005/02/08 04:28:30 chris Exp $
+ * $Id: str.h,v 1.2 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler

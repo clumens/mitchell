@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.10 2005/02/12 16:26:16 chris Exp $
+ * $Id: error.h,v 1.11 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -70,7 +70,7 @@
                     "- recommend adding an else branch to prevent runtime " \
                     "errors\n", (file), (line), (column))
 
-#define WARNINGS_AS_ERRORS \
+#define WARNINGS_AS_ERRORS() \
    do { \
       if (cconfig.warnings_are_errors) \
       { \

@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.4 2005/02/20 03:29:08 chris Exp $
+ * $Id: desugar_decls.c,v 1.5 2005/03/29 05:52:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -54,6 +54,9 @@ typedef struct {
 static decl_return_t *handle_decl_expr (absyn_decl_expr_t *node,
                                         unsigned int promotable);
 static list_t *handle_decl_lst (list_t *lst);
+static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node);
+static list_t *handle_exn_lst (list_t *lst);
+static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node);
 static absyn_expr_t *handle_expr (absyn_expr_t *node);
 static list_t *handle_expr_lst (list_t *lst);
 static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node);
@@ -104,6 +107,7 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    retval->body->column = in->column;
    retval->body->parent = in->parent;
    retval->body->kind = ABSYN_DECL;
+   retval->body->exn_handler = NULL;
    retval->body->ty = in->ty;
    retval->body->decl_expr = in;
 
@@ -122,6 +126,7 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
    retval->column = in->column;
    retval->parent = p;
    retval->kind = ABSYN_FUN_CALL;
+   retval->exn_handler = NULL;
    retval->ty = NULL;
 
    retval->fun_call_expr->lineno = in->lineno;
@@ -200,10 +205,45 @@ static list_t *handle_decl_lst (list_t *lst)
          case ABSYN_VAL_DECL:
             decl->val_decl = handle_val_decl (decl->val_decl);
             break;
+
+#ifndef NEW_GRAMMAR
+         default:
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad decl->type");
+            exit(1);
+#endif
       }
    }
 
    return lst;
+}
+
+static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node)
+{
+   node->handler_lst = handle_exn_lst (node->handler_lst);
+
+   if (node->default_handler != NULL)
+      node->default_handler->expr = handle_expr (node->default_handler->expr);
+
+   return node;
+}
+
+static list_t *handle_exn_lst (list_t *lst)
+{
+   list_t *tmp;
+
+   for (tmp = lst; tmp != NULL; tmp = tmp->next)
+   {
+      absyn_exn_lst_t *node = tmp->data;
+      node->expr = handle_expr(node->expr);
+   }
+
+   return tmp;
+}
+
+static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)
+{
+   node->values = handle_record_assn (node->values);
+   return node;
 }
 
 static absyn_expr_t *handle_expr (absyn_expr_t *node)
@@ -265,6 +305,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          break;
       }
 
+      case ABSYN_EXN:
+         node->exn_expr = handle_exn_expr (node->exn_expr);
+         break;
+
       case ABSYN_EXPR_LST:
          node->expr_lst = handle_expr_lst (node->expr_lst);
          break;
@@ -277,6 +321,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          node->if_expr = handle_if_expr (node->if_expr);
          break;
 
+      case ABSYN_RAISE:
+         node->raise_expr = handle_expr (node->raise_expr);
+         break;
+
       case ABSYN_RECORD_ASSN:
          node->record_assn_lst = handle_record_assn (node->record_assn_lst);
          break;
@@ -285,10 +333,17 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          node->record_ref = handle_record_ref (node->record_ref);
          break;
 
+      /* Running into a case expression is impossible, but this shuts up gcc. */
+      case ABSYN_CASE:
+#ifndef NEW_GRAMMAR
       default:
+#endif
          MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind for expr");
          exit(1);
    }
+
+   if (node->exn_handler != NULL)
+      node->exn_handler = handle_exn_handler (node->exn_handler);
 
    return node;
 }
@@ -347,7 +402,7 @@ static list_t *handle_record_assn (list_t *lst)
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
       absyn_record_assn_t *node = tmp->data;
-      tmp->data = handle_expr (node->expr);
+      node->expr = handle_expr (node->expr);
    }
 
    return lst;

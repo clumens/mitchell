@@ -1,0 +1,6 @@
+# Description:  Create a new exception type
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Empty ← ℰ { line: integer }
+end

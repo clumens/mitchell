@@ -1,0 +1,8 @@
+# Description:  Raise expression returns whatever type is required.
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Exn ← ℰ { val: integer }
+   τ Exn2 ← ℰ { val: string }
+   ʋ x: Exn ← raise Exn2 { val ← "asdf" }
+end

@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.11 2005/01/22 01:04:01 chris Exp $
+ * $Id: symtab.h,v 1.12 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -43,9 +43,11 @@
  * This enum is how we tell them apart, and this value will get added in with
  * the symbol name in the hash function so three symbols with the same name can
  * still coexist.  Note:  SYM_FUNCTION and SYM_VALUE are different enum values,
- * but must be handled the same by the hashing function.
+ * but must be handled the same by the hashing function.  Same with SYM_EXN and
+ * SYM_TYPE.
  */
-typedef enum { SYM_FUNCTION, SYM_MODULE, SYM_TYPE, SYM_VALUE } subtable_t;
+typedef enum { SYM_EXN, SYM_FUNCTION, SYM_MODULE, SYM_TYPE,
+               SYM_VALUE } subtable_t;
 
 typedef struct {
    struct ty_t *retval;
@@ -59,7 +61,7 @@ typedef struct symbol_t {
    union {
       function_symbol_t *function;        /* SYM_FUNCTION */
       struct tabstack_t *stack;           /* SYM_MODULE */
-      struct ty_t       *ty;              /* SYM_TYPE, SYM_VALUE */
+      struct ty_t       *ty;              /* SYM_EXN, SYM_TYPE, SYM_VALUE */
    } info;
 } symbol_t;
 
@@ -87,10 +89,12 @@ typedef struct tabstack_t {
 
 /* These are obvious except for a couple:
  *    TY_ALIAS is when you make a new name for an existing type,
+ *    TY_ANY is the type of a raise-expr, since it needs to be equal to
+ *           whatever type is expected for type checking purposes
  *    TY_BOTTOM is the type for when there's no other type (⊥)
  */
-typedef enum { TY_ALIAS, TY_BOOLEAN, TY_BOTTOM, TY_INTEGER, TY_LIST,
-               TY_RECORD, TY_STRING } ty_kind;
+typedef enum { TY_ALIAS, TY_ANY, TY_BOOLEAN, TY_BOTTOM, TY_EXN, TY_INTEGER,
+               TY_LIST, TY_RECORD, TY_STRING } ty_kind;
 
 /* Used for determining whether a type is part of an infinite loop or not. */
 typedef enum { TY_NOT_FINITE, TY_UNVISITED, TY_VISITED, TY_FINITE } ty_finite;
@@ -107,7 +111,8 @@ typedef struct ty_t {
    union {
       symbol_t      *alias;               /* TY_ALIAS */
       struct ty_t   *list_base_ty;        /* TY_LIST */
-      list_t        *record;              /* TY_RECORD - list of element_t */
+      list_t        *elts;                /* TY_EXN, TY_RECORD - list of
+                                             element_t */
    };
 } ty_t;
 
@@ -119,7 +124,7 @@ typedef struct ty_t {
 /* Functions for manipulating a single symbol table. */
 symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
                               subtable_t kind);
-symtab_t *symtab_new ();
+symtab_t *symtab_new();
 int table_add_entry (symtab_t *symtab, symbol_t *symbol);
 unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
                                  subtable_t kind);

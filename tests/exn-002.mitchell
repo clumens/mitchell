@@ -1,0 +1,7 @@
+# Description:  Create a new exception type containing another
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ Empty ← ℰ { line: integer }
+   τ Nested ← ℰ { msg: string, exn: Empty }
+end

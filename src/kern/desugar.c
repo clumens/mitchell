@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.3 2005/02/12 17:07:43 chris Exp $
+ * $Id: desugar.c,v 1.4 2005/03/29 05:52:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -49,7 +49,9 @@
 #include <stdlib.h>
 
 #include "absyn.h"
+#include "config.h"
 #include "desugar.h"
+#include "error.h"
 #include "memory.h"
 #include "str.h"
 
@@ -105,6 +107,15 @@ backlink_t *find_lexical_parent (backlink_t *bl)
          case LINK_DECL:
             tmp = ((absyn_decl_t *) tmp->ptr)->parent; break;
 
+         case LINK_EXN:
+            tmp = ((absyn_exn_expr_t *) tmp->ptr)->parent; break;
+
+         case LINK_EXN_HANDLER:
+            tmp = ((absyn_exn_handler_t *) tmp->ptr)->parent; break;
+
+         case LINK_EXN_LST:
+            tmp = ((absyn_exn_lst_t *) tmp->ptr)->parent; break;
+
          case LINK_EXPR:
             tmp = ((absyn_expr_t *) tmp->ptr)->parent; break;
 
@@ -118,6 +129,9 @@ backlink_t *find_lexical_parent (backlink_t *bl)
             tmp = ((absyn_id_lst_t *) tmp->ptr)->parent; break;
 
          case LINK_IF_EXPR:
+            tmp = ((absyn_if_expr_t *) tmp->ptr)->parent; break;
+
+         case LINK_RAISE:
             tmp = ((absyn_if_expr_t *) tmp->ptr)->parent; break;
 
          case LINK_RECORD_ASSN:
@@ -134,6 +148,12 @@ backlink_t *find_lexical_parent (backlink_t *bl)
 
          case LINK_VAL_DECL:
             tmp = ((absyn_val_decl_t *) tmp->ptr)->parent; break;
+
+#ifndef NEW_GRAMMAR
+         default:
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad backlink type");
+            exit(1);
+#endif
       }
    }
 

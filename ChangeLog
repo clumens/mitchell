@@ -6,12 +6,16 @@ Grammar:
 - Strings may now be continued across multiple lines.  Put a backslash at
   the end of the first line, and another one before the first character you
   want included in the string on the next line.  (Patch from Mike.)
+- Expressions may be surrounded by parentheses.
+- Added support for creating, handling, and raising exceptions.
 Internals:
 - Added a backlink_t type and a link of this type to every AST noded.  The
   backlink points at the parent node in the tree.
 - Renamed compiler_config to cconfig.
 - print_absyn now takes a header argument since we're going to dump the AST
   after every round of simplification.
+- Modified AST output to be much more verbose and readable.
+- absyn_expr_t has a pointer to an exception handler.
 Misc:
 - Added the beginnings of a language reference.
 

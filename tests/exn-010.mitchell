@@ -1,0 +1,8 @@
+# Description:  Using parens to disambiguate
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ Exn ← ℰ { x: integer }
+
+   ʋ x: integer ← if t then 0 else (1 handle else e → 47 end)
+end

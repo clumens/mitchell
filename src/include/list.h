@@ -2,7 +2,7 @@
  * list nodes do not need to be homogenous, as each node simply stores a
  * pointer to the data.
  *
- * $Id: list.h,v 1.3 2005/02/02 13:38:48 chris Exp $
+ * $Id: list.h,v 1.4 2005/03/29 05:52:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler

@@ -1,5 +1,5 @@
 " Add this to your .vimrc to make editing files in mitchell much easier.
-" $Id: mitchell-vimrc,v 1.4 2005/01/06 23:45:22 chris Exp $
+" $Id: mitchell-vimrc,v 1.5 2005/03/29 05:52:48 chris Exp $
 
 if has ("autocmd")
    au BufEnter *.mitchell call Mitchell_edit()
@@ -10,6 +10,7 @@ endif
 function! Mitchell_edit()
    iab \< ←
    iab \_ ⊥
+   iab \E ℰ
    iab \f ƒ
    iab \> →
    iab \M ℳ

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.41 2005/02/12 16:26:19 chris Exp $
+ * $Id: parse.c,v 1.42 2005/03/29 05:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -53,75 +53,85 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
-#define NRULES   23        /* number of parser rules in each set */
-#define SET_SIZE 15        /* max number of elements in each rule */
+#define NRULES   26        /* number of parser rules in each set */
+#define SET_SIZE 20        /* max number of elements in each rule */
 
-enum { SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
-       SET_DECL_EXPR, SET_DECL_LST, SET_EXPR, SET_EXPR_LST,
-       SET_FUN_CALL_OR_ID, SET_FUN_DECL, SET_ID, SET_ID_LST, SET_IF_EXPR,
-       SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_RECORD_ASSN_LST,
-       SET_RECORD_REF, SET_SYM_REF, SET_TOP_DECL, SET_TOP_DECL_LST, SET_TY,
-       SET_TY_DECL, SET_VAL_DECL };
+enum { SET_ARG_LST, SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
+       SET_DECL_EXPR, SET_DECL_LST, SET_EXN_HANDLER, SET_EXN_LST, SET_EXPR,
+       SET_EXPR_LST, SET_FUN_DECL, SET_ID, SET_ID_LST,
+       SET_IF_EXPR, SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_NAKED_EXPR,
+       SET_RECORD_ASSN_LST, SET_RECORD_REF, SET_SYM_REF, SET_TOP_DECL,
+       SET_TOP_DECL_LST, SET_TY, SET_TY_DECL, SET_VAL_DECL };
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
+   /* arg-lst */ { LPAREN, -1 },
    /* branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
    /* branch-lst */ { BOOLEAN, ELSE, IDENTIFIER, INTEGER, STRING, -1 },
    /* case-expr */ { CASE, -1 },
    /* decl */ { FUNCTION, TYPE, VAL, -1 },
    /* decl-expr */ { DECL, -1 },
    /* decl-lst */ { FUNCTION, TYPE, VAL, -1 },
+   /* exn-handler */ { HANDLE, -1 },
+   /* exn-lst */ { ELSE, IDENTIFIER, -1 },
    /* expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
-                LBRACK, STRING, -1 },
+                LBRACK, LPAREN, RAISE, STRING, -1 },
    /* expr-lst */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER,
-                    LBRACE, LBRACK, STRING, -1 },
-   /* fun-call-or-id */ { IDENTIFIER, -1 },
+                    LBRACE, LBRACK, LPAREN, RAISE, STRING, -1 },
    /* fun-decl */ { FUNCTION, -1 },
    /* id */ { IDENTIFIER, -1 },
    /* id-lst */ { IDENTIFIER, -1 },
    /* if-expr */ { IF, -1 },
    /* module-decl */ { MODULE, -1 },
    /* module-decl-lst */ { MODULE, -1 },
+   /* naked-expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER,
+                      LBRACE, LBRACK, RAISE, STRING, -1 },
    /* record-assn-lst */ { IDENTIFIER, -1 },
-   /* record-ref */ { IDENTIFIER, -1 },
+   /* record-ref */ { PIPE, -1 },
    /* sym-ref */ { IDENTIFIER, -1 },
    /* top-decl */ { FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { FUNCTION, MODULE, TYPE, VAL, -1 },
-   /* ty */ { BOTTOM, IDENTIFIER, LBRACE, LIST, -1 },
+   /* ty */ { BOTTOM, EXN, IDENTIFIER, LBRACE, LIST, -1 },
    /* ty-decl */ { TYPE, -1 },
    /* val-decl */ { VAL, -1 }
 };
 
 static const int FOLLOW_SET[NRULES][SET_SIZE] = {
+   /* arg-lst */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, PIPE,
+                   RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* branch-expr */ { MAPSTO, -1 },
    /* branch-lst */ { END, -1 },
-   /* case-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN,
-                     THEN, TYPE, VAL, -1 },
+   /* case-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                     RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
-   /* decl-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN,
-                     THEN, TYPE, VAL, -1 },
-   /* decl-lst */ { END, IN, -1 },
-   /* expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN, THEN,
-                TYPE, VAL, -1 },
+   /* decl-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                     RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* decl-lst */ { IN, -1 },
+   /* exn-handler */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                       RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* exn-lst */ { END, -1 },
+   /* expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* expr-lst */ { RBRACK, RPAREN, -1 },
-   /* fun-call-or-id */ { COMMA, ELSE, END, FUNCTION, IN, PIPE, RBRACE, RBRACK,
-                          RPAREN, THEN, TYPE, VAL, -1 },
    /* fun-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
-   /* id */ { COMMA, ELSE, END, FUNCTION, IN, LPAREN, MAPSTO, PIPE, RBRACE,
-              RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* id */ { ASSIGN, COMMA, ELSE, END, FUNCTION, HANDLE, IDENTIFIER, IN,
+              LBRACE, LPAREN, MAPSTO, MODULE, PIPE, RBRACE, RPAREN, RPAREN,
+              THEN, TYPE, VAL, -1 },
    /* id-lst */ { RBRACE, RPAREN, -1 },
-   /* if-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN, THEN,
-                   TYPE, VAL, -1 },
+   /* if-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                   RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* module-decl */ { END, ENDOFFILE, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* module-decl-lst */ { ENDOFFILE, -1 },
+   /* naked-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                      RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* record-assn-lst */ { RBRACE, -1 },
-   /* record-ref */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN,
-                      THEN, TYPE, VAL, -1 },
-   /* sym-ref */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN, THEN,
-                   TYPE, VAL, -1 },
+   /* record-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                      RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* sym-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
+                   RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* top-decl */ { END, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { END, -1 },
-   /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE, RPAREN, TYPE,
-              VAL, -1 },
+   /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, MODULE, RBRACE,
+              RPAREN, TYPE, VAL, -1 },
    /* ty-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
    /* val-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 }
 };
@@ -129,21 +139,24 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
 /* These functions are seriously mutually recursive, so put forward
  * declarations of them here.
  */
+static list_t *parse_arg_lst (backlink_t *parent);
 static absyn_expr_t *parse_branch_expr (backlink_t *parent);
 static list_t *parse_branch_lst (backlink_t *parent);
 static absyn_case_expr_t *parse_case_expr (backlink_t *parent);
 static absyn_decl_t *parse_decl (backlink_t *parent);
 static absyn_decl_expr_t *parse_decl_expr (backlink_t *parent);
 static list_t *parse_decl_lst (backlink_t *parent);
+static absyn_exn_handler_t *parse_exn_handler (backlink_t *parent);
+static list_t *parse_exn_lst (backlink_t *parent);
 static absyn_expr_t *parse_expr (backlink_t *parent);
 static list_t *parse_expr_lst (backlink_t *parent);
-static absyn_expr_t *parse_fun_call_or_id (backlink_t *parent);
 static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent);
 static absyn_id_expr_t *parse_id (backlink_t *parent);
 static list_t *parse_id_lst (backlink_t *parent);
 static absyn_if_expr_t *parse_if_expr (backlink_t *parent);
 static absyn_module_decl_t *parse_module_decl (backlink_t *parent);
 static list_t *parse_module_decl_lst ();
+static absyn_expr_t *parse_naked_expr (backlink_t *parent);
 static list_t *parse_record_assn_lst (backlink_t *parent);
 static absyn_id_expr_t *parse_record_ref (backlink_t *parent);
 static absyn_expr_t *parse_sym_ref (backlink_t *parent);
@@ -298,6 +311,29 @@ ast_t *parse (const char *filename)
  * +=================================================================+
  */
 
+/* arg-lst ::= LPAREN RPAREN
+ *           | LPAREN expr-lst RPAREN
+ */
+static list_t *parse_arg_lst (backlink_t *parent)
+{
+   list_t *retval = NULL;
+
+   ENTERING (__FUNCTION__);
+
+   match(LPAREN);
+
+   if (tok->type == RPAREN)
+      match(RPAREN);
+   else
+   {
+      retval = parse_expr_lst(parent);
+      match(RPAREN);
+   }
+   
+   LEAVING (__FUNCTION__);
+   return retval;
+}
+
 /* branch-expr ::= id
  *               | INTEGER
  *               | STRING
@@ -313,6 +349,7 @@ static absyn_expr_t *parse_branch_expr (backlink_t *parent)
    retval->lineno = tok->lineno;
    retval->column = tok->column;
    retval->parent = parent;
+   retval->exn_handler = NULL;
 
    switch (tok->type) {
       case BOOLEAN:
@@ -428,7 +465,7 @@ static absyn_case_expr_t *parse_case_expr (backlink_t *parent)
    retval->test = parse_expr(bl);
    match(IN);
 
-   /* Gatber up all the branches into a list.  If there is a default one, it
+   /* Gather up all the branches into a list.  If there is a default one, it
     * will be at the very end, as enforced by parse_branch_lst().  In this
     * case, we need to pull it out of the list and put it in the default_expr
     * slot of retval.
@@ -541,93 +578,146 @@ static list_t *parse_decl_lst (backlink_t *parent)
    return retval;
 }
 
-/* expr ::= LBRACK expr-lst RBRACK
- *        | LBRACE record-assn-lst RBRACE
- *        | case-expr
- *        | decl-expr
- *        | if-expr
- *        | sym-ref
- *        | INTEGER
- *        | STRING
- *        | BOOLEAN
- *        | BOTTOM
+/* exn-handler ::= HANDLE exn-lst END */
+static absyn_exn_handler_t *parse_exn_handler (backlink_t *parent)
+{
+   absyn_exn_handler_t *retval;
+   absyn_exn_lst_t *last_handler;
+   backlink_t *bl;
+
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_exn_handler_t));
+
+   bl = make_bl (LINK_EXN_HANDLER, retval);
+
+   match (HANDLE);
+   retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
+   retval->parent = parent;
+
+   /* This is similar to how the case-expr stuff works:  Gather up all the
+    * handlers into a list.  If there is a default one, it will be at the very
+    * end as enforced by the grammar.  In this case, we need to pull it out
+    * of the list and put it in the default_handler slot of retval.
+    */
+   retval->handler_lst = parse_exn_lst(bl);
+
+   last_handler = (list_tl(retval->handler_lst))->data;
+   if (last_handler->exn_id == NULL)
+   {
+      retval->default_handler = last_handler;
+      retval->handler_lst = list_remove_tl (retval->handler_lst);
+   }
+   else
+      retval->default_handler = NULL;
+
+   match (END);
+
+   LEAVING (__FUNCTION__);
+   return retval;
+}
+
+/* exn-lst ::= id IDENTIFIER MAPSTO expr
+ *           | id IDENTIFIER MAPSTO expr COMMA exn-lst
+ *           | ELSE IDENTIFIER MAPSTO expr
+ */
+static list_t *parse_exn_lst (backlink_t *parent)
+{
+   list_t *retval = NULL;
+
+   ENTERING (__FUNCTION__);
+
+   while (1) {
+      absyn_exn_lst_t *new_ele;
+      backlink_t *bl;
+
+      MALLOC (new_ele, sizeof(absyn_exn_lst_t));
+      bl = make_bl (LINK_EXN_LST, new_ele);
+
+      /* Add any default handler as the last element in the list.  The only
+       * thing that differentiates it from a regular handler is that the
+       * default one will not have an exn_id pointer.
+       */
+      if (tok->type == ELSE)
+      {
+         match(ELSE);
+         match(IDENTIFIER);
+         new_ele->id = last_tok->string;
+
+         match(MAPSTO);
+         new_ele->expr = parse_expr (parent);
+         new_ele->exn_id = NULL;
+         new_ele->lineno = new_ele->expr->lineno;
+         new_ele->column = new_ele->expr->column;
+         new_ele->parent = parent;
+
+         retval = list_append (retval, new_ele);
+
+         /* The else branch has to come last. */
+         if (!in_set (tok, FOLLOW_SET[SET_EXN_LST]))
+            parse_error (tok, FOLLOW_SET[SET_EXN_LST]);
+
+         LEAVING (__FUNCTION__);
+         return retval;
+      }
+      else
+      {
+         new_ele->exn_id = parse_id (bl);
+         new_ele->lineno = new_ele->exn_id->lineno;
+         new_ele->column = new_ele->exn_id->column;
+         new_ele->parent = parent;
+
+         match(IDENTIFIER);
+         new_ele->id = last_tok->string;
+         match(MAPSTO);
+         new_ele->expr = parse_expr (bl);
+
+         retval = list_append (retval, new_ele);
+      }
+
+      if (in_set (tok, FOLLOW_SET[SET_EXN_LST]))
+         break;
+      else
+         match(COMMA);
+   }
+
+   LEAVING (__FUNCTION__);
+   return retval;
+}
+
+/* expr ::= LPAREN naked-expr RPAREN
+ *        | LPAREN naked-expr RPAREN exn-handler
+ *        | naked-expr
+ *        | naked-expr exn-handler
  */
 static absyn_expr_t *parse_expr (backlink_t *parent)
 {
    absyn_expr_t *retval;
-   backlink_t *bl;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_expr_t));
 
-   retval->lineno = tok->lineno;
-   retval->column = tok->column;
-   retval->parent = parent;
+   if (tok->type == LPAREN)
+   {
+      match (LPAREN);
+      retval = parse_naked_expr(parent);
+      match (RPAREN);
 
-   bl = make_bl (LINK_EXPR, retval);
+      if (in_set (tok, FIRST_SET[SET_EXN_HANDLER]))
+         retval->exn_handler = parse_exn_handler(make_bl (LINK_EXPR, retval));
+      else
+         retval->exn_handler = NULL;
+   }
+   else
+   {
+      retval = parse_naked_expr(parent);
 
-   switch (tok->type) {
-      case BOOLEAN:
-         match(BOOLEAN);
-         retval->kind = ABSYN_BOOLEAN;
-         retval->boolean_expr = last_tok->boolean;
-         break;
-
-      case BOTTOM:
-         match(BOTTOM);
-         retval->kind = ABSYN_BOTTOM;
-         break;
-
-      case CASE:
-         retval->kind = ABSYN_CASE;
-         retval->case_expr = parse_case_expr(bl);
-         break;
-
-      case DECL:
-         retval->kind = ABSYN_DECL;
-         retval->decl_expr = parse_decl_expr(bl);
-         break;
-
-      case IDENTIFIER:
-         retval = parse_sym_ref(bl);
-         break;
-
-      case IF:
-         retval->kind = ABSYN_IF;
-         retval->if_expr = parse_if_expr(bl);
-         break;
-
-      case INTEGER:
-         match(INTEGER);
-         retval->kind = ABSYN_INTEGER;
-         retval->integer_expr = last_tok->integer;
-         break;
-
-      case LBRACE:
-         match(LBRACE);
-         retval->kind = ABSYN_RECORD_ASSN;
-         retval->record_assn_lst = parse_record_assn_lst(bl);
-         match(RBRACE);
-         break;
-
-      case LBRACK:
-         match(LBRACK);
-         retval->kind = ABSYN_EXPR_LST;
-         retval->expr_lst = parse_expr_lst(bl);
-         match(RBRACK);
-         break;
-
-      case STRING:
-         match(STRING);
-         retval->kind = ABSYN_STRING;
-         retval->string_expr = last_tok->string;
-         break;
-
-      default:
-         parse_error (tok, FIRST_SET[SET_EXPR]);
+      if (in_set (tok, FIRST_SET[SET_EXN_HANDLER]))
+         retval->exn_handler = parse_exn_handler(make_bl (LINK_EXPR, retval));
+      else
+         retval->exn_handler = NULL;
    }
 
-   LEAVING(__FUNCTION__);
+   LEAVING (__FUNCTION__);
    return retval;
 }
 
@@ -647,67 +737,6 @@ static list_t *parse_expr_lst (backlink_t *parent)
          break;
       else
          match(COMMA);
-   }
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* fun-call-or-id ::= id LPAREN expr-lst RPAREN
- *                  | id LPAREN RPAREN
- *                  | id
- */
-static absyn_expr_t *parse_fun_call_or_id (backlink_t *parent)
-{
-   absyn_expr_t *retval;
-   absyn_id_expr_t *tmp;
-   backlink_t *bl;
-
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_expr_t));
-
-   bl = make_bl (LINK_EXPR, retval);
-
-   tmp = parse_id(bl);
-
-   retval->lineno = tmp->lineno;
-   retval->column = tmp->column;
-   retval->parent = parent;
-
-   if (!in_set (tok, FOLLOW_SET[SET_FUN_CALL_OR_ID]))
-   {
-      match(LPAREN);
-
-      MALLOC (retval->fun_call_expr, sizeof(absyn_fun_call_t));
-
-      retval->kind = ABSYN_FUN_CALL;
-      retval->fun_call_expr->lineno = retval->lineno;
-      retval->fun_call_expr->column = retval->column;
-      retval->fun_call_expr->parent = bl;
-      retval->fun_call_expr->identifier = tmp;
-
-      /* Now we have to fix up the identifier's backlink pointer since it was
-       * set to point at retval, which is no longer the case.
-       */
-      retval->fun_call_expr->identifier->parent->kind = LINK_FUN_CALL;
-      retval->fun_call_expr->identifier->parent->ptr = retval->fun_call_expr;
-
-      if (tok->type != RPAREN)
-      {
-         retval->fun_call_expr->arg_lst =
-            parse_expr_lst(make_bl(LINK_FUN_CALL, retval->fun_call_expr));
-         match(RPAREN);
-      }
-      else
-      {
-         match(RPAREN);
-         retval->fun_call_expr->arg_lst = NULL;
-      }
-   }
-   else
-   {
-      retval->kind = ABSYN_ID;
-      retval->identifier = tmp;
    }
 
    LEAVING(__FUNCTION__);
@@ -775,6 +804,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
       expr->lineno = retval->body->lineno;
       expr->column = retval->body->column;
       expr->parent = bl;
+      expr->exn_handler = NULL;
       expr->kind = ABSYN_DECL;
       expr->ty = retval->body->ty;
 
@@ -958,6 +988,104 @@ static list_t *parse_module_decl_lst ()
    return retval;
 }
 
+/* naked-expr ::= LBRACK expr-lst RBRACK
+ *              | LBRACE record-assn-lst RBRACE
+ *              | case-expr
+ *              | decl-expr
+ *              | if-expr
+ *              | sym-ref
+ *              | RAISE expr
+ *              | INTEGER
+ *              | STRING
+ *              | BOOLEAN
+ *              | BOTTOM
+ */
+static absyn_expr_t *parse_naked_expr (backlink_t *parent)
+{
+   absyn_expr_t *retval;
+   backlink_t *bl;
+
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_t));
+
+   retval->lineno = tok->lineno;
+   retval->column = tok->column;
+   retval->parent = parent;
+   retval->exn_handler = NULL;
+
+   bl = make_bl (LINK_EXPR, retval);
+
+   switch (tok->type) {
+      case BOOLEAN:
+         match(BOOLEAN);
+         retval->kind = ABSYN_BOOLEAN;
+         retval->boolean_expr = last_tok->boolean;
+         break;
+
+      case BOTTOM:
+         match(BOTTOM);
+         retval->kind = ABSYN_BOTTOM;
+         break;
+
+      case CASE:
+         retval->kind = ABSYN_CASE;
+         retval->case_expr = parse_case_expr(bl);
+         break;
+
+      case DECL:
+         retval->kind = ABSYN_DECL;
+         retval->decl_expr = parse_decl_expr(bl);
+         break;
+
+      case IDENTIFIER:
+         retval = parse_sym_ref(bl);
+         break;
+
+      case IF:
+         retval->kind = ABSYN_IF;
+         retval->if_expr = parse_if_expr(bl);
+         break;
+
+      case INTEGER:
+         match(INTEGER);
+         retval->kind = ABSYN_INTEGER;
+         retval->integer_expr = last_tok->integer;
+         break;
+
+      case LBRACE:
+         match(LBRACE);
+         retval->kind = ABSYN_RECORD_ASSN;
+         retval->record_assn_lst = parse_record_assn_lst(bl);
+         match(RBRACE);
+         break;
+
+      case LBRACK:
+         match(LBRACK);
+         retval->kind = ABSYN_EXPR_LST;
+         retval->expr_lst = parse_expr_lst(bl);
+         match(RBRACK);
+         break;
+
+      case RAISE:
+         match(RAISE);
+         retval->kind = ABSYN_RAISE;
+         retval->raise_expr = parse_expr(bl);
+         break;
+
+      case STRING:
+         match(STRING);
+         retval->kind = ABSYN_STRING;
+         retval->string_expr = last_tok->string;
+         break;
+
+      default:
+         parse_error (tok, FIRST_SET[SET_EXPR]);
+   }
+
+   LEAVING(__FUNCTION__);
+   return retval;
+}
+
 /* record-assn-lst ::= IDENTIFIER ASSIGN expr
  *                   | IDENTIFIER ASSIGN expr COMMA record-assn-lst
  */
@@ -1004,8 +1132,8 @@ static list_t *parse_record_assn_lst (backlink_t *parent)
    return retval;
 }
 
-/* record-ref ::= IDENTIFIER PIPE record-ref
- *              | IDENTIFIER
+/* record-ref ::= PIPE IDENTIFIER
+ *              | PIPE IDENTIFIER record-ref
  */
 static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
 {
@@ -1014,17 +1142,16 @@ static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof (absyn_id_expr_t));
 
-   match(IDENTIFIER);
+   match (PIPE);
+   match (IDENTIFIER);
+
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->parent = parent;
    retval->symbol = last_tok->string;
 
    if (tok->type == PIPE)
-   {
-      match(PIPE);
-      retval->sub = parse_record_ref(make_bl(LINK_ID_EXPR, retval));
-   }
+      retval->sub = parse_record_ref (make_bl(LINK_ID_EXPR, retval));
    else
       retval->sub = NULL;
 
@@ -1032,40 +1159,122 @@ static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
    return retval;
 }
 
-/* sym-ref ::= fun-call-or-id
- *           | fun-call-or-id PIPE record-ref
+/* sym-ref ::= id
+ *           | id record-ref
+ *           | id arg-lst
+ *           | id arg-lst record-ref
+ *           | id LBRACE record-assn-lst RBRACE
  */
 static absyn_expr_t *parse_sym_ref (backlink_t *parent)
 {
-   absyn_expr_t *tmp, *retval;
+   absyn_expr_t *retval = NULL;
+   absyn_id_expr_t *id;
 
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_t));
 
-   /* If we end up taking the "else" branch below, tmp will have the right
-    * backlink, which will then get assigned to retval.  Otherwise, we have
-    * to be careful.
-    */
-   tmp = parse_fun_call_or_id(parent);
+   /* This backlink is wrong so we'll need to set it in the cases below. */
+   id = parse_id (parent);
 
-   if (tok->type == PIPE)
+   /* These will get set the same in each case regardless. */
+   retval->lineno = id->lineno;
+   retval->column = id->column;
+   retval->parent = parent;
+   retval->exn_handler = NULL;
+
+   if (in_set (tok, FOLLOW_SET[SET_SYM_REF]))
    {
-      match(PIPE);
+      retval->kind = ABSYN_ID;
+      retval->identifier = id;
+      retval->identifier->parent = make_bl (LINK_ID_EXPR, retval);
+   }
+   else if (in_set (tok, FIRST_SET[SET_RECORD_REF]))
+   {
+      backlink_t *rec_bl;
 
-      MALLOC (retval, sizeof(absyn_expr_t));
       MALLOC (retval->record_ref, sizeof(absyn_record_ref_t));
+      rec_bl = make_bl (LINK_RECORD_REF, retval->record_ref);
 
       retval->kind = ABSYN_RECORD_REF;
-      retval->parent = parent;
-      retval->lineno = retval->record_ref->lineno = tmp->lineno;
-      retval->column = retval->record_ref->column = tmp->column;
-
+      retval->record_ref->lineno = id->lineno;
+      retval->record_ref->column = id->column;
       retval->record_ref->parent = make_bl(LINK_EXPR, retval);
-      retval->record_ref->rec = tmp;
-      retval->record_ref->element =
-         parse_record_ref(make_bl(LINK_RECORD_REF, retval->record_ref));
+      retval->record_ref->element = parse_record_ref(rec_bl);
+
+      /* We have to wrap id in an expr before we can put it in retval. */
+      MALLOC (retval->record_ref->rec, sizeof(absyn_expr_t));
+      retval->record_ref->rec->lineno = id->lineno;
+      retval->record_ref->rec->column = id->column;
+      retval->record_ref->rec->parent = rec_bl;
+      retval->record_ref->rec->exn_handler = NULL;
+      retval->record_ref->rec->kind = ABSYN_ID;
+      retval->record_ref->rec->identifier = id;
    }
-   else
-      retval = tmp;
+   else if (in_set (tok, FIRST_SET[SET_ARG_LST]))
+   {
+      absyn_fun_call_t *fun_call;
+      backlink_t *fun_bl;
+
+      /* Regardless of the path we take below, a function call is always
+       * involved so first set that structure up.
+       */
+      MALLOC (fun_call, sizeof(absyn_fun_call_t));
+      fun_bl = make_bl (LINK_FUN_CALL, fun_call);
+
+      fun_call->lineno = retval->lineno;
+      fun_call->column = retval->column;
+      fun_call->parent = make_bl (LINK_EXPR, retval);
+      fun_call->identifier = id;
+      fun_call->identifier->parent = fun_bl;
+      fun_call->arg_lst = parse_arg_lst (fun_bl);
+
+      if (in_set (tok, FIRST_SET[SET_RECORD_REF]))
+      {
+         MALLOC (retval->record_ref, sizeof(absyn_record_ref_t));
+
+         retval->kind = ABSYN_RECORD_REF;
+
+         retval->record_ref->lineno = retval->lineno;
+         retval->record_ref->column = retval->column;
+         retval->record_ref->parent = make_bl (LINK_EXPR, retval);
+         retval->record_ref->element =
+            parse_record_ref(make_bl (LINK_RECORD_REF, retval->record_ref));
+
+         /* We have to wrap the fun_call in an expr, of course. */
+         MALLOC (retval->record_ref->rec, sizeof(absyn_expr_t));
+         retval->record_ref->rec->lineno = fun_call->lineno;
+         retval->record_ref->rec->column = fun_call->column;
+         retval->record_ref->rec->parent = make_bl (LINK_RECORD_REF,
+                                                    retval->record_ref);
+         retval->record_ref->rec->exn_handler = NULL;
+         retval->record_ref->rec->kind = ABSYN_FUN_CALL;
+         retval->record_ref->rec->fun_call_expr = fun_call;
+      }
+      else
+      {
+         retval->kind = ABSYN_FUN_CALL;
+         retval->fun_call_expr = fun_call;
+      }
+   }
+   else if (tok->type == LBRACE)
+   {
+      backlink_t *exn_bl;
+
+      match(LBRACE);
+
+      MALLOC (retval->exn_expr, sizeof(absyn_exn_expr_t));
+      exn_bl = make_bl (LINK_EXN, retval->exn_expr);
+
+      retval->kind = ABSYN_EXN;
+      retval->exn_expr->lineno = retval->lineno;
+      retval->exn_expr->column = retval->column;
+      retval->exn_expr->parent = make_bl (LINK_EXPR, retval);
+      retval->exn_expr->identifier = id;
+      retval->exn_expr->identifier->parent = exn_bl;
+      retval->exn_expr->values = parse_record_assn_lst (exn_bl);
+
+      match(RBRACE);
+   }
 
    LEAVING (__FUNCTION__);
    return retval;
@@ -1136,6 +1345,7 @@ static list_t *parse_top_decl_lst (backlink_t *parent)
 }
 
 /* ty ::= BOTTOM
+ *      | EXN LBRACE id-lst RBRACE
  *      | LIST ty
  *      | LBRACE id-lst RBRACE
  *      | id
@@ -1157,6 +1367,17 @@ static absyn_ty_t *parse_ty (backlink_t *parent)
          retval->lineno = last_tok->lineno;
          retval->column = last_tok->column;
          retval->parent = parent;
+         break;
+
+      case EXN:
+         match(EXN);
+         match(LBRACE);
+         retval->lineno = last_tok->lineno;
+         retval->column = last_tok->column;
+         retval->parent = parent;
+         retval->kind = ABSYN_TY_EXN;
+         retval->exn = parse_id_lst(bl);
+         match(RBRACE);
          break;
 
       case IDENTIFIER:

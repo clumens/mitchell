@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.2 2005/02/20 03:26:14 chris Exp $
+ * $Id: desugar_case.c,v 1.3 2005/03/29 05:52:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -42,6 +42,9 @@
 static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node);
 static absyn_decl_expr_t *handle_decl_expr (absyn_decl_expr_t *node);
 static list_t *handle_decl_lst (list_t *lst);
+static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node);
+static list_t *handle_exn_lst (list_t *lst);
+static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node);
 static absyn_expr_t *handle_expr (absyn_expr_t *node);
 static list_t *handle_expr_lst (list_t *lst);
 static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node);
@@ -125,6 +128,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    retval->lineno = left->lineno;
    retval->column = left->column;
    retval->parent = NULL;
+   retval->exn_handler = NULL;
    retval->kind = ABSYN_FUN_CALL;
    retval->ty = left->ty;
    retval->fun_call_expr = fun_call;
@@ -142,6 +146,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    val_expr->lineno = left->lineno;
    val_expr->column = right->lineno;
    val_expr->parent = make_bl (LINK_FUN_CALL, retval->fun_call_expr);
+   val_expr->exn_handler = NULL;
    val_expr->kind = ABSYN_ID;
    val_expr->ty = left->ty;
 
@@ -176,7 +181,15 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
          id->symbol = wcsdup (L"String");
          break;
 
+      case TY_ALIAS:
+      case TY_ANY:
+      case TY_BOTTOM:
+      case TY_EXN:
+      case TY_LIST:
+      case TY_RECORD:
+#ifndef NEW_TYPES
       default:
+#endif
          MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad type for left->ty");
          exit(1);
          break;
@@ -206,6 +219,7 @@ static absyn_expr_t *build_if_expr (absyn_val_decl_t *val, list_t *lst)
    retval->lineno = val->lineno;
    retval->column = val->column;
    retval->parent = NULL;
+   retval->exn_handler = NULL;
    retval->ty = val->ty;
    retval->kind = ABSYN_IF;
 
@@ -324,10 +338,45 @@ static list_t *handle_decl_lst (list_t *lst)
          case ABSYN_VAL_DECL:
             decl->val_decl = handle_val_decl (decl->val_decl);
             break;
+
+#ifndef NEW_GRAMMAR
+         default:
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad decl->type");
+            exit(1);
+#endif
       }
    }
 
    return lst;
+}
+
+static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node)
+{
+   node->handler_lst = handle_exn_lst (node->handler_lst);
+
+   if (node->default_handler != NULL)
+      node->default_handler->expr = handle_expr (node->default_handler->expr);
+
+   return node;
+}
+
+static list_t *handle_exn_lst (list_t *lst)
+{
+   list_t *tmp;
+
+   for (tmp = lst; tmp != NULL; tmp = tmp->next)
+   {
+      absyn_exn_lst_t *node = tmp->data;
+      node->expr = handle_expr(node->expr);
+   }
+
+   return tmp;
+}
+
+static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)
+{
+   node->values = handle_record_assn (node->values);
+   return node;
 }
 
 static absyn_expr_t *handle_expr (absyn_expr_t *node)
@@ -350,6 +399,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          node->decl_expr = handle_decl_expr (node->decl_expr);
          break;
 
+      case ABSYN_EXN:
+         node->exn_expr = handle_exn_expr (node->exn_expr);
+         break;
+
       case ABSYN_EXPR_LST:
          node->expr_lst = handle_expr_lst (node->expr_lst);
          break;
@@ -362,6 +415,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          node->if_expr = handle_if_expr (node->if_expr);
          break;
 
+      case ABSYN_RAISE:
+         node->raise_expr = handle_expr (node->raise_expr);
+         break;
+
       case ABSYN_RECORD_ASSN:
          node->record_assn_lst = handle_record_assn (node->record_assn_lst);
          break;
@@ -369,7 +426,16 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
       case ABSYN_RECORD_REF:
          node->record_ref = handle_record_ref (node->record_ref);
          break;
+
+#ifndef NEW_GRAMMAR
+         default:
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+            exit(1);
+#endif
    }
+
+   if (node->exn_handler != NULL)
+      node->exn_handler = handle_exn_handler (node->exn_handler);
 
    return node;
 }
@@ -421,7 +487,7 @@ static list_t *handle_record_assn (list_t *lst)
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
       absyn_record_assn_t *node = tmp->data;
-      tmp->data = handle_expr (node->expr);
+      node->expr = handle_expr (node->expr);
    }
 
    return lst;
