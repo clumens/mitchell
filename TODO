@@ -1,11 +1,16 @@
 - documentation:
    - lots and lots of documentation explaining syntax definition
    - add doxygen docs to all the source
+   - explain the somewhat complicated scoping rules
 - grammar:
 - misc:
+   - need to think up a format for built modules that will allow us to
+     suck in a symbol table for them during semantic analysis
 - output:
    - parser error messages can always be better
    - all error messages should have the same form
 - symbol table:
+   - need a good way to dump the entire symtab
 - testing:
    - more test cases for parser
+   - test cases for scope, access of identifiers from modules, etc.
