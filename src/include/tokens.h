@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.3 2004/09/01 16:27:08 chris Exp $
+ * $Id: tokens.h,v 1.4 2004/10/13 02:47:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,8 +31,9 @@ typedef struct {
    int type;               /* can be any value from the defines below */
 
    union {
-      long     integer;
-      wchar_t *string;
+      long          integer;
+      wchar_t      *string;
+      unsigned int  boolean;
    };
 } token_t;
 
@@ -40,6 +41,7 @@ typedef struct {
 #define  IDENTIFIER  100      /* a word identifier */
 #define  INTEGER     101      /* an integer */
 #define  STRING      102      /* a string */
+#define  BOOLEAN     103      /* true or false */
 
 /* Reserved character values. */
 #define  COMMENT     200      /* # */

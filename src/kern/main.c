@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.3 2004/09/01 16:27:08 chris Exp $
+ * $Id: main.c,v 1.4 2004/10/13 02:47:24 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -86,6 +86,10 @@ int main (int argc, char **argv)
          case STRING:
             printf ("STRING: |%ls|\n", t->string);
             free (t->string);
+            break;
+
+         case BOOLEAN:
+            printf ("BOOLEAN: |%s|\n", t->boolean == 1 ? "true" : "false");
             break;
 
          case FUNCTION:

@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.4 2004/09/02 15:29:58 chris Exp $
+ * $Id: tokenize.c,v 1.5 2004/10/13 02:47:24 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,7 +33,7 @@
 
 #include "tokens.h"
 
-static wchar_t *reserved = L"#()[].\"ƒ";
+static wchar_t *reserved = L"#()[],\"ƒ";
 
 #define MALLOC(ptr, size) \
    if (((ptr) = malloc(size)) == NULL) \
@@ -242,12 +242,37 @@ token_t *next_token (FILE *f)
             return retval;
          }
 
+         /* Deal with words, which can either be reserved words or something
+          * new that the programmer has made up.
+          */
          default:
+         {
+            wchar_t *str;
+
             unget_char (ch, f);
 
-            retval->type = IDENTIFIER;
-            retval->string = word_state (f, word_member);
+            str = word_state (f, word_member);
+
+            if (wcscmp (str, L"f") == 0)
+            {
+               free (str);
+               retval->type = BOOLEAN;
+               retval->boolean = 0;
+            }
+            else if (wcscmp (str, L"t") == 0)
+            {
+               free (str);
+               retval->type = BOOLEAN;
+               retval->boolean = 1;
+            }
+            else
+            {
+               retval->type = IDENTIFIER;
+               retval->string = str;
+            }
+
             return retval;
+         }
       }
    }
 
