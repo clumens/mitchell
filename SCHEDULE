@@ -23,7 +23,9 @@ preview-4 - miscellaneous fixes
 
 preview-5 - intermediate representation
 =======================================
-- conversion of type-annotated AST into IR
+- conversion of AST into simplified AST
+- conversion of simplified AST into IR
+- merge in BRANCH_EXN
 - front-end frozen (exception - serious bugs)
 - tagged as PREVIEW_5
 ? possible branch BRANCH_SSA for development of an SSA-based optimizer
@@ -60,8 +62,6 @@ bootstrap-1
 - bug fixes from post-preview-8
 - complete C-based compiler
 - complete base runtime
-- latest time to merge BRANCH_EXCEPTIONS since exceptions should be part
-  of the first released language specification
 ? latest time to merge BRANCH_SSA, if created
 - full language specification and compiler & runtime documentation
 - full test suite for compiler and runtime
