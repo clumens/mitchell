@@ -2,8 +2,10 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
+   ʋ i: integer ← 47
+
    ƒ foo: boolean () ←
-      case Main.asdf() in
+      case i in
          else → f,
          1 → t
       end
