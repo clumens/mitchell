@@ -1,0 +1,6 @@
+# Description:  Single empty module declaration.
+# Expected:  FAIL
+
+ℳ Main ← decl
+in
+end

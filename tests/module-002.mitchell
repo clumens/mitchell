@@ -1,0 +1,16 @@
+# Description:  Multiple non-empty module declarations.
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ main: int ()
+in
+   ƒ main: int () ←
+      47
+end
+
+ℳ Secondary ← decl
+   ƒ main: int ()
+in
+   ƒ main: int () ←
+      47
+end
