@@ -1,0 +1,6 @@
+# Description:  Record with duplicate fields
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ people ← {name: string, age: integer, is_male: boolean, age: string}
+end
