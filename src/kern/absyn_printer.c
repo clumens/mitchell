@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.24 2005/02/02 02:25:15 chris Exp $
+ * $Id: absyn_printer.c,v 1.25 2005/02/09 04:57:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -138,6 +138,10 @@ static void print_decl_t (absyn_decl_t *node, unsigned int indent)
       case ABSYN_VAL_DECL:
          print_val_decl_t (node->val_decl, indent+1);
          break;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->type");
+         exit(1);
    }
 }
 
@@ -219,6 +223,10 @@ static void print_expr_t (absyn_expr_t *node, unsigned int indent)
       case ABSYN_STRING:
          fprintf (out, "\n%*sSTRING(%ls)", indent+1, "", node->string_expr);
          break;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->kind");
+         exit(1);
    }
 }
 
@@ -346,6 +354,10 @@ static void print_ty_t (absyn_ty_t *node, unsigned int indent)
       case ABSYN_TY_RECORD:
          print_id_lst_t (node->record, indent+1);
          break;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->kind");
+         exit(1);
    }
 }
 
