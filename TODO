@@ -1,5 +1,4 @@
 - desugar:
-   - output option for simplified AST separate from -Idump-absyn
 - documentation:
    - documentation aimed more at actual users
    - write a formal semantics
@@ -13,7 +12,6 @@
    - proposal for C interface module
    - outline contents for runtime library
 - output:
-   - debug option for dumping type-annotated AST
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
 - testing:
