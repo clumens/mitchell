@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.16 2004/10/28 18:51:11 chris Exp $
+ * $Id: main.c,v 1.17 2004/11/13 14:08:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -145,13 +145,11 @@ static void handle_arguments (int argc, char **argv)
    else
       help (argv[0]);
 
-/* Currently commented out until we're past the absyn stage. */
-# if 0
    /* Now that we know the name of the input file, we can do some additional
     * argument processing for things that depend on it.
     */
    if (compiler_config.debug.dump_absyn &&
-       compiler_config.debug.absyn_file == NULL)
+       compiler_config.debug.absyn_outfile == NULL)
    {
       MALLOC (compiler_config.debug.absyn_outfile,
               strlen(compiler_config.filename)+5)
@@ -160,7 +158,6 @@ static void handle_arguments (int argc, char **argv)
       compiler_config.debug.absyn_outfile =
          strcat(compiler_config.debug.absyn_outfile, ".ast");
    }
-#endif
 }
 
 int main (int argc, char **argv)
@@ -191,7 +188,8 @@ int main (int argc, char **argv)
    handle_arguments (argc, argv);
    ast = parse (compiler_config.filename);
 
-   print_absyn (ast, &compiler_config);
+   if (compiler_config.debug.dump_absyn)
+      print_absyn (ast, &compiler_config);
 
    return 0;
 }

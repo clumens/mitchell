@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.8 2004/11/11 03:19:42 chris Exp $
+ * $Id: absyn_printer.c,v 1.9 2004/11/13 14:08:54 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,6 +22,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "absyn.h"
 #include "config.h"
@@ -52,10 +53,8 @@ static FILE *out = NULL;
 /* Abstract syntax tree printer entry point. */
 void print_absyn (ast_t *ast, compiler_config_t *config)
 {
-   /* This needs to get changed when printing the abstract syntax is not
-    * the default operation.
-    */
-   if (config->debug.absyn_outfile == NULL)
+   if (config->debug.absyn_outfile == NULL ||
+       strcmp ("-", config->debug.absyn_outfile) == 0)
       out = stdout;
    else
    {
