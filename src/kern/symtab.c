@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.3 2004/11/18 03:59:55 chris Exp $
+ * $Id: symtab.c,v 1.4 2004/11/18 04:14:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -105,16 +105,20 @@ void table_dump (symtab_t *symtab)
 
    for (i = 0; i < SYMTAB_ROWS; i++)
    {
-      printf ("row %d:\t", i);
       tmp = (*symtab)[i];
-
-      while (tmp != NULL)
+      
+      if (tmp != NULL)
       {
-         printf ("%ls, ", (wchar_t *) tmp->symbol->name);
-         tmp = tmp->next;
-      }
+         printf ("row %2d:\t", i);
 
-      printf ("NULL\n");
+         while (tmp != NULL)
+         {
+            printf ("%ls, ", (wchar_t *) tmp->symbol->name);
+            tmp = tmp->next;
+         }
+
+         printf ("NULL\n");
+      }
    }
 }
 
