@@ -1,0 +1,10 @@
+# Description:  Two types broken up by a function.
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ data ← { name: string, age: integer }
+
+   ƒ fun: integer () ← 47
+
+   τ node ← { data: data, left: node, right: node }
+end

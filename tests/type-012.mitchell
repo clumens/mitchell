@@ -1,0 +1,7 @@
+# Description:  A group of mutually recursive types.
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ a ← { data: integer, next: b }
+   τ b ← { data: string, next: a }
+end

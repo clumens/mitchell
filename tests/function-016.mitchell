@@ -1,0 +1,7 @@
+# Description:  Mutually recursive functions
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ one: integer (x: integer) ← two(x)
+   ƒ two: integer (x: integer) ← one(x)
+end
