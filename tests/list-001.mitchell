@@ -1,0 +1,20 @@
+# List expression handling.
+# Requires: Preview 3
+# Expected: PASS
+
+ℳ Main ← decl
+   ƒ lst1a: list int (p: list string) ←
+      [1, 2, 3]
+
+   ƒ lst1b: list int () ←
+      lst1a (["The", "Cat", "Goes", "Woof"])
+
+   ƒ lst2a: list list string (q: list list int) ←
+      [["A", "B", "C"], ["0", "1"]]
+   
+   ƒ lst2b: list list string () ←
+      lst2a ([[0, 1, 2], [3, 4, 5]])
+
+   ƒ main: string () ← ""
+end
+
