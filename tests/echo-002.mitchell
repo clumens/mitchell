@@ -1,0 +1,24 @@
+# A version of echo that uses the C-style Main.main interface.
+# Requires: preview 3
+# Expected: PASS
+
+ℳ Main ← decl
+   ƒ recho: string (strs: list string) ←
+      if StringList.empty (strs)
+         then ""
+         else String.+ (String.+
+            (" ", StringList.head (strs)),
+            recho (StringList.tail (strs)))
+   ƒ main: integer (cmd: string, args: list string) ←
+      if StringList.empty (args)
+         then Console.print ("
+")
+         else Console.print
+            (String.+
+               (String.+
+                  (StringList.head (args),
+                  recho (StringList.tail (args))),
+               "
+"))
+end
+

@@ -1,0 +1,8 @@
+# Echo the string given on the command-line.
+# Requires: preview 2
+# Expected: PASS
+
+ℳ Main ← decl
+   ƒ main: string (s: string) ← s
+end
+
