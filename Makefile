@@ -15,7 +15,10 @@ test-compiler: compiler
 		echo -n "$$(basename $$t)... " ; \
 		src/kern/mitchell $$t 1>&- 2>&- ; \
 		retval=$$? ; \
-		if [ $$retval = 0 -a ! -z "$$(grep PASS $$t)" -o \
+		if [ $$retval -gt 128 ]; then \
+			failed=$$(expr $$failed + 1) ; \
+			echo "FAIL (CORE DUMPED)" ; \
+		elif [ $$retval = 0 -a ! -z "$$(grep PASS $$t)" -o \
 		     $$retval = 1 -a ! -z "$$(grep FAIL $$t)" ]; then \
 			passed=$$(expr $$passed + 1) ; \
 			echo "PASS" ; \
