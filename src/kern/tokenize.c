@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.23 2005/01/19 03:32:06 chris Exp $
+ * $Id: tokenize.c,v 1.24 2005/02/11 04:59:46 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -251,13 +251,37 @@ static mstring_t *string_state (FILE *f)
 
                retval[new_len-2] = n;
                break;
+            }
 
+            case L'\n':
+            case L'\r':
+               whitespace_state (f);
+               if ((ch = read_char (f)) == WEOF)
+               {
+                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  fprintf (stderr, "\tpremature end of file while reading "
+                                   "string whitespace escape\n");
+                  fclose(f);
+                  exit(1);
+               }
+
+               if (ch != L'\\')
+               {
+                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  fprintf (stderr, "\texpected '\\' at end of string "
+                                   "whitespace escape\n");
+                  fclose(f);
+                  exit(1);
+               }
+
+               new_len--;
+               break;
+	       
             case L'\\':
             case L'"':
             default:
                retval[new_len-2] = ch;
                break;
-            }
          }
       }
       else

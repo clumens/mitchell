@@ -1,0 +1,11 @@
+# Description:  Says "Hello, Mitchell!" in a number of different languages.
+# Expected:  PASS
+
+ℳ Main ← decl
+	ƒ main: string () ←
+		"Hello, Mitchell!\n\t\u00a1Hola, Mitchell!\n\t\tBonjour, Mitchell!\n\
+\\t\t\tHallo, Mitchell!\n\
+      \\t\tCiao, Mitchell!\n\
+      \\tЗдравствулте, Mitchell!\nこんにちは, Mitchell!"
+end
+
