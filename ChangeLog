@@ -3,6 +3,7 @@ current
 Compiler frontend:
 - Added column numbers to error reporting.
 - Added -last-phase to halt compilation early.
+- Added -Werror for treating warnings as errors.
 Grammar:
 - Added escape sequences into string literals.
 - Allow functions to return record values for element reference.

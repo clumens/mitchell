@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.24 2005/01/10 05:22:03 chris Exp $
+ * $Id: main.c,v 1.25 2005/01/17 23:48:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -39,8 +39,8 @@
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
                OPT_LAST_PHASE,
-               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN,
-               OPT_IDUMP_SYMTAB } config_vals_t;
+               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN, OPT_IDUMP_SYMTAB,
+               OPT_WERROR } config_vals_t;
 
 /* The command line arguments we accept. */
 static char *shortopts = "hv";
@@ -59,11 +59,15 @@ static struct option longopts[] = {
    { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
    { "Idump-symtab", 2, NULL, OPT_IDUMP_SYMTAB },
 
+   /* Options for dealing with warnings */
+   { "Werror", 0, NULL, OPT_WERROR },
+
    { 0, 0, 0, 0 }
 };
 
 /* Stash all the command line arguments in here. */
 compiler_config_t compiler_config = { .last_phase = 0,
+                                      .warnings_are_errors = 0,
                                       .debug.parser_debug = 0,
                                       .debug.dump_absyn = 0,
                                       .debug.dump_symtab = 0};
@@ -85,12 +89,20 @@ static void help_internal_debug ()
            " or <infile>.symtab\n\t\t\tby default\n");
 }
 
+static void help_warnings ()
+{
+   printf ("Warning Options:\n");
+   printf ("-Werror\t\t\tTerminate compilation on warnings, as on errors\n");
+}
+
 static void verbose_help (const char *progname)
 {
    printf ("usage:  %s <infile>\n", progname);
    help_general();
    printf ("\n");
    help_internal_debug();
+   printf ("\n");
+   help_warnings();
    exit (0);
 }
 
@@ -181,6 +193,10 @@ static void handle_arguments (int argc, char **argv)
                compiler_config.debug.symtab_outfile = strdup(optarg);
             else
                compiler_config.debug.symtab_outfile = NULL;
+            break;
+
+         case OPT_WERROR:
+            compiler_config.warnings_are_errors = 1;
             break;
 
          /* getopt already told us what was wrong so only print the help. */

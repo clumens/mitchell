@@ -2,7 +2,7 @@
  * of the compiler.  For the most part, this configuration is set by the
  * command line options provided by the user.
  *
- * $Id: config.h,v 1.5 2005/01/10 05:22:00 chris Exp $
+ * $Id: config.h,v 1.6 2005/01/17 23:47:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@ typedef struct {
    char *filename;                     /* the file we're compiling */
 
    last_phase_t last_phase;            /* where to stop compilation */
+   unsigned int warnings_are_errors;   /* handle warnings as errors? */
 
    struct {
       unsigned int parser_debug;       /* debug output level for the parser */

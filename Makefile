@@ -1,3 +1,5 @@
+MITCHELL_TEST_OPTS = -Werror
+
 all: compiler
 
 compiler:
@@ -13,7 +15,7 @@ test-compiler: compiler
 	failed=0 ; \
 	for t in tests/*.mitchell; do \
 		echo -n "$$(basename $$t)... " ; \
-		src/kern/mitchell $$t 1>&- 2>&- ; \
+		src/kern/mitchell $(MITCHELL_TEST_OPTS) $$t 1>&- 2>&- ; \
 		retval=$$? ; \
 		if [ $$retval -gt 128 ]; then \
 			failed=$$(expr $$failed + 1) ; \

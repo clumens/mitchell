@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.32 2005/01/17 23:18:56 chris Exp $
+ * $Id: semant.c,v 1.33 2005/01/17 23:48:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -629,8 +629,11 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
          exit(1);
       }
       else
+      {
          NONEXHAUSTIVE_MATCH_WARNING (compiler_config.filename, node->lineno,
                                       node->column);
+         WARNINGS_AS_ERRORS;
+      }
    }
 
    return node->ty;

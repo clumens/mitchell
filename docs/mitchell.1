@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.9 2005/01/10 05:21:58 chris Exp $
-.TH mitchell 1 "January 10, 2005" "mitchell preview 4"
+.\" $Id: mitchell.1,v 1.10 2005/01/17 23:47:03 chris Exp $
+.TH mitchell 1 "January 17, 2005" "mitchell preview 4"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -87,6 +87,17 @@ On exit from a level of scope (module, function, decl block), writes a
 string representation of the block's symbol table to \fR\fIsymtabfile\fR,
 or \fR\fIinfile\fR.symtab if no filename is provided.  If \fR\fI-\fR is
 given as a filename, the symbol table is written on stdout.
+.SS Warning Options
+These options control the types of warnings emitted and how they are handled.
+Warnings will cause a message to be printed, but compilation will continue.
+Errors will cause a message to be printed and terminate compilation of the
+source program.  In general, the mitchell compiler will handle more problems as
+errors rather than warnings in order to keep the number of runtime errors to
+a minimum.
+.TP
+.B \-Werror
+Handle warnings as errors.  That is, all warnings will cause compilation to
+terminate as if an error had occurred.
 .SH ENVIRONMENT
 This section describes how various environment variables affect the
 operation of the compiler.

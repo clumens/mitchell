@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.6 2005/01/17 23:18:48 chris Exp $
+ * $Id: error.h,v 1.7 2005/01/17 23:47:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -58,9 +58,18 @@
 
 /* Warnings, which do not stop compilation. */
 #define NONEXHAUSTIVE_MATCH_WARNING(file, line, column) \
-      fprintf (stderr, "%s:%d.%d Warning:  non-exhaustive match in case-expr " \
-                       "- recommend adding an else branch to prevent runtime " \
-                       " errors\n", (file), (line), (column))
+   fprintf (stderr, "%s:%d.%d Warning:  non-exhaustive match in case-expr " \
+                    "- recommend adding an else branch to prevent runtime " \
+                    "errors\n", (file), (line), (column))
+
+#define WARNINGS_AS_ERRORS \
+   do { \
+      if (compiler_config.warnings_are_errors) \
+      { \
+         fprintf (stderr, "Handling warnings as errors.  Exiting.\n"); \
+         exit(1); \
+      } \
+   } while (0)
 
 #endif
 
