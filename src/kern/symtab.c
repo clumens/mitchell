@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.14 2004/12/22 03:20:22 chris Exp $
+ * $Id: symtab.c,v 1.15 2005/01/05 03:10:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -133,7 +133,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_FUNCTION:
-            (*symtab)[row]->symbol->info.function = sym->info.function;
+            tmp->next->symbol->info.function = sym->info.function;
             break;
 
          case SYM_TYPE:
