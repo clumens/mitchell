@@ -1,7 +1,7 @@
 CC = gcc
 CFLAGS = -Wall -I../include
 
-OBJS = main.o tokenize.o
+OBJS = main.o parse.o tokenize.o
 
 all: mitchell
 
