@@ -2,7 +2,7 @@
  * that can store any type of data.  The list nodes do not need to be
  * homogenous, as each node simply stores a pointer to the data.
  *
- * $Id: list.c,v 1.1 2004/12/15 03:39:47 chris Exp $
+ * $Id: list.c,v 1.2 2004/12/19 21:51:13 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -77,34 +77,29 @@ list_t *list_append (list_t *lst, void *data)
    return lst;
 }
 
-list_t *list_prepend (list_t *lst, void *data)
+list_t *list_find (list_t *lst, void *user_data, cmp_func_t cmp_func)
 {
-   list_t *tmp;
+   list_t *tmp = lst;
 
-   MALLOC (tmp, sizeof(list_t));
-   tmp->data = data;
-
-   if (tmp == NULL)
-      return NULL;
-
-   /* If the list is empty, make the new node its head.  Otherwise, prepend. */
-   if (lst == NULL)
-   {
-      lst = tmp;
-      lst->next = lst->prev = NULL;
-   }
-   else
-   {
-      tmp->prev = NULL;
-      tmp->next = lst;
-      lst->prev = tmp;
-   }
+   /* Find the node with the user's data in it. */
+   while (tmp != NULL && cmp_func (tmp->data, user_data) != 0)
+      tmp = tmp->next;
 
    return tmp;
 }
 
-list_t *list_insert_unique (list_t *lst, void *user_data,
-                            int (*cmp_func)(void *, void *))
+void list_foreach (list_t *lst, trav_func_t trav_func)
+{
+   list_t *tmp = lst;
+
+   while (tmp != NULL)
+   {
+      trav_func(tmp->data);
+      tmp = tmp->next;
+   }
+}
+
+list_t *list_insert_unique (list_t *lst, void *user_data, cmp_func_t cmp_func)
 {
    list_t *tmp = lst;
    list_t *new = NULL;
@@ -149,6 +144,72 @@ list_t *list_insert_unique (list_t *lst, void *user_data,
       return lst;
 }
 
+int list_is_empty (list_t *lst)
+{
+   if (lst == NULL) return 1;
+   else return 0;
+}
+
+unsigned int list_length (list_t *lst)
+{
+   unsigned int len = 0;
+
+   while (lst != NULL)
+   {
+      len++;
+      lst = lst->next;
+   }
+
+   return len;
+}
+
+list_t *list_prepend (list_t *lst, void *data)
+{
+   list_t *tmp;
+
+   MALLOC (tmp, sizeof(list_t));
+   tmp->data = data;
+
+   if (tmp == NULL)
+      return NULL;
+
+   /* If the list is empty, make the new node its head.  Otherwise, prepend. */
+   if (lst == NULL)
+   {
+      lst = tmp;
+      lst->next = lst->prev = NULL;
+   }
+   else
+   {
+      tmp->prev = NULL;
+      tmp->next = lst;
+      lst->prev = tmp;
+   }
+
+   return tmp;
+}
+
+list_t *list_remove (list_t *lst, void *user_data, cmp_func_t cmp_func)
+{
+   list_t *tmp = list_find (lst, user_data, cmp_func);
+
+   if (tmp == NULL)
+      return NULL;
+
+   /* Handle the node being at the beginning of the list. */
+   if (tmp == lst)
+      lst = lst->next;
+
+   /* Unlink the node from the list. */
+   if (tmp->prev != NULL) tmp->prev->next = tmp->next;
+   if (tmp->next != NULL) tmp->next->prev = tmp->prev;
+
+   tmp->data = NULL;
+   tmp = NULL;
+
+   return lst;
+}
+
 list_t *list_remove_hd (list_t *lst)
 {
    list_t *tmp = lst;
@@ -182,62 +243,9 @@ list_t *list_remove_tl (list_t *lst)
    return lst;
 }
 
-list_t *list_remove (list_t *lst, void *user_data,
-                     int (*cmp_func)(void *, void *))
-{
-   list_t *tmp = lst;
-
-   /* Find the node with the user's data in it. */
-   while (tmp != NULL && cmp_func (tmp->data, user_data) != 0)
-      tmp = tmp->next;
-
-   if (tmp == NULL) return NULL;
-
-   /* Handle the node being at the beginning of the list. */
-   if (tmp == lst)
-      lst = lst->next;
-
-   /* Unlink the node from the list. */
-   if (tmp->prev != NULL) tmp->prev->next = tmp->next;
-   if (tmp->next != NULL) tmp->next->prev = tmp->prev;
-
-   tmp->data = NULL;
-   tmp = NULL;
-
-   return lst;
-}
-
-unsigned int list_length (list_t *lst)
-{
-   unsigned int len = 0;
-
-   while (lst != NULL)
-   {
-      len++;
-      lst = lst->next;
-   }
-
-   return len;
-}
-
-int list_is_empty (list_t *lst)
-{
-   if (lst == NULL) return 1;
-   else return 0;
-}
-
 list_t *list_tl (list_t *lst)
 {
    return __list_find_tl (lst);
 }
 
-void list_foreach (list_t *lst, void (*trav_func)(void *))
-{
-   list_t *tmp = lst;
-
-   while (tmp != NULL)
-   {
-      trav_func(tmp->data);
-      tmp = tmp->next;
-   }
-}
+/* vim: set tags=../tags: */

@@ -2,7 +2,7 @@
  * list nodes do not need to be homogenous, as each node simply stores a
  * pointer to the data.
  *
- * $Id: list.h,v 1.1 2004/12/15 03:39:45 chris Exp $
+ * $Id: list.h,v 1.2 2004/12/19 21:51:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,23 +24,34 @@
 #ifndef _LIST_H
 #define _LIST_H 1
 
+/* A node of the linked list. */
 typedef struct list_t {
    void          *data;
    struct list_t *prev;
    struct list_t *next;
 } list_t;
 
+/* The type of the comparison function several functions require - must return
+ * zero if list data is equal to user data.
+ */
+typedef int (*cmp_func_t)(void *, void *);
+
+/* The type of the list traversal function callback. */
+typedef void (*trav_func_t)(void *);
+
+/* List manipulation functions. */
 list_t *list_append (list_t *lst, void *data);
+list_t *list_find (list_t *lst, void *user_data, cmp_func_t cmp_func);
+void list_foreach (list_t *lst, trav_func_t trav_func);
+list_t *list_insert_unique (list_t *lst, void *user_data, cmp_func_t cmp_func);
+int list_is_empty (list_t *lst);
+unsigned int list_length (list_t *lst);
 list_t *list_prepend (list_t *lst, void *data);
-list_t *list_insert_unique (list_t *lst, void *user_data,
-                            int (*cmp_func)(void *, void *));
+list_t *list_remove (list_t *lst, void *user_data, cmp_func_t cmp_func);
 list_t *list_remove_hd (list_t *lst);
 list_t *list_remove_tl (list_t *lst);
-list_t *list_remove (list_t *lst, void *user_data,
-                     int (*cmp_func)(void *, void *));
-unsigned int list_length (list_t *lst);
-int list_is_empty (list_t *lst);
 list_t *list_tl (list_t *lst);
-void list_foreach (list_t *lst, void (*trav_func)(void *));
 
 #endif
+
+/* vim: set tags=../tags: */
