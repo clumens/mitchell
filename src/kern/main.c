@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.22 2004/12/07 00:27:14 chris Exp $
+ * $Id: main.c,v 1.23 2005/01/07 05:31:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -39,7 +39,7 @@
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
                OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN,
-               OPT_IDUMP_SYMTABS } config_vals_t;
+               OPT_IDUMP_SYMTAB } config_vals_t;
 
 /* The command line arguments we accept. */
 static char *shortopts = "hv";
@@ -53,7 +53,7 @@ static struct option longopts[] = {
    /* Internal compiler options */
    { "Idebug-parser", 1, NULL, OPT_IDEBUG_PARSER },
    { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
-   { "Idump-symtabs", 0, NULL, OPT_IDUMP_SYMTABS },
+   { "Idump-symtab", 2, NULL, OPT_IDUMP_SYMTAB },
 
    { 0, 0, 0, 0 }
 };
@@ -61,7 +61,7 @@ static struct option longopts[] = {
 /* Stash all the command line arguments in here. */
 compiler_config_t compiler_config = { .debug.parser_debug = 0,
                                       .debug.dump_absyn = 0,
-                                      .debug.dump_symtabs = 0};
+                                      .debug.dump_symtab = 0};
 
 static void help_internal_debug ()
 {
@@ -70,8 +70,8 @@ static void help_internal_debug ()
            " and parser\n");
    printf ("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file',"
            " or <infile>.ast\n\t\t\tby default\n");
-   printf ("-Idump-symtabs\t\tDump the symbol tables on exit from a level of "
-           "scope\n");
+   printf ("-Idump-symtab[=file]\tDump the symbol tables to 'file',"
+           " or <infile>.symtab\n\t\t\tby default\n");
 }
 
 static void verbose_help (const char *progname)
@@ -142,8 +142,13 @@ static void handle_arguments (int argc, char **argv)
                compiler_config.debug.absyn_outfile = NULL;
             break;
 
-         case OPT_IDUMP_SYMTABS:
-            compiler_config.debug.dump_symtabs = 1;
+         case OPT_IDUMP_SYMTAB:
+            /* Same comment as for OPT_IDUMP_SYMTAB */
+            compiler_config.debug.dump_symtab = 1;
+            if (optarg)
+               compiler_config.debug.symtab_outfile = strdup(optarg);
+            else
+               compiler_config.debug.symtab_outfile = NULL;
             break;
 
          /* getopt already told us what was wrong so only print the help. */
@@ -170,6 +175,17 @@ static void handle_arguments (int argc, char **argv)
          strcpy(compiler_config.debug.absyn_outfile, compiler_config.filename);
       compiler_config.debug.absyn_outfile =
          strcat(compiler_config.debug.absyn_outfile, ".ast");
+   }
+
+   if (compiler_config.debug.dump_symtab &&
+       compiler_config.debug.symtab_outfile == NULL)
+   {
+      MALLOC (compiler_config.debug.symtab_outfile,
+              strlen(compiler_config.filename)+8);
+      compiler_config.debug.symtab_outfile =
+         strcpy(compiler_config.debug.symtab_outfile, compiler_config.filename);
+      compiler_config.debug.symtab_outfile =
+         strcat(compiler_config.debug.symtab_outfile, ".symtab");
    }
 }
 

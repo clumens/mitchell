@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.18 2005/01/07 02:39:42 chris Exp $
+ * $Id: absyn_printer.c,v 1.19 2005/01/07 05:31:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -23,6 +23,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
+#include <sys/stat.h>
 
 #include "absyn.h"
 #include "config.h"

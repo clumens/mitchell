@@ -17,8 +17,6 @@
      (preview-4)
    - audit line number assignments in absyn to make sure they're right
      (preview-4)
-   - should be able to redirect -Idump-symtabs output to a file
-     (preview-3)
    - debug option for dumping type-annotated AST (preview-3)
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:

@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.7 2004/12/23 02:56:30 chris Exp $
+ * $Id: symtab_printer.c,v 1.8 2005/01/07 05:31:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -29,41 +29,41 @@
 #include "symtab.h"
 
 /* Print a single symbol. */
-void symbol_dump (symbol_t *sym)
+void symbol_dump (FILE *f, symbol_t *sym)
 {
    if (sym == NULL)
       return;
 
    switch (sym->kind) {
       case SYM_FUNCTION:
-         printf ("FUNCTION(%ls):%ls", sym->name,
-                 ty_to_str(sym->info.function->retval));
+         fprintf (f, "FUNCTION(%ls):%ls", sym->name,
+                  ty_to_str(sym->info.function->retval));
          break;
 
       case SYM_MODULE:
-         printf ("MODULE(%ls)", sym->name);
+         fprintf (f, "MODULE(%ls)", sym->name);
          break;
       
       case SYM_TYPE:
-         printf ("TYPE(%ls):%ls", sym->name,
-                 sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         fprintf (f, "TYPE(%ls):%ls", sym->name,
+                  sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
          break;
          
       case SYM_VALUE:
-         printf ("VALUE(%ls):%ls", sym->name,
-                 sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         fprintf (f, "VALUE(%ls):%ls", sym->name,
+                  sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
          break;
    }
 }
 
 /* Print the single symbol table. */
-void table_dump (symtab_t *symtab, mstring_t *scope_name)
+void table_dump (FILE *f, symtab_t *symtab, mstring_t *scope_name)
 {
    symtab_entry_t *tmp;
    unsigned int i;
 
-   printf ("----------------------------------------\n");
-   printf ("Leaving scope for symbol: %ls\n", scope_name);
+   fprintf (f, "----------------------------------------\n");
+   fprintf (f, "Leaving scope for symbol: %ls\n", scope_name);
 
    for (i = 0; i < SYMTAB_ROWS; i++)
    {
@@ -71,35 +71,35 @@ void table_dump (symtab_t *symtab, mstring_t *scope_name)
       
       if (tmp != NULL)
       {
-         printf ("[%2d] => ", i);
+         fprintf (f, "[%2d] => ", i);
 
          while (tmp != NULL)
          {
-            symbol_dump (tmp->symbol);
+            symbol_dump (f, tmp->symbol);
             tmp = tmp->next;
 
             if (tmp != NULL)
-               printf (", ");
+               fprintf (f, ", ");
          }
 
-         printf ("\n");
+         fprintf (f, "\n");
       }
    }
 }
 
 /* Print a stack of symbol tables, starting from the innermost scope and
- * proceeding to the outermost one.
+ * proceeding to the outermost one.  f should be an already open filehandle.
  */
-void symtab_dump (tabstack_t *tabstack, mstring_t *scope_name)
+void symtab_dump (FILE *f, tabstack_t *tabstack, mstring_t *scope_name)
 {
    tabstack_t *tmp = tabstack;
 
-   printf ("========================================\n");
-   printf ("Leaving module: %ls\n", scope_name);
+   fprintf (f, "========================================\n");
+   fprintf (f, "Leaving module: %ls\n", scope_name);
 
    while (tmp != NULL)
    {
-      table_dump (tmp->symtab, scope_name);
+      table_dump (f, tmp->symtab, scope_name);
       tmp = tmp->upper;
    }
 }

@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.6 2004/11/24 03:40:56 chris Exp $
-.TH mitchell 1 "November 23, 2004" "mitchell preview 3"
+.\" $Id: mitchell.1,v 1.7 2005/01/07 05:31:20 chris Exp $
+.TH mitchell 1 "January 7, 2005" "mitchell preview 3"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -65,9 +65,11 @@ Writes a representation of the abstract syntax tree to \fR\fIastfile\fR, or
 \fR\fIinfile\fR.ast if no filename is provided.  If \fR\fI-\fR is given as
 a filename, the abstract syntax tree is written on stdout.
 .TP
-.B \-Idump-symtabs
+.B \-Idump-symtab[=\fR\fIsymtabfile\fR]
 On exit from a level of scope (module, function, decl block), writes a
-string representation of the block's symbol table on stdout.
+string representation of the block's symbol table to \fR\fIsymtabfile\fR,
+or \fR\fIinfile\fR.symtab if no filename is provided.  If \fR\fI-\fR is
+given as a filename, the symbol table is written on stdout.
 .SH ENVIRONMENT
 This section describes how various environment variables affect the
 operation of the compiler.

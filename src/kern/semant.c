@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.27 2005/01/07 02:39:43 chris Exp $
+ * $Id: semant.c,v 1.28 2005/01/07 05:31:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1083,8 +1083,26 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    /* Check the guts of the module against the module's new environment. */
    check_decl_lst (node->decl_lst, new_sym->info.stack);
 
-   if (compiler_config.debug.dump_symtabs)
-      symtab_dump (new_sym->info.stack, node->symbol->symbol);
+   /* Print out the symbol tables, if we're supposed to. */
+   if (compiler_config.debug.dump_symtab)
+   {
+      if (compiler_config.debug.symtab_outfile == NULL ||
+          strcmp ("-", compiler_config.debug.symtab_outfile) == 0)
+         symtab_dump (stdout, new_sym->info.stack, node->symbol->symbol);
+      else
+      {
+         FILE *out;
+         
+         if ((out = fopen (compiler_config.debug.symtab_outfile, "a")) == NULL)
+         {
+            COULD_NOT_OPEN_ERROR (compiler_config.debug.symtab_outfile,
+                                  "writing");
+            exit(1);
+         }
+
+         symtab_dump (out, new_sym->info.stack, node->symbol->symbol);
+      }
+   }
 }
 
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
