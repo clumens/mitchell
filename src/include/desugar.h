@@ -3,7 +3,7 @@
  * is only a single entry point into the desugaring process as it deals with
  * the order of the passes internally.
  *
- * $Id: desugar.h,v 1.1 2005/02/11 01:38:28 chris Exp $
+ * $Id: desugar.h,v 1.2 2005/02/12 16:26:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,6 +31,7 @@
 ast_t *desugar_ast (ast_t *ast);
 
 /* Individual passes - don't need to worry with these. */
+ast_t *desugar_case_exprs (ast_t *ast);
 ast_t *desugar_decl_exprs (ast_t *ast);
 
 backlink_t *find_lexical_parent (backlink_t *bl);

@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.17 2005/01/22 01:17:58 chris Exp $
+ * $Id: symtab.c,v 1.18 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -266,19 +266,18 @@ tabstack_t *enter_scope (tabstack_t *tabstack)
 tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name)
 {
    /* Print out the symbol tables, if we're supposed to. */
-   if (compiler_config.debug.dump_symtab)
+   if (cconfig.debug.dump_symtab)
    {
-      if (compiler_config.debug.symtab_outfile == NULL ||
-          strcmp ("-", compiler_config.debug.symtab_outfile) == 0)
+      if (cconfig.debug.symtab_outfile == NULL ||
+          strcmp ("-", cconfig.debug.symtab_outfile) == 0)
          table_dump (stdout, tabstack->symtab, scope_name);
       else
       {
          FILE *out;
 
-         if ((out = fopen (compiler_config.debug.symtab_outfile, "a")) == NULL)
+         if ((out = fopen (cconfig.debug.symtab_outfile, "a")) == NULL)
          {
-            COULD_NOT_OPEN_ERROR (compiler_config.debug.symtab_outfile,
-                                  "writing");
+            COULD_NOT_OPEN_ERROR (cconfig.debug.symtab_outfile, "writing");
             exit(1);
          }
 

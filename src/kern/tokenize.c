@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.24 2005/02/11 04:59:46 chris Exp $
+ * $Id: tokenize.c,v 1.25 2005/02/12 16:26:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -198,7 +198,7 @@ static mstring_t *string_state (FILE *f)
       {
          if ((ch = read_char (f)) == WEOF)
          {
-            PARSE_ERROR (compiler_config.filename, lineno, column);
+            PARSE_ERROR (cconfig.filename, lineno, column);
             fprintf (stderr, "\tpremature end of file while reading string\n");
             fclose(f);
             exit(1);
@@ -223,7 +223,7 @@ static mstring_t *string_state (FILE *f)
                    (str[2] = read_char(f)) == WEOF ||
                    (str[3] = read_char(f)) == WEOF)
                {
-                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  PARSE_ERROR (cconfig.filename, lineno, column);
                   fprintf (stderr, "\tpremature end of file while reading "
                                    "string\n");
                   fclose(f);
@@ -233,7 +233,7 @@ static mstring_t *string_state (FILE *f)
                if (!iswxdigit (str[0]) || !iswxdigit(str[1]) ||
                    !iswxdigit (str[2]) || !iswxdigit(str[3]))
                {
-                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  PARSE_ERROR (cconfig.filename, lineno, column);
                   fprintf (stderr, "\tinvalid unicode character escape\n");
                   fclose(f);
                   exit(1);
@@ -243,7 +243,7 @@ static mstring_t *string_state (FILE *f)
 
                if (errno == ERANGE || errno == EINVAL)
                {
-                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  PARSE_ERROR (cconfig.filename, lineno, column);
                   fprintf (stderr, "\tinvalid unicode character escape\n");
                   fclose(f);
                   exit(1);
@@ -258,7 +258,7 @@ static mstring_t *string_state (FILE *f)
                whitespace_state (f);
                if ((ch = read_char (f)) == WEOF)
                {
-                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  PARSE_ERROR (cconfig.filename, lineno, column);
                   fprintf (stderr, "\tpremature end of file while reading "
                                    "string whitespace escape\n");
                   fclose(f);
@@ -267,7 +267,7 @@ static mstring_t *string_state (FILE *f)
 
                if (ch != L'\\')
                {
-                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  PARSE_ERROR (cconfig.filename, lineno, column);
                   fprintf (stderr, "\texpected '\\' at end of string "
                                    "whitespace escape\n");
                   fclose(f);
@@ -452,7 +452,7 @@ token_t *next_token (FILE *f)
 
             if (n == 0 && (errno == ERANGE || errno == EINVAL))
             {
-               MITCHELL_INTERNAL_ERROR(compiler_config.filename,
+               MITCHELL_INTERNAL_ERROR(cconfig.filename,
                                        "Could not perform number conversion");
                fclose (f);
                exit (1);

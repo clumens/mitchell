@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.9 2005/01/22 01:04:00 chris Exp $
+ * $Id: error.h,v 1.10 2005/02/12 16:26:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -72,7 +72,7 @@
 
 #define WARNINGS_AS_ERRORS \
    do { \
-      if (compiler_config.warnings_are_errors) \
+      if (cconfig.warnings_are_errors) \
       { \
          fprintf (stderr, "Handling warnings as errors.  Exiting.\n"); \
          exit(1); \

@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.28 2005/02/11 01:38:28 chris Exp $
+ * $Id: absyn.h,v 1.29 2005/02/12 16:26:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -236,7 +236,7 @@ typedef struct {
 typedef list_t ast_t;
 
 /* Interface to the AST printer. */
-void print_absyn (ast_t *ast, compiler_config_t *config);
+void print_absyn (ast_t *ast, compiler_config_t *config, char *header);
 
 #ifdef __cplusplus
     }

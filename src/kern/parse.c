@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.40 2005/02/11 04:32:18 chris Exp $
+ * $Id: parse.c,v 1.41 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -45,11 +45,11 @@ static token_t *tok;                /* lookahead token - not yet examined */
 static token_t *last_tok = NULL;    /* previous token - needed for AST */
 
 /* Macros to control debug printing only if the appropriate level is set. */
-#define ENTERING(fn) do { if (compiler_config.debug.parser_debug > 0) \
+#define ENTERING(fn) do { if (cconfig.debug.parser_debug > 0) \
                              printf ("entering %s\n", fn); \
                         } while (0)
 
-#define LEAVING(fn)  do { if (compiler_config.debug.parser_debug > 0) \
+#define LEAVING(fn)  do { if (cconfig.debug.parser_debug > 0) \
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
@@ -226,7 +226,7 @@ static void describe_token (const token_t *t)
  */
 static void parse_error(const token_t *t, const int accepted[])
 {
-   PARSE_ERROR (compiler_config.filename, t->lineno, t->column);
+   PARSE_ERROR (cconfig.filename, t->lineno, t->column);
    fprintf (stderr, "\texpected token from set ");
    print_set (accepted);
    fprintf (stderr, ", but got { ");
@@ -246,14 +246,14 @@ static void match (const unsigned int type)
 
    if (tok == NULL)
    {
-      PARSE_ERROR (compiler_config.filename, 0, 0);
+      PARSE_ERROR (cconfig.filename, 0, 0);
       fprintf (stderr, "\tpremature end of input file\n");
       exit (1);
    }
 
    if (tok->type == type)
    {
-      if (compiler_config.debug.parser_debug > 0)
+      if (cconfig.debug.parser_debug > 0)
          printf ("  ate %s\n", token_map[type]);
 
       /* Update pointer to previous token so we can make AST chunks. */
@@ -262,7 +262,7 @@ static void match (const unsigned int type)
       /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
       {
-         PARSE_ERROR (compiler_config.filename, 0, 0);
+         PARSE_ERROR (cconfig.filename, 0, 0);
          fprintf (stderr, "\tpremature end of input file\n");
          exit (1);
       }

@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.1 2005/02/11 01:38:30 chris Exp $
+ * $Id: desugar.c,v 1.2 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -56,7 +56,15 @@
 /* Entry point into the desugaring passes. */
 ast_t *desugar_ast (ast_t *ast)
 {
-   return desugar_decl_exprs (ast);
+   ast = desugar_case_exprs (ast);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (ast, &cconfig, "case-removed abstract syntax tree");
+   
+   ast = desugar_decl_exprs (ast);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (ast, &cconfig, "decl-promoted abstract syntax tree");
+
+   return ast;
 }
 
 /* +================================================================+

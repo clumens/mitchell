@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.26 2005/02/11 01:38:29 chris Exp $
+ * $Id: absyn_printer.c,v 1.27 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -56,7 +56,7 @@ static void print_val_decl_t (absyn_val_decl_t *node, unsigned int indent);
 static FILE *out = NULL;
 
 /* Abstract syntax tree printer entry point. */
-void print_absyn (ast_t *ast, compiler_config_t *config)
+void print_absyn (ast_t *ast, compiler_config_t *config, char *header)
 {
    if (config->debug.absyn_outfile == NULL ||
        strcmp ("-", config->debug.absyn_outfile) == 0)
@@ -70,6 +70,7 @@ void print_absyn (ast_t *ast, compiler_config_t *config)
       }
    }
 
+   fprintf (out, "\n%s\n========================================", header);
    print_module_lst (ast, 0);
    fprintf (out, "\n");
 
@@ -140,7 +141,7 @@ static void print_decl_t (absyn_decl_t *node, unsigned int indent)
          break;
 
       default:
-         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->type");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->type");
          exit(1);
    }
 }
@@ -225,7 +226,7 @@ static void print_expr_t (absyn_expr_t *node, unsigned int indent)
          break;
 
       default:
-         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->kind");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
          exit(1);
    }
 }
@@ -359,7 +360,7 @@ static void print_ty_t (absyn_ty_t *node, unsigned int indent)
          break;
 
       default:
-         MITCHELL_INTERNAL_ERROR (compiler_config.filename, "bad node->kind");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
          exit(1);
    }
 }

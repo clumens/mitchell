@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.2 2005/02/11 04:32:18 chris Exp $
+ * $Id: desugar_decls.c,v 1.3 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -283,7 +283,7 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
             }
 
             default:
-               MITCHELL_INTERNAL_ERROR (compiler_config.filename,
+               MITCHELL_INTERNAL_ERROR (cconfig.filename,
                                         "bad parent->kind for expr");
                exit(1);
          }
@@ -388,3 +388,5 @@ static absyn_val_decl_t *handle_val_decl (absyn_val_decl_t *node)
    node->init = handle_expr (node->init);
    return node;
 }
+
+/* vim: set tags=../tags: */

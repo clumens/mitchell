@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.27 2005/02/11 01:38:30 chris Exp $
+ * $Id: main.c,v 1.28 2005/02/12 16:26:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -35,6 +35,7 @@
 #include "memory.h"
 #include "parse.h"
 #include "semant.h"
+#include "str.h"
 #include "version.h"
 
 /* What we want getopt_long to return. */
@@ -67,11 +68,11 @@ static struct option longopts[] = {
 };
 
 /* Stash all the command line arguments in here. */
-compiler_config_t compiler_config = { .last_phase = 0,
-                                      .warnings_are_errors = 0,
-                                      .debug.parser_debug = 0,
-                                      .debug.dump_absyn = 0,
-                                      .debug.dump_symtab = 0};
+compiler_config_t cconfig = { .last_phase = 0,
+                              .warnings_are_errors = 0,
+                              .debug.parser_debug = 0,
+                              .debug.dump_absyn = 0,
+                              .debug.dump_symtab = 0};
 
 static void help_general ()
 {
@@ -155,9 +156,9 @@ static void handle_arguments (int argc, char **argv)
             }
 
             if (strcmp (optarg, "parser") == 0)
-               compiler_config.last_phase = LAST_PARSER;
+               cconfig.last_phase = LAST_PARSER;
             else if (strcmp (optarg, "typecheck") == 0)
-               compiler_config.last_phase = LAST_TYPECHECK;
+               cconfig.last_phase = LAST_TYPECHECK;
             else
             {
                ERROR ("Invalid option supplied to -last-phase.  See the man "
@@ -167,7 +168,7 @@ static void handle_arguments (int argc, char **argv)
 
          case OPT_IDEBUG_PARSER:
             if (optarg)
-               compiler_config.debug.parser_debug = atoi(optarg);
+               cconfig.debug.parser_debug = atoi(optarg);
             else
             {
                ERROR ("-Idebug-parser requires an argument.  See the man page "
@@ -181,24 +182,24 @@ static void handle_arguments (int argc, char **argv)
             /* If no file was provided, we have to delay coming up with the
              * absyn outfile until after we know the name of the input file.
              */
-            compiler_config.debug.dump_absyn = 1;
+            cconfig.debug.dump_absyn = 1;
             if (optarg)
-               compiler_config.debug.absyn_outfile = strdup(optarg);
+               cconfig.debug.absyn_outfile = strdup(optarg);
             else
-               compiler_config.debug.absyn_outfile = NULL;
+               cconfig.debug.absyn_outfile = NULL;
             break;
 
          case OPT_IDUMP_SYMTAB:
             /* Same comment as for OPT_IDUMP_SYMTAB */
-            compiler_config.debug.dump_symtab = 1;
+            cconfig.debug.dump_symtab = 1;
             if (optarg)
-               compiler_config.debug.symtab_outfile = strdup(optarg);
+               cconfig.debug.symtab_outfile = strdup(optarg);
             else
-               compiler_config.debug.symtab_outfile = NULL;
+               cconfig.debug.symtab_outfile = NULL;
             break;
 
          case OPT_WERROR:
-            compiler_config.warnings_are_errors = 1;
+            cconfig.warnings_are_errors = 1;
             break;
 
          /* getopt already told us what was wrong so only print the help. */
@@ -209,33 +210,28 @@ static void handle_arguments (int argc, char **argv)
    }
 
    if (optind+1 == argc)
-      compiler_config.filename = strdup (argv[optind]);
+      cconfig.filename = strdup (argv[optind]);
    else
       help (argv[0]);
 
    /* Now that we know the name of the input file, we can do some additional
     * argument processing for things that depend on it.
     */
-   if (compiler_config.debug.dump_absyn &&
-       compiler_config.debug.absyn_outfile == NULL)
+   if (cconfig.debug.dump_absyn && cconfig.debug.absyn_outfile == NULL)
    {
-      MALLOC (compiler_config.debug.absyn_outfile,
-              strlen(compiler_config.filename)+5);
-      compiler_config.debug.absyn_outfile =
-         strcpy(compiler_config.debug.absyn_outfile, compiler_config.filename);
-      compiler_config.debug.absyn_outfile =
-         strcat(compiler_config.debug.absyn_outfile, ".ast");
+      MALLOC (cconfig.debug.absyn_outfile, strlen(cconfig.filename)+5);
+      cconfig.debug.absyn_outfile = strcpy(cconfig.debug.absyn_outfile,
+                                           cconfig.filename);
+      cconfig.debug.absyn_outfile = strcat(cconfig.debug.absyn_outfile, ".ast");
    }
-
-   if (compiler_config.debug.dump_symtab &&
-       compiler_config.debug.symtab_outfile == NULL)
+ 
+   if (cconfig.debug.dump_symtab && cconfig.debug.symtab_outfile == NULL)
    {
-      MALLOC (compiler_config.debug.symtab_outfile,
-              strlen(compiler_config.filename)+8);
-      compiler_config.debug.symtab_outfile =
-         strcpy(compiler_config.debug.symtab_outfile, compiler_config.filename);
-      compiler_config.debug.symtab_outfile =
-         strcat(compiler_config.debug.symtab_outfile, ".symtab");
+      MALLOC (cconfig.debug.symtab_outfile, strlen(cconfig.filename)+8);
+      cconfig.debug.symtab_outfile = strcpy(cconfig.debug.symtab_outfile,
+                                            cconfig.filename);
+      cconfig.debug.symtab_outfile = strcat(cconfig.debug.symtab_outfile,
+                                            ".symtab");
    }
 }
 
@@ -261,22 +257,22 @@ int main (int argc, char **argv)
    }
 
    handle_arguments (argc, argv);
-   ast = parse (compiler_config.filename);
+   ast = parse (cconfig.filename);
 
-   if (compiler_config.debug.dump_absyn)
-      print_absyn (ast, &compiler_config);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (ast, &cconfig, "Initial abstract syntax tree");
 
-   if (compiler_config.last_phase == LAST_PARSER)
+   if (cconfig.last_phase == LAST_PARSER)
       return 0;
 
    check_program (ast);
 
-   if (compiler_config.last_phase == LAST_TYPECHECK)
+   if (cconfig.last_phase == LAST_TYPECHECK)
       return 0;
 
    simple_ast = desugar_ast (ast);
-   if (compiler_config.debug.dump_absyn)
-      print_absyn (simple_ast, &compiler_config);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (simple_ast, &cconfig, "Simplified abstract syntax tree");
 
    return 0;
 }

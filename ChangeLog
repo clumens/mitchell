@@ -7,6 +7,9 @@ Grammar:
 Internals:
 - Added a backlink_t type and a link of this type to every AST noded.  The
   backlink points at the parent node in the tree.
+- Renamed compiler_config to cconfig.
+- print_absyn now takes a header argument since we're going to dump the AST
+  after every round of simplification.
 Misc:
 - Added the beginnings of a language reference.
 

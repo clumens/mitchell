@@ -2,7 +2,7 @@
  * of the compiler.  For the most part, this configuration is set by the
  * command line options provided by the user.
  *
- * $Id: config.h,v 1.6 2005/01/17 23:47:19 chris Exp $
+ * $Id: config.h,v 1.7 2005/02/12 16:26:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -43,7 +43,7 @@ typedef struct {
 } compiler_config_t;
 
 /* Here's the one instance of this structure we need. */
-extern compiler_config_t compiler_config;
+extern compiler_config_t cconfig;
 
 #endif
 

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.20 2005/02/11 01:38:29 chris Exp $
+# $Id: Makefile,v 1.21 2005/02/12 16:26:18 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -11,8 +11,8 @@ else
 	CFLAGS = $(BASE_CFLAGS)
 endif
 
-OBJS = absyn_printer.o desugar.o desugar_decls.o list.o main.o parse.o \
-		 semant.o str.o symtab.o symtab_printer.o tokenize.o
+OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o list.o \
+		 main.o parse.o semant.o str.o symtab.o symtab_printer.o tokenize.o
 
 all: mitchell
 
@@ -29,6 +29,10 @@ absyn_printer.o: absyn_printer.c \
 
 desugar.o: desugar.c \
 	../include/absyn.h ../include/desugar.h
+
+desugar_case.o: desugar_case.c \
+	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
+	../include/error.h ../include/list.h ../include/memory.h ../include/str.h
 
 desugar_decls.o: desugar_decls.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
