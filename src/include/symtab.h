@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.7 2004/12/12 17:39:41 chris Exp $
+ * $Id: symtab.h,v 1.8 2004/12/16 23:41:49 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
 #include <wchar.h>
 
 #include "basic_types.h"
+#include "list.h"
 
 /* +================================================================+
  * | SYMBOL TABLE TYPES                                             |
@@ -47,8 +48,8 @@
 typedef enum { SYM_FUNCTION, SYM_MODULE, SYM_TYPE, SYM_VALUE } subtable_t;
 
 typedef struct {
-   struct ty_t          *retval;
-   struct element_lst_t *formals;
+   struct ty_t *retval;
+   list_t      *formals;
 } function_symbol_t;
 
 typedef struct symbol_t {
@@ -91,11 +92,10 @@ typedef struct tabstack_t {
 typedef enum { TY_ALIAS, TY_BOOLEAN, TY_BOTTOM, TY_INTEGER, TY_LIST,
                TY_RECORD, TY_STRING } ty_kind;
 
-typedef struct element_lst_t {
+typedef struct {
    mstring_t *identifier;
    struct ty_t *ty;
-   struct element_lst_t *next;
-} element_lst_t;
+} element_t;
 
 typedef struct ty_t {
    ty_kind ty;
@@ -103,7 +103,7 @@ typedef struct ty_t {
    union {
       symbol_t      *alias;               /* TY_ALIAS */
       struct ty_t   *list_base_ty;        /* TY_LIST */
-      element_lst_t *record;              /* TY_RECORD */
+      list_t        *record;              /* TY_RECORD */
    };
 } ty_t;
 
@@ -120,7 +120,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *symbol);
 unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
                                  subtable_t kind);
 int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
-                        symbol_t *new);
+                        symbol_t *newsym);
 
 /* Functions for manipulating an entire stack of symbol tables.  These should
  * be used by client code for symbol table management, rather than the single

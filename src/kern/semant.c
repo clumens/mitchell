@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.20 2004/12/14 02:01:00 chris Exp $
+ * $Id: semant.c,v 1.21 2004/12/16 23:41:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -79,6 +79,7 @@ static tabstack_t *global = NULL;
 
 /* More mutually recursive functions for yet another tree walk. */
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
+static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
@@ -171,14 +172,17 @@ wchar_t *ty_to_str (const ty_t *ty)
       case TY_RECORD:
       {
          wchar_t *retval, *tmp;
-         element_lst_t *ele;
+         list_t *lst;
+         element_t *ele;
 
          /* First, the brace indicating a record type. */
          MALLOC(retval, sizeof(wchar_t)*2);
          retval = wcscpy (retval, L"{");
 
-         for (ele = ty->record; ele != NULL; ele = ele->next)
+         for (lst = ty->record; lst != NULL; lst = lst->next)
          {
+            ele = (element_t *) lst->data;
+
             /* Second, the name of the element. */
             REALLOC(retval, WCSLEN(retval)+WCSLEN(ele->identifier));
             retval = wcscat (retval, ele->identifier);
@@ -216,6 +220,12 @@ wchar_t *ty_to_str (const ty_t *ty)
  * +================================================================+
  */
 
+static int __element_cmp (void *lst_data, void *user_data)
+{
+   return wcscmp (((element_t *) lst_data)->identifier,
+                  ((element_t *) user_data)->identifier);
+}
+
 static unsigned int equal_types (ty_t *left, ty_t *right)
 {
    /* Basic sanity checking. */
@@ -223,21 +233,59 @@ static unsigned int equal_types (ty_t *left, ty_t *right)
       return 0;
 
    switch (left->ty) {
+      /* Two aliased types are equal if they bottom out in the same types. */
       case TY_ALIAS:
          if (right->ty == TY_ALIAS)
             return equal_types (left->alias->info.ty, right->alias->info.ty);
          else
             return equal_types (left->alias->info.ty, right);
 
+      /* Two list types are equal if their base types are equal. */
       case TY_LIST:
          if (right->ty == TY_LIST)
             return equal_types (left->list_base_ty, right->list_base_ty);
          else
             return 0;
 
+      /* Two record types are equal if they have identical lists of elements,
+       * each with identical types.  No fancy subtyping here.
+       */
       case TY_RECORD:
-         break;
+      {
+         list_t *left_lst = left->record;
+         list_t *right_lst = right->record;
+         element_t *left_ele, *right_ele;
 
+         while (1)
+         {
+            /* If both lists are at NULL, they were the same length and passed
+             * all the other tests, so return success.  If only one list is
+             * at NULL, they weren't the same length so fail.
+             */
+            if (left_lst == NULL && right_lst == NULL)
+               break;
+            else if ((left_lst == NULL && right_lst != NULL) ||
+                     (left_lst != NULL && right_lst == NULL))
+               return 0;
+
+            left_ele = (element_t *) left_lst->data;
+            right_ele = (element_t *) right_lst->data;
+
+            /* If the elements do not have the same identifier with the same
+             * type, fail.  Otherwise, we cycle around to the next one.
+             */
+            if (wcscmp (left_ele->identifier, right_ele->identifier) != 0 ||
+                !equal_types (left_ele->ty, right_ele->ty))
+               return 0;
+
+            left_lst = left_lst->next;
+            right_lst = right_lst->next;
+         }
+
+         return 1;
+      }
+
+      /* Otherwise, two types are equal if they're the same type. */
       default:
          return left->ty == right->ty;
    }
@@ -367,45 +415,31 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
       case ABSYN_TY_RECORD:
       {
-         absyn_id_lst_t *cur_id, *tmp_id;
-         element_lst_t *new_ele, *cur_ele = NULL;
+         absyn_id_lst_t *cur_id;
+         element_t *new_ele;
 
-         MALLOC(retval, sizeof(ty_t));
+         MALLOC (retval, sizeof(ty_t));
          retval->ty = TY_RECORD;
          retval->record = NULL;
 
+         /* Store all the record elements in alphabetical order in the symbol,
+          * since that will make various record operations easier later on.
+          */
          for (cur_id = node->record; cur_id != NULL; cur_id = cur_id->next)
          {
-            /* First, make sure there's no other record member with the same
-             * name.
-             */
-            for (tmp_id = cur_id->next; tmp_id != NULL; tmp_id = tmp_id->next)
-            {
-               if (wcscmp (tmp_id->symbol->symbol, cur_id->symbol->symbol) == 0)
-               {
-                  BAD_SYMBOL_ERROR (compiler_config.filename, tmp_id->lineno,
-                                    tmp_id->symbol->symbol, "duplicate symbol "
-                                    "already exists in this record type");
-                  exit(1);
-               }
-            }
-
-            /* Now do all the hard work of adding a record element entry. */
-            MALLOC(new_ele, sizeof(element_lst_t));
+            MALLOC (new_ele, sizeof(element_t));
             new_ele->identifier = cur_id->symbol->symbol;
             new_ele->ty = ast_to_ty (cur_id->ty, stack);
-            new_ele->next = NULL;
 
-            /* Link the new_ele entry into place. */
+            /* Two elements with the same name are not allowed. */
+            retval->record = list_insert_unique (retval->record, new_ele,
+                                                 __element_cmp);
             if (retval->record == NULL)
             {
-               retval->record = new_ele;
-               cur_ele = new_ele;
-            }
-            else
-            {
-               cur_ele->next = new_ele;
-               cur_ele = cur_ele->next;
+               BAD_SYMBOL_ERROR (compiler_config.filename, cur_id->lineno,
+                                 cur_id->symbol->symbol, "duplicate symbol "
+                                 "already exists in this record type");
+               exit(1);
             }
          }
 
@@ -541,6 +575,11 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
    }
 }
 
+static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
+{
+   return NULL;
+}
+
 /* Check a function declaration and add that new type information into the
  * symbol table.  The skeleton entry representing the function's name was
  * already added in by check_decl.  We just need to overwrite it with complete
@@ -551,7 +590,9 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    absyn_id_expr_t *fun_name = node->symbol;
    absyn_id_lst_t  *formals_ast;
    symbol_t        *fun_sym, *tmp_sym;
-   element_lst_t   *tmp;
+   list_t          *formals = NULL;
+   element_t       *tmp_ele;
+   ty_t            *body_ty;
    
    /* Add the function's symbol to the outer scope, since the function may
     * be referenced from within its own body.
@@ -564,29 +605,22 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    fun_sym->info.function->retval = ast_to_ty (node->retval, stack);
    fun_sym->info.function->formals = NULL;
 
-   tmp = fun_sym->info.function->formals;
-
-   /* Round up all the formal parameters into a list. */
+   /* Build an unsorted list of all the formal parameters.  Formals need
+    * to be stored in the order seen so we can match them against the actual
+    * parameters at function call time and check type against type.
+    */
    for (formals_ast = node->formals; formals_ast != NULL;
         formals_ast = formals_ast->next)
    {
-      if (tmp == NULL)
-      {
-         MALLOC(fun_sym->info.function->formals, sizeof(element_lst_t));
-         tmp = fun_sym->info.function->formals;
-         tmp->identifier = formals_ast->symbol->symbol;
-         tmp->ty = ast_to_ty (formals_ast->ty, stack);
-         tmp->next = NULL;
-      }
-      else
-      {
-         MALLOC(tmp->next, sizeof(element_lst_t));
-         tmp = tmp->next;
-         tmp->identifier = formals_ast->symbol->symbol;
-         tmp->ty = ast_to_ty (formals_ast->ty, stack);
-         tmp->next = NULL;
-      }
+      MALLOC (tmp_ele, sizeof (element_t));
+      tmp_ele->identifier = formals_ast->symbol->symbol;
+      tmp_ele->ty = ast_to_ty (formals_ast->ty, stack);
+
+      formals = list_append (formals, tmp_ele);
    }
+
+   /* Link the list of formal parameters into the symbol. */
+   fun_sym->info.function->formals = formals;
 
    /* Now obliterate the skeleton entry for this symbol with the real thing. */
    if (table_update_entry (stack->symtab, fun_sym->name, SYM_FUNCTION,
@@ -606,14 +640,14 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    stack = enter_scope (stack);
 
    formals_ast = node->formals;
-   tmp = fun_sym->info.function->formals;
+   formals = fun_sym->info.function->formals;
 
-   while (tmp != NULL)
+   while (formals != NULL)
    {
-      MALLOC(tmp_sym, sizeof(symbol_t));
+      MALLOC (tmp_sym, sizeof(symbol_t));
       tmp_sym->kind = SYM_VALUE;
-      tmp_sym->name = tmp->identifier;
-      tmp_sym->info.ty = tmp->ty;
+      tmp_sym->name = ((element_t *) formals->data)->identifier;
+      tmp_sym->info.ty = ((element_t *) formals->data)->ty;
 
       if (symtab_add_entry (stack, tmp_sym) == -1)
       {
@@ -623,15 +657,24 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
          exit(1);
       }
 
-      tmp = tmp->next;
+      formals = formals->next;
       formals_ast = formals_ast->next;
    }
 
    /* Now check the function body within this augmented environment. */
+   body_ty = check_expr (node->body, stack);
 
    /* Check that the body's return value matches with what the stated return
     * type was.
     */
+   if (!equal_types (body_ty, fun_sym->info.function->retval))
+   {
+      TYPE_ERROR (compiler_config.filename, node->lineno,
+                  "type of function body does not match declared type",
+                  "declared", ty_to_str (fun_sym->info.function->retval),
+                  "body", ty_to_str (body_ty));
+      exit(1);
+   }
 
    stack = leave_scope (stack, node->symbol->symbol);
 }
@@ -722,7 +765,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    ty_t *val_ty, *expr_ty;
 
    val_ty = ast_to_ty (node->ty, stack);
-   /* expr_ty = check_expr (node->init, stack); */
+   expr_ty = check_expr (node->init, stack);
 
    if (!equal_types (val_ty, expr_ty))
    {
@@ -733,7 +776,6 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
       exit(1);
    }
    
-
    MALLOC (new_sym, sizeof (symbol_t));
 
    new_sym->kind = SYM_VALUE;

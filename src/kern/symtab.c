@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.11 2004/12/12 17:39:44 chris Exp $
+ * $Id: symtab.c,v 1.12 2004/12/16 23:41:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -184,10 +184,10 @@ unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
  * the symbol table.
  */
 int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
-                        symbol_t *new)
+                        symbol_t *newsym)
 {
    if (table_entry_exists (symtab, name, kind) == 0)
-      return table_add_entry (symtab, new);
+      return table_add_entry (symtab, newsym);
    else
    {
       unsigned int row    = hash (name, kind);
@@ -208,9 +208,9 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
       /* cur now points at the entry we need to revise.  Overwite its
        * contents with that of the new data.
        */
-      switch (new->kind) {
+      switch (newsym->kind) {
          case SYM_MODULE:
-            cur->symbol->info.stack = new->info.stack;
+            cur->symbol->info.stack = newsym->info.stack;
             break;
 
          case SYM_FUNCTION:
@@ -218,7 +218,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
 
          case SYM_TYPE:
          case SYM_VALUE:
-            cur->symbol->info.ty = new->info.ty;
+            cur->symbol->info.ty = newsym->info.ty;
             break;
       }
    }
