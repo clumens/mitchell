@@ -22,7 +22,10 @@ still contain enough features to be used as a general-purpose language.
 However, there are no guarantees about the language or runtime definition.
 Features may be added or removed at any time throughout development.  So
 for anyone who might want to use Mitchell for their own project, you have
-been warned.
+been warned.  Despite this lack of guarantee, the compiler and runtime
+will follow the syntax and semantics definitions included with the source
+distribution.  There is just no guarantee that those definitions will
+remain constant.
 
 The current status of Mitchell is very limited.  It can only check the
 syntax of an input source code file.
