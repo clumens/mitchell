@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.4 2004/11/18 04:14:33 chris Exp $
+ * $Id: symtab.c,v 1.5 2004/11/20 21:13:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -81,6 +81,16 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       (*symtab)[row]->symbol->name =
          (mstring_t *) wcsdup ((wchar_t *) sym->name);
       (*symtab)[row]->next = NULL;
+
+      switch (sym->kind) {
+         case SYM_MODULE:
+            (*symtab)[row]->symbol->stack = sym->stack;
+            break;
+
+         case SYM_FUNVAL:
+         case SYM_TYPE:
+            break;
+      }
    }
    else
    {
@@ -93,6 +103,16 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       tmp->next->symbol->kind = sym->kind;
       tmp->next->symbol->name = (mstring_t *) wcsdup ((wchar_t *) sym->name);
       tmp->next->next = NULL;
+
+      switch (sym->kind) {
+         case SYM_MODULE:
+            tmp->next->symbol->stack = sym->stack;
+            break;
+
+         case SYM_FUNVAL:
+         case SYM_TYPE:
+            break;
+      }
    }
 
    return 1;
@@ -113,7 +133,13 @@ void table_dump (symtab_t *symtab)
 
          while (tmp != NULL)
          {
-            printf ("%ls, ", (wchar_t *) tmp->symbol->name);
+            switch (tmp->symbol->kind) {
+               case SYM_FUNVAL: printf ("FUNVAL("); break;
+               case SYM_MODULE: printf ("MODULE("); break;
+               case SYM_TYPE: printf ("TYPE("); break;
+            }
+            
+            printf ("%ls), ", (wchar_t *) tmp->symbol->name);
             tmp = tmp->next;
          }
 
