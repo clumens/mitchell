@@ -2,10 +2,10 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf: int ()
+   ƒ asdf: integer ()
 in
-   ƒ asdf: int () ← decl
-      ʋ foo: int ← 47
+   ƒ asdf: integer () ← decl
+      ʋ foo: integer ← 47
    in
       foo
    end

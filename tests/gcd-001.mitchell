@@ -2,9 +2,9 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ gcd: int (a: int, b: int)
+   ƒ gcd: integer (a: integer, b: integer)
 in
-   ƒ gcd: int (a: int, b: int) ←
+   ƒ gcd: integer (a: integer, b: integer) ←
       if Integer.= (b, 0) then a
       else gcd (b, Integer.mod (a, b))
 end

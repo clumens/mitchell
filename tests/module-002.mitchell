@@ -2,15 +2,15 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ main: int ()
+   ƒ main: integer ()
 in
-   ƒ main: int () ←
+   ƒ main: integer () ←
       47
 end
 
 ℳ Secondary ← decl
-   ƒ main: int ()
+   ƒ main: integer ()
 in
-   ƒ main: int () ←
+   ƒ main: integer () ←
       47
 end

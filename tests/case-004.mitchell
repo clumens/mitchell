@@ -2,9 +2,9 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: int ()
+   ƒ foo: integer ()
 in
-   ƒ foo: int () ←
+   ƒ foo: integer () ←
       case Main.asdf() in
          true → case "something" in
                    1 → 1,

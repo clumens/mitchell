@@ -2,9 +2,9 @@
 # Expected:  FAIL
 
 ℳ Main ← decl
-   ƒ foo: int ()
+   ƒ foo: integer ()
 in
-   ƒ foo: int () ←
+   ƒ foo: integer () ←
       case Main.asdf() in
          Integer.+ (3, 4) → true,
          10 → false

@@ -2,8 +2,8 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf: int (a: int)
+   ƒ asdf: integer (a: integer)
 in
-   ƒ asdf: int (a: int) ←
+   ƒ asdf: integer (a: integer) ←
       47
 end

@@ -2,9 +2,9 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: int ()
+   ƒ foo: integer ()
 in
-   ƒ foo: int () ←
+   ƒ foo: integer () ←
       if true then
          case 40 in
             true → 1,
