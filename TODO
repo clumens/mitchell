@@ -5,7 +5,9 @@
    - think about a better documentation format
 - grammar:
    - allow empty lists (requires polymorphic type checking)
-   - are visibility declarations really needed?
+   - allow some sort of list pattern matching as a stop-gap for real
+     pattern matching throughout
+   - tagged discriminated union support
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis (preview-5)
@@ -14,4 +16,5 @@
 - output:
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
+   - add type information to standard library stubs
 - testing:
