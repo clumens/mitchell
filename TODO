@@ -18,6 +18,7 @@
    - audit line number assignments in absyn to make sure they're right
 - symbol table / type checker:
    - detect infinite loops of types
+   - base types may currently be overridden - good or bad?
 - testing:
    - more test cases for parser
    - more test cases for scope
