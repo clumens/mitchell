@@ -1,0 +1,6 @@
+# Description:  Recursive type
+# Expected:  PASS
+
+ℳ Main ← decl
+   τ node ← { data: string, left: node, right: node }
+end
