@@ -1,0 +1,83 @@
+Each section describes the features of the compiler that will be
+completed/present at that release, or which actions will be taken at
+release time.
+
+
+preview-3 - type checking
+=========================
+- working strict non-polymorphic type system
+- grammar frozen (exceptions - record access, empty lists)
+- tagged as PREVIEW_3
+
+preview-4 - miscellaneous fixes
+===============================
+- fix miscellaneous grammar problems - decl, escapes in strings,
+  visibility declarations
+- add column numbers to error messages
+- detect infinite loops of recursive types
+- documentation and testing
+- tagged as PREVIEW_4
+- branch BRANCH_EXCEPTIONS for adding exception support
+- branch BRANCH_TYPE_CHECKER for adding a polymorphic inferring type
+  checker
+
+preview-5 - intermediate representation
+=======================================
+- conversion of type-annotated AST into IR
+- front-end frozen (exception - serious bugs)
+- tagged as PREVIEW_5
+? possible branch BRANCH_SSA for development of an SSA-based optimizer
+
+preview-6 - runtime / interpreter
+=================================
+- on-disk module format
+- initial basic runtime library - magic C library module, other important bits
+- runtime documentation and testing
+- interpreter
+- front-end frozen (exception - serious bugs)
+- tagged as PREVIEW_6
+
+preview-7 - miscellaneous fixes
+===============================
+- builtin release for bug fixes and miscellaneous additions, may be
+  removed if unneeded
+? possible speed profiling and improvements, if needed
+- tagged as PREVIEW_7
+
+preview-8 - compiler
+====================
+- instruction selection and register allocation targeting i386
+- compiler front-end
+- front-end and IR frozen (exception - serious bugs)
+- complete basic runtime library consisting of C and mitchell components
+- runtime documentation and testing
+- latest time to merge BRANCH_TYPE_CHECKER since the polymorphic type
+  checker will be required for a complete runtime later on
+- tagged as PREVIEW_8
+
+bootstrap-1
+===========
+- bug fixes from post-preview-8
+- complete C-based compiler
+- complete base runtime
+- latest time to merge BRANCH_EXCEPTIONS since exceptions should be part
+  of the first released language specification
+? latest time to merge BRANCH_SSA, if created
+- full language specification and compiler & runtime documentation
+- full test suite for compiler and runtime
+- tagged as BOOTSTRAP_1
+
+
+future
+======
+- bootstrap releases follow roughly the same schedule as the preview
+  releases, but consist of rewriting mitchell compiler chunks in mitchell
+  itself
+- bootstrap releases may include additions to the runtime library as
+  needed for ease of rewriting the compiler
+- bootstrap releases may rarely include changes to the language
+  specification but only if needed
+- release-1 corresponds with a fully self-hosting mitchell compiler,
+  runtime environment, and stabilized specification
+- post-release-1 releases will focus on performance of the compiler and
+  building up a good optimizer
