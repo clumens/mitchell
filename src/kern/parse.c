@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.14 2004/10/24 01:32:44 chris Exp $
+ * $Id: parse.c,v 1.15 2004/10/26 04:33:36 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -612,13 +612,17 @@ static absyn_fun_decl_t *parse_fun_decl()
 static absyn_fun_proto_t *parse_fun_decl_proto()
 {
    absyn_fun_proto_t *retval;
+   absyn_id_expr_t *sym;
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_fun_proto_t))
+   MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(FUNCTION);
    match(IDENTIFIER);
-   retval->symbol = last_tok->string;
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
 
    match(COLON);
    retval->ty = parse_ty();
@@ -669,12 +673,16 @@ static absyn_id_expr_t *parse_id()
 static absyn_id_lst_t *parse_id_lst()
 {
    absyn_id_lst_t *retval;
+   absyn_id_expr_t *sym;
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_id_lst_t))
+   MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
-   retval->symbol = last_tok->string;
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
 
    match(COLON);
    retval->ty = (struct absyn_ty_t *) parse_ty();
@@ -714,13 +722,17 @@ static absyn_if_expr_t *parse_if_expr()
 static absyn_module_decl_t *parse_module_decl()
 {
    absyn_module_decl_t *retval;
+   absyn_id_expr_t *sym;
 
    ENTERING(__FUNCTION__);
    MALLOC (retval, sizeof (absyn_module_decl_t))
+   MALLOC (sym, sizeof (absyn_id_expr_t))
 
    match (MODULE);
    match (IDENTIFIER);
-   retval->symbol = last_tok->string;
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
 
    match (ASSIGN);
    match (DECL);
@@ -831,12 +843,16 @@ static absyn_proto_lst_t *parse_proto_lst()
 static absyn_record_lst_t *parse_record_assn_lst()
 {
    absyn_record_lst_t *retval;
+   absyn_id_expr_t *sym;
    
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_record_lst_t))
+   MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
-   retval->symbol = last_tok->string;
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
    match(ASSIGN);
    retval->expr = (struct absyn_expr_t *) parse_expr();
 
@@ -954,13 +970,17 @@ static absyn_val_decl_t *parse_val_decl()
 static absyn_val_proto_t *parse_val_decl_proto()
 {
    absyn_val_proto_t *retval;
+   absyn_id_expr_t *sym;
    
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_val_proto_t))
+   MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(VAL);
    match(IDENTIFIER);
-   retval->symbol = last_tok->string;
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
 
    match(COLON);
    retval->ty = parse_ty();

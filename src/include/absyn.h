@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.4 2004/10/24 16:04:57 chris Exp $
+ * $Id: absyn.h,v 1.5 2004/10/26 04:33:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -25,6 +25,7 @@
 #define _ABSYN_H 1
 
 #include "basic_types.h"
+#include "config.h"
 
 /* +================================================================+
  * | EXPRESSION AST TYPES                                           |
@@ -41,7 +42,7 @@ typedef struct {
 } absyn_id_expr_t;
 
 typedef struct {
-   mstring_t symbol;                   /* XXX: temporary */
+   absyn_id_expr_t *symbol;
    struct absyn_expr_t *expr;
    struct record_assn_lst_t *next;
 } absyn_record_lst_t;
@@ -102,7 +103,7 @@ typedef struct {
  */
 
 typedef struct {
-   mstring_t symbol;                   /* XXX: temporary */
+   absyn_id_expr_t *symbol;
    struct absyn_ty_t *ty;
    struct absyn_id_lst_t *next;
 } absyn_id_lst_t;
@@ -125,13 +126,13 @@ typedef struct {
 typedef enum { ABSYN_FUN_DECL, ABSYN_TY_DECL, ABSYN_VAL_DECL } decl_type;
 
 typedef struct {
-   mstring_t symbol;                   /* XXX: temporary */
+   absyn_id_expr_t *symbol;
    absyn_ty_t *ty;
    absyn_id_lst_t *id_lst;
 } absyn_fun_proto_t;
 
 typedef struct {
-   mstring_t symbol;                   /* XXX: temporary */
+   absyn_id_expr_t *symbol;
    absyn_ty_t *ty;
 } absyn_val_proto_t;
 
@@ -166,7 +167,7 @@ typedef struct {
 } absyn_val_decl_t;
 
 typedef struct {
-   mstring_t symbol;                   /* XXX: temporary */
+   absyn_id_expr_t *symbol;
    struct absyn_proto_lst_t *proto_lst;
    struct absyn_decl_lst_t *decl_lst;
 } absyn_module_decl_t;
@@ -199,7 +200,7 @@ typedef struct {
 typedef absyn_module_lst_t ast_t;
 
 /* Interface to the AST printer. */
-void print_absyn (ast_t *ast);
+void print_absyn (ast_t *ast, compiler_config_t *config);
 
 #endif
 
