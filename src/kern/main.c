@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.11 2004/10/22 01:04:14 chris Exp $
+ * $Id: main.c,v 1.12 2004/10/24 01:32:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "absyn.h"
 #include "config.h"
 #include "parse.h"
 
@@ -132,11 +133,13 @@ static void handle_arguments (int argc, char **argv)
 
 int main (int argc, char **argv)
 {
+   ast_t *ast;
+
    /* Grab locale information from the environment. */
    setlocale (LC_ALL, "");
 
    handle_arguments (argc, argv);
-   parse (compiler_config.filename);
+   ast = parse (compiler_config.filename);
 
    return 0;
 }

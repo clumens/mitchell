@@ -3,7 +3,7 @@
  * This is done for both validation of the input file and for building the
  * abstract syntax tree.
  *
- * $Id: parse.h,v 1.1 2004/10/15 14:59:54 chris Exp $
+ * $Id: parse.h,v 1.2 2004/10/24 01:32:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -25,8 +25,12 @@
 #ifndef _PARSE_H
 #define _PARSE_H 1
 
-/* Parse the file provided by the caller.  Currently returns nothing. */
-void parse (const char *filename);
+#include "absyn.h"
+
+/* Parse the file provided by the caller.  Returns a pointer to the root node
+ * of the abstract syntax tree.
+ */
+ast_t *parse (const char *filename);
 
 #endif
 

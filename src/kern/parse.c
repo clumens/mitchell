@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.13 2004/10/23 19:34:10 chris Exp $
+ * $Id: parse.c,v 1.14 2004/10/24 01:32:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -132,22 +132,22 @@ static absyn_decl_lst_t *parse_decl_lst();
 static absyn_expr_t *parse_expr();
 static absyn_expr_lst_t *parse_expr_lst();
 static absyn_expr_t *parse_fun_call_or_id();
-static void parse_fun_decl();
-static void parse_fun_decl_proto();
+static absyn_fun_decl_t *parse_fun_decl();
+static absyn_fun_proto_t *parse_fun_decl_proto();
 static absyn_id_expr_t *parse_id();
-static void parse_id_lst();
+static absyn_id_lst_t *parse_id_lst();
 static absyn_if_expr_t *parse_if_expr();
-static void parse_module_decl();
-static void parse_module_decl_lst();
-static void parse_proto();
-static void parse_proto_lst();
+static absyn_module_decl_t *parse_module_decl();
+static absyn_module_lst_t *parse_module_decl_lst();
+static absyn_proto_t *parse_proto();
+static absyn_proto_lst_t *parse_proto_lst();
 static absyn_record_lst_t *parse_record_assn_lst();
-static void parse_single_ty();
-static void parse_ty();
-static void parse_ty_decl();
-static void parse_ty_decl_proto();
-static void parse_val_decl();
-static void parse_val_decl_proto();
+static absyn_ty_t *parse_single_ty();
+static absyn_ty_t *parse_ty();
+static absyn_ty_decl_t *parse_ty_decl();
+static absyn_id_expr_t *parse_ty_decl_proto();
+static absyn_val_decl_t *parse_val_decl();
+static absyn_val_proto_t *parse_val_decl_proto();
 
 /* Is the token t in the set?  This is used to determine membership in both
  * first and follow sets of rules by passing the appropriate rule's set from
@@ -251,8 +251,10 @@ static void match (const unsigned int type)
 /* Main parser entry point - open the file, read the first token, and try
  * to parse the start symbol.
  */
-void parse (const char *filename)
+ast_t *parse (const char *filename)
 {
+   absyn_module_lst_t *retval = NULL;
+
    if ((in = fopen (filename, "r")) == NULL)
    {
       fprintf (stderr, "could not open for reading: %s\n", filename);
@@ -262,13 +264,14 @@ void parse (const char *filename)
    tok = next_token (in);
 
    if (in_set (tok, FIRST_SET[15]))
-      parse_module_decl_lst();
+      retval = parse_module_decl_lst();
    else
       parse_error (tok, "MODULE");
 
    match (ENDOFFILE);
 
    fclose (in);
+   return retval;
 }
 
 /* branch-expr ::= id
@@ -368,19 +371,25 @@ static absyn_case_expr_t *parse_case_expr()
  */
 static absyn_decl_t *parse_decl()
 {
+   absyn_decl_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_decl_t))
 
    switch (tok->type) {
       case FUNCTION:
-         parse_fun_decl();
+         retval->type = ABSYN_FUN_DECL;
+         retval->fun_decl = parse_fun_decl();
          break;
          
       case TYPE:
-         parse_ty_decl();
+         retval->type = ABSYN_TY_DECL;
+         retval->ty_decl = parse_ty_decl();
          break;
 
       case VAL:
-         parse_val_decl();
+         retval->type = ABSYN_VAL_DECL;
+         retval->val_decl = parse_val_decl();
          break;
 
       default:
@@ -391,7 +400,7 @@ static absyn_decl_t *parse_decl()
       parse_error (tok, "END FUNCTION IN TYPE VAL");
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* decl-expr ::= DECL decl-lst IN expr END */
@@ -582,39 +591,53 @@ static absyn_expr_t *parse_fun_call_or_id()
 }
 
 /* fun-decl ::= fun-decl-proto ASSIGN expr */
-static void parse_fun_decl()
+static absyn_fun_decl_t *parse_fun_decl()
 {
-   ENTERING (__FUNCTION__);
+   absyn_fun_decl_t *retval;
 
-   parse_fun_decl_proto();
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_fun_decl_t))
+
+   retval->proto = parse_fun_decl_proto();
    match(ASSIGN);
-   parse_expr();
+   retval->body = parse_expr();
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
  *                  | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN
  */
-static void parse_fun_decl_proto()
+static absyn_fun_proto_t *parse_fun_decl_proto()
 {
+   absyn_fun_proto_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_fun_proto_t))
 
    match(FUNCTION);
    match(IDENTIFIER);
+   retval->symbol = last_tok->string;
+
    match(COLON);
-   parse_ty();
+   retval->ty = parse_ty();
+
    match(LPAREN);
 
    if (tok->type == RPAREN)
+   {
       match(RPAREN);
+      retval->id_lst = NULL;
+   }
    else
    {
-      parse_id_lst();
+      retval->id_lst = parse_id_lst();
       match(RPAREN);
    }
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* id ::= IDENTIFIER
@@ -643,21 +666,29 @@ static absyn_id_expr_t *parse_id()
 /* id-lst ::= IDENTIFIER COLON ty
  *          | IDENTIFIER COLON ty COMMA id-lst
  */
-static void parse_id_lst()
+static absyn_id_lst_t *parse_id_lst()
 {
+   absyn_id_lst_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_id_lst_t))
 
    match(IDENTIFIER);
+   retval->symbol = last_tok->string;
+
    match(COLON);
-   parse_ty();
+   retval->ty = (struct absyn_ty_t *) parse_ty();
 
    if (tok->type == COMMA)
    {
       match(COMMA);
-      parse_id_lst();
+      retval->next = (struct absyn_id_lst_t *) parse_id_lst();
    }
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* if-expr ::= IF expr THEN expr ELSE expr */
@@ -680,65 +711,83 @@ static absyn_if_expr_t *parse_if_expr()
 }
 
 /* module-decl ::= MODULE IDENTIFIER ASSIGN DECL proto-lst IN decl-lst END */
-static void parse_module_decl()
+static absyn_module_decl_t *parse_module_decl()
 {
+   absyn_module_decl_t *retval;
+
    ENTERING(__FUNCTION__);
+   MALLOC (retval, sizeof (absyn_module_decl_t))
 
    match (MODULE);
    match (IDENTIFIER);
+   retval->symbol = last_tok->string;
+
    match (ASSIGN);
    match (DECL);
-   parse_proto_lst();
+   retval->proto_lst = (struct absyn_proto_lst_t *) parse_proto_lst();
+
    match (IN);
-   parse_decl_lst();
+   retval->decl_lst = (struct absyn_decl_lst_t *) parse_decl_lst();
    match (END);
 
    if (!in_set (tok, FOLLOW_SET[14]))
       parse_error (tok, "ENDOFFILE MODULE");
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* module-decl-lst ::= module-decl
  *                   | module-decl module-decl-lst
  */
-static void parse_module_decl_lst()
+static absyn_module_lst_t *parse_module_decl_lst()
 {
+   absyn_module_lst_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_module_lst_t))
 
    if (in_set (tok, FIRST_SET[14]))
    {
-      parse_module_decl();
-      parse_module_decl_lst();
+      retval->module = parse_module_decl();
+      retval->next = (struct absyn_module_lst_t *) parse_module_decl_lst();
    }
    else
    {
       if (!in_set (tok, FOLLOW_SET[15]))
          parse_error (tok, "MODULE");
+      else retval = NULL;
    }
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* proto ::= ty-decl-proto
  *         | val-decl-proto
  *         | fun-decl-proto
  */
-static void parse_proto()
+static absyn_proto_t *parse_proto()
 {
+   absyn_proto_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_proto_t))
 
    switch (tok->type) {
       case FUNCTION:
-         parse_fun_decl_proto();
+         retval->type = ABSYN_FUN_DECL;
+         retval->fun_proto = parse_fun_decl_proto();
          break;
 
       case TYPE:
-         parse_ty_decl_proto();
+         retval->type = ABSYN_TY_DECL;
+         retval->ty_proto = parse_ty_decl_proto();
          break;
 
       case VAL:
-         parse_val_decl_proto();
+         retval->type = ABSYN_VAL_DECL;
+         retval->val_proto = parse_val_decl_proto();
          break;
 
       default:
@@ -749,24 +798,31 @@ static void parse_proto()
       parse_error (tok, "FUNCTION IN TYPE VAL");
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* proto-lst ::= proto
  *             | proto proto-lst
  */
-static void parse_proto_lst()
+static absyn_proto_lst_t *parse_proto_lst()
 {
+   absyn_proto_lst_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_proto_lst_t))
 
    if (!in_set (tok, FIRST_SET[17]))
       parse_error (tok, "FUNCTION TYPE VAL");
 
-   parse_proto();
+   retval->proto = parse_proto();
 
    if (!in_set (tok, FOLLOW_SET[17]))
-      parse_proto_lst();
+      retval->next = (struct absyn_proto_lst_t *) parse_proto_lst();
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* record-assn-lst ::= IDENTIFIER ASSIGN expr
@@ -799,18 +855,23 @@ static absyn_record_lst_t *parse_record_assn_lst()
 /* single-ty ::= LBRACE id-lst RBRACE
  *             | id
  */
-static void parse_single_ty()
+static absyn_ty_t *parse_single_ty()
 {
+   absyn_ty_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_ty_t))
 
    switch (tok->type) {
       case IDENTIFIER:
-         parse_id();
+         retval->is_record = 0;
+         retval->identifier = parse_id();
          break;
 
       case LBRACE:
          match(LBRACE);
-         parse_id_lst();
+         retval->is_record = 1;
+         retval->record = parse_id_lst();
          match(RBRACE);
          break;
 
@@ -819,69 +880,93 @@ static void parse_single_ty()
    }
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* ty ::= single-ty
  *      | single-ty LIST
  */
-static void parse_ty()
+static absyn_ty_t *parse_ty()
 {
+   absyn_ty_t *retval;
+
    ENTERING (__FUNCTION__);
 
-   parse_single_ty();
+   retval = parse_single_ty();
    
    if (tok->type == LIST)
+   {
       match(LIST);
+      retval->is_list = 1;
+   }
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* ty-decl ::= ty-decl-proto ASSIGN ty */
-static void parse_ty_decl()
+static absyn_ty_decl_t *parse_ty_decl()
 {
-   ENTERING (__FUNCTION__);
+   absyn_ty_decl_t *retval;
 
-   parse_ty_decl_proto();
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_ty_decl_t))
+
+   retval->proto = parse_ty_decl_proto();
    match(ASSIGN);
-   parse_ty();
+   retval->ty = parse_ty();
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* ty-decl-proto ::= TYPE id */
-static void parse_ty_decl_proto()
+static absyn_id_expr_t *parse_ty_decl_proto()
 {
+   absyn_id_expr_t *retval;
+
    ENTERING (__FUNCTION__);
 
    match(TYPE);
-   parse_id();
+   retval = parse_id();
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* val-decl ::= val-decl-proto ASSIGN expr */
-static void parse_val_decl()
+static absyn_val_decl_t *parse_val_decl()
 {
-   ENTERING (__FUNCTION__);
+   absyn_val_decl_t *retval;
 
-   parse_val_decl_proto();
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_val_decl_t))
+
+   retval->proto = parse_val_decl_proto();
    match(ASSIGN);
-   parse_expr();
+   retval->init = parse_expr();
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* val-decl-proto ::= VAL IDENTIFIER COLON ty */
-static void parse_val_decl_proto()
+static absyn_val_proto_t *parse_val_decl_proto()
 {
+   absyn_val_proto_t *retval;
+   
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_val_proto_t))
 
    match(VAL);
    match(IDENTIFIER);
+   retval->symbol = last_tok->string;
+
    match(COLON);
-   parse_ty();
+   retval->ty = parse_ty();
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* vim: set tags=../tags: */
