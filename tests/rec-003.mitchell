@@ -7,5 +7,5 @@
    ʋ rec: rec ← { name ← "one", pos ← { x ← 1, y ← 2 } }
 
    ʋ name: string ← rec|name
-   ʋ y: integer ← rec|pos|a
+   ʋ y: integer ← rec|pos|y
 end
