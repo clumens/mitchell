@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.5 2004/11/23 01:15:47 chris Exp $
+ * $Id: semant.c,v 1.6 2004/11/23 02:09:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -114,7 +114,7 @@ void check_program (ast_t *ast)
 
    MALLOC (boolean_symtab, sizeof (symbol_t))
    boolean_symtab->kind = SYM_MODULE;
-   boolean_symtab->name = (mstring_t *) wcsdup (L"Integer");
+   boolean_symtab->name = (mstring_t *) wcsdup (L"Boolean");
    boolean_symtab->stack = enter_scope (boolean_symtab->stack);
 
    symtab_add_entry (global, boolean_symtab);
@@ -174,6 +174,25 @@ static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack)
    MALLOC (new, sizeof (symbol_t))
    new->name = (mstring_t *) wcsdup ((wchar_t *) sym->symbol);
    new->kind = SYM_FUNVAL;
+
+   if (symtab_add_entry (stack, new) == -1)
+      duplicate_symbol_error (new, sym->lineno);
+}
+
+/* Similar to the above, except for types. */
+static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
+{
+   symbol_t *new = NULL;
+
+   /* Make sure these TYPEs do not contain periods, as that wouldn't make
+    * them simple anymore.
+    */
+   if (sym->sub != NULL)
+      invalid_name_error (sym, sym->lineno);
+
+   MALLOC (new, sizeof (symbol_t))
+   new->name = (mstring_t *) wcsdup ((wchar_t *) sym->symbol);
+   new->kind = SYM_TYPE;
 
    if (symtab_add_entry (stack, new) == -1)
       duplicate_symbol_error (new, sym->lineno);
@@ -456,6 +475,7 @@ static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
    }
 }
 
+/* FIXME:  This is all wrong. */
 static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
 {
    absyn_record_lst_t *tmp = node;
@@ -488,14 +508,7 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
 
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 {
-#if 0
-   symbol_t *s = check_id (node->symbol, stack);
-
-   s->kind = SYM_TYPE;
-   if (symtab_add_entry (stack, s) == -1)
-      duplicate_symbol_error (s, node->lineno);
-#endif
-   check_id (node->symbol, stack);
+   add_simple_type (node->symbol, stack);
    check_ty (node->ty, stack);
 }
 
