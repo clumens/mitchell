@@ -1,7 +1,9 @@
 - documentation:
-   - lots and lots of documentation explaining syntax definition
+   - documentation aimed more at actual users
+   - write a formal semantics
+   - think about a better documentation format
 - grammar:
-   - allow empty lists
+   - allow empty lists (requires polymorphic type checking)
    - are visibility declarations really needed?
 - misc:
    - need to think up a format for built modules that will allow us to
@@ -9,14 +11,11 @@
    - proposal for C interface module
    - outline contents for runtime library
 - output:
-   - debug option for dumping type-annotated AST (preview-4)
+   - debug option for dumping type-annotated AST
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
    - detect infinite loops of types (preview-4)
-   - base types may currently be overridden - good or bad?
-   - better hashing function
-   - check for duplicate literals in case-expr (if we're not already doing
-     this - or, just say the first match wins)
+   - better hashing function (preview-4)
 - testing:
    - more test cases for parser
    - more test cases for scope

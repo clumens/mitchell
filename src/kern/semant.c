@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.34 2005/01/19 03:32:06 chris Exp $
+ * $Id: semant.c,v 1.35 2005/01/20 23:59:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -727,6 +727,17 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
    {
       absyn_id_expr_t *ty_sym = ((absyn_decl_t *) tmp->data)->ty_decl->symbol;
       symbol_t *new_sym = NULL;
+
+      /* You're not allowed to make a type that overrides anything in the global
+       * scope, since that scope contains our base types.
+       */
+      if (lookup_id (ty_sym, SYM_TYPE, global) != NULL)
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, ty_sym->lineno,
+                           ty_sym->column, ty_sym->symbol,
+                           "duplicate symbol exists in global scope");
+         exit(1);
+      }
 
       /* Skeleton entries have a NULL ty pointer, which will be a magic
        * value later on indicating the entry can be overwritten.
