@@ -14,8 +14,6 @@
 - symbol table:
    - functions need to store a list of the types of their formal
      parameters
-   - option to dump symbol table upon leaving a scope (additionally,
-     providing the name of what's being left would be helpful)
 - testing:
    - more test cases for parser
-   - test cases for scope, access of identifiers from modules, etc.
+   - more test cases for scope
