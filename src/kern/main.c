@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.10 2004/10/20 14:12:41 chris Exp $
+ * $Id: main.c,v 1.11 2004/10/22 01:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -20,6 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <gc.h>
 #include <getopt.h>
 #include <locale.h>
 #include <stdio.h>
@@ -80,6 +81,8 @@ static void version (const char *progname)
 static void handle_arguments (int argc, char **argv)
 {
    int index, retval;
+
+   GC_INIT();
 
    if (argc == 1)
       help (argv[0]);

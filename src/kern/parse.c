@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.8 2004/10/20 14:12:41 chris Exp $
+ * $Id: parse.c,v 1.9 2004/10/22 01:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,6 +28,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <gc.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>

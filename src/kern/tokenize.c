@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.9 2004/10/16 05:16:44 chris Exp $
+ * $Id: tokenize.c,v 1.10 2004/10/22 01:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,6 +24,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <gc.h>
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
@@ -50,14 +51,14 @@ static unsigned int lineno = 1;
 static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ}])τʋ#\"";
 
 #define MALLOC(ptr, size) \
-   if (((ptr) = malloc(size)) == NULL) \
+   if (((ptr) = GC_MALLOC(size)) == NULL) \
    { \
       fprintf (stderr, "could not malloc at %s: %d\n", __FILE__, __LINE__); \
       exit (1); \
    }
 
 #define REALLOC(ptr, size) \
-   if (((ptr) = realloc(ptr, size)) == NULL) \
+   if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
    { \
       fprintf (stderr, "could not realloc at %s: %d\n", __FILE__, __LINE__); \
       exit (1); \
@@ -337,56 +338,30 @@ token_t *next_token (FILE *f)
 
             if (wcscmp (str, L"f") == 0)
             {
-               free (str);
                retval->type = BOOLEAN;
                retval->boolean = 0;
             }
             else if (wcscmp (str, L"t") == 0)
             {
-               free (str);
                retval->type = BOOLEAN;
                retval->boolean = 1;
             }
             else if (wcscmp (str, L"case") == 0)
-            {
-               free (str);
                retval->type = CASE;
-            }
             else if (wcscmp (str, L"decl") == 0)
-            {
-               free (str);
                retval->type = DECL;
-            }
             else if (wcscmp (str, L"else") == 0)
-            {
-               free (str);
                retval->type = ELSE;
-            }
             else if (wcscmp (str, L"end") == 0)
-            {
-               free (str);
                retval->type = END;
-            }
             else if (wcscmp (str, L"if") == 0)
-            {
-               free (str);
                retval->type = IF;
-            }
             else if (wcscmp (str, L"in") == 0)
-            {
-               free (str);
                retval->type = IN;
-            }
             else if (wcscmp (str, L"list") == 0)
-            {
-               free (str);
                retval->type = LIST;
-            }
             else if (wcscmp (str, L"then") == 0)
-            {
-               free (str);
                retval->type = THEN;
-            }
             else
             {
                retval->type = IDENTIFIER;
