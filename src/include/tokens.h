@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.5 2004/10/13 14:02:35 chris Exp $
+ * $Id: tokens.h,v 1.6 2004/10/15 13:35:38 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,38 +38,44 @@ typedef struct {
    };
 } token_t;
 
+extern const char *token_map[];
+
 /* More complicated values. */
-#define  BOOLEAN     100      /* t or f */
-#define  IDENTIFIER  101      /* a word identifier */
-#define  INTEGER     102      /* an integer */
-#define  LIST        103
-#define  STRING      104      /* a string */
+#define  BOOLEAN     0        /* t or f */
+#define  IDENTIFIER  1        /* a word identifier */
+#define  INTEGER     2        /* an integer */
+#define  LIST        3
+#define  STRING      4        /* a string */
 
 /* Reserved character and word values. */
-#define  ASSIGN      200      /* ← */
-#define  CASE        201      /* case */
-#define  COLON       202      /* : */
-#define  COMMA       203      /* , */
-#define  CONST       204      /* ɕ */
-#define  DECL        205      /* decl */
-#define  DOT         206      /* . */
-#define  ELSE        207      /* else */
-#define  END         208      /* end */
-#define  FUNCTION    209      /* ƒ */
-#define  IF          210      /* if */
-#define  IN          211      /* in */
-#define  LBRACK      212      /* [ */
-#define  LPAREN      213      /* ( */
-#define  MAPSTO      214      /* → */
-#define  MODULE      215      /* ℳ */
-#define  RBRACK      216      /* ] */
-#define  RPAREN      217      /* ) */
-#define  THEN        218      /* then */
-#define  TYPE        219      /* τ */
-#define  VAR         220      /* ʋ */
+#define  ASSIGN      5        /* ← */
+#define  CASE        6        /* case */
+#define  COLON       7        /* : */
+#define  COMMA       8        /* , */
+#define  CONST       9        /* ɕ */
+#define  DECL        10       /* decl */
+#define  DOT         11       /* . */
+#define  ELSE        12       /* else */
+#define  END         13       /* end */
+#define  FUNCTION    14       /* ƒ */
+#define  IF          15       /* if */
+#define  IN          16       /* in */
+#define  LBRACE      17       /* { */
+#define  LBRACK      18       /* [ */
+#define  LPAREN      19       /* ( */
+#define  MAPSTO      20       /* → */
+#define  MODULE      21       /* ℳ */
+#define  RBRACE      22       /* } */
+#define  RBRACK      23       /* ] */
+#define  RPAREN      24       /* ) */
+#define  THEN        25       /* then */
+#define  TYPE        26       /* τ */
+#define  VAR         27       /* ʋ */
 
-#define  COMMENT     300      /* # */
-#define  DBLQUOTE    301      /* " */
+#define  COMMENT     28       /* # */
+#define  DBLQUOTE    29       /* " */
+
+#define  ENDOFFILE   30
 
 /* Return the next token from the previously opened file f, or NULL if no
  * more tokens are available.
