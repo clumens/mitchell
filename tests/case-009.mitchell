@@ -1,0 +1,14 @@
+# Description:  Using something other than a boolean, integer, or string
+#               as the test expression
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ lst ← list integer
+   ʋ lst: lst ← [1, 2, 3]
+
+   ƒ foo: boolean () ←
+      case lst in
+         1 → t,
+         else → f
+      end
+end

@@ -1,4 +1,4 @@
-# Description:  Basic branch-expr possibilities
+# Description:  Type of branch tests doesn't match type of test-expr
 # Expected:  FAIL
 
 ℳ Main ← decl
@@ -6,7 +6,6 @@
 
    ƒ foo: integer () ←
       case Main.asdf() in
-         X.Y → 1,
          "one" → 1,
          0 → 0,
          f → 0
