@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -Wall -I../include
+CFLAGS = -O2 -Wall -I../include
 
 OBJS = main.o parse.o tokenize.o
 
