@@ -2,7 +2,7 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ fact: integer (n: int) ←
+   ƒ fact: integer (n: integer) ←
       if Integer.= (n, 0) then
          1
       else
