@@ -3,17 +3,20 @@
 # Expected: PASS
 
 ℳ Main ← decl
-   ƒ lst1a: list int (p: list string) ←
+   ƒ lst1a: list integer (p: list string) ←
       [1, 2, 3]
 
-   ƒ lst1b: list int () ←
+   ƒ lst1b: list integer () ←
       lst1a (["The", "Cat", "Goes", "Woof"])
 
-   ƒ lst2a: list list string (q: list list int) ←
+   ƒ lst2a: list list string (q: list list integer) ←
       [["A", "B", "C"], ["0", "1"]]
    
    ƒ lst2b: list list string () ←
       lst2a ([[0, 1, 2], [3, 4, 5]])
+
+   # Unsupported in preview 3.
+   #ƒ lst3: list bool () ← []
 
    ƒ main: string () ← ""
 end
