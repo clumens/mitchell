@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.6 2004/11/23 02:09:22 chris Exp $
+ * $Id: semant.c,v 1.7 2004/11/23 02:48:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -77,7 +77,6 @@ static void check_expr (absyn_expr_t *node, tabstack_t *stack);
 static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static void check_id (absyn_id_expr_t *node, tabstack_t *stack);
-static void check_id_lst (absyn_id_lst_t *node, tabstack_t *stack);
 static void check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
@@ -130,6 +129,13 @@ void check_program (ast_t *ast)
  * | COMMON ERROR HANDLING FUNCTIONS                                |
  * +================================================================+
  */
+
+static void duplicate_name_error (absyn_id_expr_t *s, unsigned int lineno)
+{
+   fprintf (stderr, "*** duplicate symbol referenced on line %d:  %ls\n",
+                    lineno, (wchar_t *) s->symbol);
+   exit (1);
+}
 
 static void duplicate_symbol_error (symbol_t *s, unsigned int lineno)
 {
@@ -420,19 +426,6 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
    }
 }
 
-/* TODO: Check for duplicate names. */
-static void check_id_lst (absyn_id_lst_t *node, tabstack_t *stack)
-{
-   absyn_id_lst_t *tmp = node;
-
-   while (tmp != NULL)
-   {
-      check_id (tmp->symbol, stack);
-      check_ty (tmp->ty, stack);
-      tmp = tmp->next;
-   }
-}
-
 static void check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
 {
    check_expr (node->test_expr, stack);
@@ -488,11 +481,38 @@ static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
    }
 }
 
+/* TODO:  something about is_list */
 static void check_ty (absyn_ty_t *node, tabstack_t *stack)
 {
-   /* something about is_list */
+   /* Records are a little bit complicated. */
    if (node->is_record)
-      check_id_lst (node->record, stack);
+   {
+      absyn_id_lst_t *cur = node->record;
+      absyn_id_lst_t *tmp;
+
+      /* Step 1.  Check all record identifiers to make sure they're not trying
+       * to be in some sort of namespace.
+       */
+      for (tmp = cur; tmp != NULL; tmp = tmp->next)
+         if (tmp->symbol->sub != NULL)
+            invalid_name_error (tmp->symbol, tmp->lineno);
+
+      /* Step 2.  Check all record identifiers for proper typing and no
+       * duplicates.
+       */
+      while (cur != NULL)
+      {
+         /* First, check the type of the record member. */
+         check_ty (cur->ty, stack);
+
+         /* Now make sure there's no other record member with the same name. */
+         for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
+            if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
+               duplicate_name_error (tmp->symbol, tmp->lineno);
+
+         cur = cur->next;
+      }
+   }
    else
    {
       symbol_t s = { SYM_TYPE, (mstring_t *) node->identifier->symbol };
