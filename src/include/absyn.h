@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.17 2004/12/02 05:22:03 chris Exp $
+ * $Id: absyn.h,v 1.18 2004/12/12 17:39:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -26,6 +26,7 @@
 
 #include "basic_types.h"
 #include "config.h"
+#include "symtab.h"
 
 #ifdef __cplusplus
     extern "C" {
@@ -140,8 +141,8 @@ typedef struct absyn_ty_t {
    enum { ABSYN_TY_ID, ABSYN_TY_LIST, ABSYN_TY_RECORD } kind;
 
    union {
-      absyn_id_expr_t *identifier;
-      absyn_id_lst_t *record;
+      absyn_id_expr_t   *identifier;
+      absyn_id_lst_t    *record;
       struct absyn_ty_t *list;
    };
 } absyn_ty_t;

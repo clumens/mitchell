@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.4 2004/12/01 05:15:45 chris Exp $
+ * $Id: symtab_printer.c,v 1.5 2004/12/12 17:39:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -48,14 +48,26 @@ void table_dump (symtab_t *symtab, mstring_t *scope_name)
          while (tmp != NULL)
          {
             switch (tmp->symbol->kind) {
-               case SYM_FUNVAL: printf ("FUNVAL("); break;
-               case SYM_MODULE: printf ("MODULE("); break;
-               case SYM_TYPE: printf ("TYPE("); break;
+               case SYM_FUNCTION:
+                  printf ("FUNCTION(%ls), ", tmp->symbol->name);
+                  break;
+
+               case SYM_MODULE:
+                  printf ("MODULE(%ls), ", tmp->symbol->name);
+                  break;
+               
+               case SYM_TYPE:
+                  printf ("TYPE(%ls):%ls, ", tmp->symbol->name,
+                          tmp->symbol->info.ty == NULL ? L"" :
+                          ty_to_str(tmp->symbol->info.ty));
+                  break;
+                  
+               case SYM_VALUE:
+                  printf ("VALUE(%ls):%ls¸ ", tmp->symbol->name,
+                          tmp->symbol->info.ty == NULL ? L"" :
+                          ty_to_str(tmp->symbol->info.ty));
+                  break;
             }
-            
-            printf ("%ls):%s, ", tmp->symbol->name,
-                                 tmp->symbol->ty == NULL ? "" :
-                                 ty_to_str(tmp->symbol->ty));
 
             tmp = tmp->next;
          }

@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.18 2004/12/02 05:52:07 chris Exp $
+ * $Id: semant.c,v 1.19 2004/12/12 17:39:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -43,39 +43,34 @@ static ty_t integer_ty = { TY_INTEGER };
 static ty_t string_ty = { TY_STRING };
 
 static symbol_t base_env[] = {
-   { SYM_FUNVAL, &boolean_ty, L"f" },
-   { SYM_FUNVAL, &boolean_ty, L"t" },
-   { SYM_TYPE, &bottom_ty, L"⊥" },
-   { SYM_TYPE, &boolean_ty, L"boolean" },
-   { SYM_TYPE, &integer_ty, L"integer" },
-   { SYM_TYPE, &string_ty, L"string" },
-   { SYM_TYPE, NULL, NULL }
+   { SYM_VALUE, L"f", .info.ty=&boolean_ty },
+   { SYM_VALUE, L"t", .info.ty=&boolean_ty },
+   { SYM_TYPE, L"⊥", .info.ty=&bottom_ty },
+   { SYM_TYPE, L"boolean", .info.ty=&boolean_ty },
+   { SYM_TYPE, L"integer", .info.ty=&integer_ty },
+   { SYM_TYPE, L"string", .info.ty=&string_ty },
+   { SYM_TYPE, NULL, .info.ty=NULL }
 };
-
-/* Maps a type to an identifying string.  Note that the order of these strings
- * must hatch the order of the type enumeration in basic_types.h.
- */
-static char *ty_map[] = {
-   "alias", "boolean", "bottom", "integer", "list", "record", "string"};
 
 /* XXX: These are temporary environments to allow me to keep working on stuff
  * without getting stuck on the problem of how external modules get loaded in.
  * Of course, I'll need to figure that out before too long.
  */
 static symbol_t integer_env[] = {
-   { SYM_FUNVAL, NULL, L"+" },
-   { SYM_FUNVAL, NULL, L"-" },
-   { SYM_FUNVAL, NULL, L"*" },
-   { SYM_FUNVAL, NULL, L"<" },
-   { SYM_FUNVAL, NULL, L"=" },
-   { SYM_FUNVAL, NULL, L"mod" },
-   { SYM_TYPE, NULL, NULL }
+   { SYM_FUNCTION, L"+", .info.ty=NULL },
+   { SYM_FUNCTION, L"-", .info.ty=NULL },
+   { SYM_FUNCTION, L"*", .info.ty=NULL },
+   { SYM_FUNCTION, L"<", .info.ty=NULL },
+   { SYM_FUNCTION, L"=", .info.ty=NULL },
+   { SYM_FUNCTION, L"mod", .info.ty=NULL },
+   { SYM_TYPE, NULL, .info.ty=NULL }
 };
 
 static symbol_t boolean_env[] = {
-   { SYM_FUNVAL, NULL, L"or" },
-   { SYM_TYPE, NULL, NULL }
+   { SYM_FUNCTION, L"or", .info.ty=NULL },
+   { SYM_TYPE, NULL, .info.ty=NULL }
 };
+/* XXX: End temporary stuff. */
 
 /* The global symbol table stack - always points to the outermost symbol table
  * (that is, the one all top-level modules get added into).
@@ -83,21 +78,10 @@ static symbol_t boolean_env[] = {
 static tabstack_t *global = NULL;
 
 /* More mutually recursive functions for yet another tree walk. */
-static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
-static void check_decl (absyn_decl_t *node, tabstack_t *stack);
-static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
-static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
-static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
-static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
-static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack);
-static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
-static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack);
-static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
-static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
 
 /* Semantic analysis entry point. */
 void check_program (ast_t *ast)
@@ -118,29 +102,41 @@ void check_program (ast_t *ast)
    MALLOC (integer_symtab, sizeof (symbol_t));
    integer_symtab->kind = SYM_MODULE;
    integer_symtab->name = wcsdup (L"Integer");
-   integer_symtab->stack = enter_scope (integer_symtab->stack);
+   integer_symtab->info.stack = enter_scope (integer_symtab->info.stack);
 
    symtab_add_entry (global, integer_symtab);
 
    for (i = 0; integer_env[i].name != NULL; i++)
-      symtab_add_entry (integer_symtab->stack, &integer_env[i]);
+      symtab_add_entry (integer_symtab->info.stack, &integer_env[i]);
 
    MALLOC (boolean_symtab, sizeof (symbol_t));
    boolean_symtab->kind = SYM_MODULE;
    boolean_symtab->name = wcsdup (L"Boolean");
-   boolean_symtab->stack = enter_scope (boolean_symtab->stack);
+   boolean_symtab->info.stack = enter_scope (boolean_symtab->info.stack);
 
    symtab_add_entry (global, boolean_symtab);
 
    for (i = 0; boolean_env[i].name != NULL; i++)
-      symtab_add_entry (boolean_symtab->stack, &boolean_env[i]);
+      symtab_add_entry (boolean_symtab->info.stack, &boolean_env[i]);
+   /* XXX: End temporary stuff. */
 
    check_module_lst (ast, global);
+
    global = leave_scope (global, L"global");
 }
 
-char *ty_to_str (const ty_t *ty)
+#define WCSLEN(str)  (wcslen(str)*sizeof(wchar_t))
+
+/* Convert a ty_t into a string representation for debugging output purposes. */
+wchar_t *ty_to_str (const ty_t *ty)
 {
+   /* Maps a type to an identifying string.  Note that the order of these
+    * strings must hatch the order of the type enumeration in basic_types.h.
+    */
+   static wchar_t *ty_map[] = {
+      L"alias", L"boolean", L"bottom", L"integer", L"list", L"record",
+      L"string" };
+
    if (ty == NULL)
       return NULL;
 
@@ -153,26 +149,59 @@ char *ty_to_str (const ty_t *ty)
          break;
 
       case TY_ALIAS:
-         return "some alias";
+         return ty->alias->name;
          break;
 
       case TY_LIST:
       {
-         char *retval;
-         char *tmp = ty_to_str(ty->list_base_ty);
+         wchar_t *retval;
+         wchar_t *tmp = ty_to_str(ty->list_base_ty);
 
-         MALLOC(retval, 6);
-         retval = strcpy (retval, "list ");
-         REALLOC(retval, strlen(retval)+strlen(tmp)+1);
-         retval = strcat (retval, tmp);
+         MALLOC(retval, sizeof(wchar_t)*6);
+         retval = wcscpy (retval, L"list ");
+         REALLOC(retval, WCSLEN(retval)+WCSLEN(tmp)+1);
+         retval = wcscat (retval, tmp);
 
          return retval;
          break;
       }
 
       case TY_RECORD:
-         return "some record";
+      {
+         wchar_t *retval, *tmp;
+         element_lst_t *ele;
+
+         /* First, the brace indicating a record type. */
+         MALLOC(retval, sizeof(wchar_t)*2);
+         retval = wcscpy (retval, L"{");
+
+         for (ele = ty->record; ele != NULL; ele = ele->next)
+         {
+            /* Second, the name of the element. */
+            REALLOC(retval, WCSLEN(retval)+WCSLEN(ele->identifier));
+            retval = wcscat (retval, ele->identifier);
+
+            /* Third, a colon. */
+            REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*2);
+            retval = wcscat (retval, L":");
+
+            /* Fourth, the type of the element. */
+            tmp = ty_to_str(ele->ty);
+            REALLOC(retval, WCSLEN(retval)+WCSLEN(tmp)+1);
+            retval = wcscat (retval, tmp);
+
+            /* Fifth, a comma. */
+            REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*2);
+            retval = wcscat (retval, L",");
+         }
+
+         /* Finally, the closing brace. */
+         REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*6);
+         retval = wcscat (retval, L"NULL}");
+
+         return retval;
          break;
+      }
 
       default:
          return NULL;
@@ -185,391 +214,30 @@ char *ty_to_str (const ty_t *ty)
  * +================================================================+
  */
 
-/* A quick utility function to add SYM_FUNVALs into a symbol table, since we'll
- * be doing a lot of this.  It's sort of like what check_id used to do but
- * specialized to this case.
+/* Look up the identifier provided by node in the given symbol table stack.
+ * Returns the symbol table entry if it exists (from which type information
+ * can be extracted) or NULL otherwise.
  */
-static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack,
-                               ty_t *ty)
+static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind,
+                            tabstack_t *stack)
 {
-   symbol_t *new = NULL;
-
-   /* Make sure these FUNVALs do not contain periods, as that wouldn't make
-    * them simple anymore.
-    */
-   if (sym->sub != NULL)
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
-                        "unknown symbol referenced");
-      exit(1);
-   }
-
-   MALLOC (new, sizeof (symbol_t));
-   new->name = wcsdup (sym->symbol);
-   new->ty = ty;
-   new->kind = SYM_FUNVAL;
-
-   if (symtab_add_entry (stack, new) == -1)
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
-                        "duplicate symbol already exists in this scope");
-      exit(1);
-   }
-}
-
-/* Similar to the above, except for types. */
-static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
-{
-   symbol_t *new = NULL;
-
-   /* Make sure these TYPEs do not contain periods, as that wouldn't make
-    * them simple anymore.
-    */
-   if (sym->sub != NULL)
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
-                        "symbol may not contain a namespace");
-      exit(1);
-   }
-
-   MALLOC (new, sizeof (symbol_t));
-   new->name = wcsdup (sym->symbol);
-   new->kind = SYM_TYPE;
-
-   if (symtab_add_entry (stack, new) == -1)
-   {
-      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
-                        "duplicate symbol already exists in this scope");
-      exit(1);
-   }
-}
-
-/* Compare two types for equality. */
-static unsigned int equal_types (ty_t *left, ty_t *right)
-{
-   /* Basic sanity checking. */
-   if (left == NULL || right == NULL)
-      return 0;
-
-   /* If the two types are lists, apply the list-= rule, which states that two
-    * list types are equivalent if the two underlying types are equivalent.
-    * Of course if only one's a list, that's an error.
-    */
-   if (left->ty == TY_LIST && right->ty == TY_LIST)
-   {
-      return equal_types (left->list_base_ty, right->list_base_ty);
-   }
-   else if ((left->ty == TY_LIST && right->ty != TY_LIST) ||
-            (left->ty != TY_LIST && right->ty == TY_LIST))
-   {
-      return 0;
-   }
-   else
-   {
-      return (left->ty == right->ty ? 1 : 0);
-   }
-}
-
-/* +================================================================+
- * | TYPE CHECKING FUNCTIONS - ONE PER AST NODE TYPE                |
- * +================================================================+
- */
-
-/* TODO:  need to check the branch tests to make sure they're a basic type
- * (see grammar)
- */
-static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
-{
-   absyn_branch_lst_t *tmp = node->branch_lst;
-   ty_t *test_ty = NULL;
-   ty_t *branch_ty = NULL;
-   ty_t *expr_ty = NULL;
-   ty_t *t = NULL;
-
-   /* Save the type of the test-expr for comparison against every branch. */
-   test_ty = check_expr (node->test, stack);
-
-   /* Check the branches.  We don't want a separate function for this for type
-    * checking purposes.
-    */
-   while (tmp != NULL)
-   {
-      /* Compare each branch test to the first one, so if there is no first
-       * one then we have to set it.  All branch tests must have the same
-       * type.  This type must also be the same as the test-expr.  We'll only
-       * compare the first branch's type to the test's type, since transitivity
-       * will take care of the rest.
-       */
-      if (branch_ty == NULL)
-      {
-         branch_ty = check_expr (tmp->branch, stack);
-
-         if (!equal_types (branch_ty, test_ty))
-         {
-            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
-                        "branch test must have the same type as case's test",
-                        "branch test", ty_to_str(branch_ty), "test-expr",
-                        ty_to_str(test_ty));
-            exit(1);
-         }
-      }
-      else
-      {
-         t = check_expr (tmp->branch, stack);
-
-         if (!equal_types (branch_ty, t))
-         {
-            TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
-                        "inconsistent types in case expression",
-                        "previous test", ty_to_str (branch_ty), "this test",
-                        ty_to_str(t));
-            exit(1);
-         }
-      }
-
-      /* Compare each branch expression to the first one, so if there is no
-       * first one then we have to set it.  All branch expressions must have
-       * the same type, and this is the type that the whole case expression
-       * will return.
-       */
-      if (expr_ty == NULL)
-         expr_ty = check_expr (tmp->expr, stack);
-      else
-      {
-         t = check_expr (tmp->expr, stack);
-
-         if (!equal_types (expr_ty, t))
-         {
-            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
-                        "inconsistent types in case branch exprs",
-                        "previous expr", ty_to_str (expr_ty), "this expr",
-                        ty_to_str(t));
-            exit(1);
-         }
-      }
-
-      tmp = tmp->next;
-   }
-
-   /* If there is a default expression, make sure it has the same type as
-    * all the previous expressions.  It could also be the only branch, so take
-    * care of that possibility as well.
-    */
-   if (node->default_expr != NULL)
-   {
-      if (expr_ty != NULL)
-      {
-         t = check_expr (node->default_expr, stack);
-
-         if (!equal_types (expr_ty, t))
-         {
-            TYPE_ERROR (compiler_config.filename, node->default_expr->lineno,
-                        "inconsistent types in case branch exprs",
-                        "previous expr", ty_to_str (expr_ty), "default-expr",
-                        ty_to_str(t));
-            exit(1);
-         }
-      }
-      else
-         expr_ty = check_expr (node->default_expr, stack);
-   }
-
-   node->ty = expr_ty;
-   return expr_ty;
-}
-
-static void check_decl (absyn_decl_t *node, tabstack_t *stack)
-{
-   switch (node->type) {
-      case ABSYN_FUN_DECL:
-         check_fun_decl (node->fun_decl, stack);
-         break;
-
-      case ABSYN_MODULE_DECL:
-         check_module_decl (node->module_decl, stack);
-         break;
-
-      case ABSYN_TY_DECL:
-         check_ty_decl (node->ty_decl, stack);
-         break;
-
-      case ABSYN_VAL_DECL:
-         check_val_decl (node->val_decl, stack);
-         break;
-   }
-}
-
-static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
-{
-   stack = enter_scope (stack);
-   check_decl_lst (node->decl_lst, stack);
-   check_expr (node->expr, stack);
-   stack = leave_scope (stack, L"decl-expr");
-
-   node->ty = node->expr->ty;
-   return node->ty;
-}
-
-static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
-{
-   absyn_decl_lst_t *tmp = node;
-
-   while (tmp != NULL)
-   {
-      check_decl (tmp->decl, stack);
-      tmp = tmp->next;
-   }
-}
-
-static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
-{
-   switch (node->kind) {
-      case ABSYN_BOOLEAN:
-         MALLOC (node->ty, sizeof (ty_t));
-         node->ty->ty = TY_BOOLEAN;
-         break;
-
-      case ABSYN_CASE:
-         node->ty = check_case_expr (node->case_expr, stack);
-         break;
-
-      case ABSYN_DECL:
-         node->ty = check_decl_expr (node->decl_expr, stack);
-         break;
-
-      case ABSYN_EXPR_LST:
-         node->ty = check_expr_lst (node->expr_lst, stack);
-         break;
-
-      /* TODO: check types of arguments against types of formals, set type
-       * to return type of function
-       */
-      case ABSYN_FUN_CALL:
-         check_id (node->fun_call_expr.identifier, stack);
-         /* check_expr_lst (node->fun_call_expr.arg_lst, stack); */
-         break;
-
-      case ABSYN_ID:
-         node->ty = check_id (node->identifier, stack);
-         break;
-
-      case ABSYN_IF:
-         node->ty = check_if_expr (node->if_expr, stack);
-         break;
-
-      case ABSYN_INTEGER:
-         MALLOC (node->ty, sizeof (ty_t));
-         node->ty->ty = TY_INTEGER;
-         break;
-
-      /* TODO: set type to the formed record */
-      case ABSYN_RECORD_LST:
-         check_record_lst (node->record_assn_lst, stack);
-         break;
-
-      case ABSYN_STRING:
-         MALLOC (node->ty, sizeof (ty_t));
-         node->ty->ty = TY_STRING;
-         break;
-   }
-
-   return node->ty;
-}
-
-static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
-{
-   absyn_expr_lst_t *tmp = node;
-   ty_t *t = NULL;
-   ty_t *expr_ty = NULL;
-   ty_t *retval = NULL;
-
-   /* Check that each expression in the list has the same type as the first
-    * expression in the list.
-    */
-   while (tmp != NULL)
-   {
-      if (expr_ty == NULL)
-         expr_ty = check_expr (tmp->expr, stack);
-      else
-      {
-         t = check_expr (tmp->expr, stack);
-
-         if (!equal_types (expr_ty, t))
-         {
-            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
-                        "inconsistent types in expression list",
-                        "previous expr", ty_to_str (expr_ty), "this expr",
-                        ty_to_str(t));
-            exit(1);
-         }
-      }
-
-      tmp = tmp->next;
-   }
-
-   /* Now that we've verified all the expressions have the same type, create
-    * a list type with the expression type as the base.
-    */
-   MALLOC(retval, sizeof(ty_t));
-   retval->ty = TY_LIST;
-   retval->list_base_ty = expr_ty;
-
-   return retval;
-}
-
-/* TODO: add type information to symbol table entry */
-static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
-{
-   absyn_id_lst_t *tmp;
-
-   /* The function name needs to be entered into the outer scope since it is
-    * able to be referenced from out there.
-    */
-   add_simple_funval (node->symbol, stack, NULL);
-   check_ty (node->ty, stack);
-   
-   /* However, the parameters are only meaningful inside the function itself,
-    * so enter a new level of scope before entering those.
-    */
-   stack = enter_scope (stack);
-
-   /* TODO: add list of formal types into function's symtab entry. */
-   for (tmp = node->id_lst; tmp != NULL; tmp = tmp->next)
-   {
-      add_simple_funval (tmp->symbol, stack, NULL);
-      check_ty (tmp->ty, stack);
-   }
-   
-   /* Now check the function body with this augmented environment. */
-   check_expr (node->body, stack);
-   stack = leave_scope (stack, node->symbol->symbol);
-}
-
-/* Check that an identifier exists somewhere in the symbol table. */
-/* TODO: return type information */
-static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
-{
-   /* If there's no namespace, then this is just a naked identifier.  Traverse
-    * the current module's symbol table stack from most local to the module's
-    * top-level symbol table looking for an entry for the identifier.
+   /* If there's no namespace, this is just a naked identifier.  That means
+    * it must be resolved within the current module.  Traverse the current
+    * module's symbol table stack from most local to the top-level symbol
+    * table looking for a matching entry.
     */
    if (node->sub == NULL)
-   {
-      if (!symtab_entry_exists (stack, node->symbol, SYM_FUNVAL))
-      {
-         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                           node->symbol, "unknown symbol referenced");
-         exit(1);
-      }
-   }
+      return symtab_lookup_entry (stack, node->symbol, kind);
    else
    {
-      /* Since a namespace is specified, it must be from the top-level all
-       * the way down.  So, intialize our table pointer to the global symbol
-       * table.
+      /* Since a namespace is specified, it must specify the entire module
+       * path from the globally available one all the way down.  The general
+       * algorithm is to look at the first namespace in the ID, check the
+       * global symbol table for that module, enter into that module and strip
+       * off the outermost namespace from the ID, and continue in this fashion.
        */
-      absyn_id_expr_t *ns = node;
-      symtab_t *tbl = global->symtab;
+      absyn_id_expr_t *ns  = node;
+      symtab_t        *tbl = global->symtab;
 
       while (1)
       {
@@ -580,80 +248,216 @@ static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
              * contain entries for further modules).  If it's not found, that's
              * an error.
              */
-            symbol_t *retval;
+            symbol_t *entry = table_lookup_entry (tbl, ns->symbol, SYM_MODULE);
 
-            if ((retval = table_lookup_entry (tbl, ns->symbol,
-                                              SYM_MODULE)) ==NULL)
-            {
-               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno,
-                                 ns->symbol, "unknown symbol referenced");
-               exit(1);
-            }
+            if (entry == NULL)
+               return NULL;
 
             /* Really, this should never happen (kiss of death, I know). */
-            assert (retval != NULL);
-            assert (retval->stack != NULL);
-            assert (retval->stack->symtab != NULL);
+            assert (entry != NULL);
+            assert (entry->info.stack != NULL);
+            assert (entry->info.stack->symtab != NULL);
 
             /* Traverse down into the next module's symbol table and strip off
-             * one layer of the namespace path from the identifier to set up
-             * for another pass.
+             * one layer of the namespace path from the ID to set up for
+             * another pass.
              */
-            tbl = retval->stack->symtab;
+            tbl = entry->info.stack->symtab;
             ns = ns->sub;
          }
          else
-         {
-            /* Okay, now we're down to just the naked identifier.  Look in
-             * the current symbol table (no looking through a stack of tables)
-             * to resolve the identifier.
+            /* Okay, now we're down to just the naked ID.  Look in the current
+             * symbol table (no looking through a stack) to resolve.
              */
-            if (!table_entry_exists (tbl, ns->symbol, SYM_FUNVAL))
-            {
-               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno,
-                                 ns->symbol, "unknown symbol referenced");
-               exit(1);
-            }
-            else
-               break;
-         }
+            return table_lookup_entry (tbl, ns->symbol, kind);
       }
    }
 
    return NULL;
 }
 
-static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
+/* Convert an AST representation of a type into a corresponding symbol table
+ * type declaration, suitable for inserting into tables.
+ */
+static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 {
-   ty_t *tmp1, *tmp2;
-   ty_t bool_ty = { TY_BOOLEAN };
+   ty_t *retval = NULL;
 
-   tmp1 = check_expr (node->test_expr, stack);
-   if (!equal_types (tmp1, &bool_ty))
-   {
-      TYPE_ERROR (compiler_config.filename, node->lineno,
-                  "if-expr test must return boolean type", "if-expr",
-                  ty_to_str (tmp1), "expected", "boolean");
-      exit(1);
+   switch (node->kind) {
+      case ABSYN_TY_ID:
+      {
+         /* First check the local symbol table stack (to take into account any
+          * modules we might be inside of).  If that fails, also check the
+          * global symbol table for those basic types.
+          */
+         symbol_t *s;
+
+         if ((s = lookup_id (node->identifier, SYM_TYPE, stack)) == NULL)
+         {
+            if ((s = lookup_id (node->identifier, SYM_TYPE, global)) == NULL)
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                                 node->identifier->symbol,
+                                 "unknown symbol referenced");
+               exit(1);
+            }
+         }
+         else if (s->info.ty != NULL)
+         {
+            MALLOC (retval, sizeof(ty_t));
+            retval->ty = TY_ALIAS;
+            retval->alias = s;
+            break;
+         }
+
+         /* If the type pointer is NULL, that means this is an alias to a
+          * type that's defined later on in the decl-lst.  Since the type
+          * pointer in the target's symbol table entry will be filled in later,
+          * for now all we can return is a made-up type that points to that
+          * symbol table entry.
+          */
+         if (s->info.ty == NULL)
+         {
+            MALLOC(retval, sizeof(ty_t));
+            retval->ty = TY_ALIAS;
+            retval->alias = s;
+         }
+         else
+            retval = s->info.ty;
+
+         break;
+      }
+
+      case ABSYN_TY_LIST:
+         MALLOC(retval, sizeof(ty_t));
+         retval->ty = TY_LIST;
+         retval->list_base_ty = ast_to_ty (node->list, stack);
+         break;
+
+      case ABSYN_TY_RECORD:
+      {
+         absyn_id_lst_t *cur_id, *tmp_id;
+         element_lst_t *new_ele, *cur_ele = NULL;
+
+         MALLOC(retval, sizeof(ty_t));
+         retval->ty = TY_RECORD;
+         retval->record = NULL;
+
+         for (cur_id = node->record; cur_id != NULL; cur_id = cur_id->next)
+         {
+            /* First, make sure there's no other record member with the same
+             * name.
+             */
+            for (tmp_id = cur_id->next; tmp_id != NULL; tmp_id = tmp_id->next)
+            {
+               if (wcscmp (tmp_id->symbol->symbol, cur_id->symbol->symbol) == 0)
+               {
+                  BAD_SYMBOL_ERROR (compiler_config.filename, tmp_id->lineno,
+                                    tmp_id->symbol->symbol, "duplicate symbol "
+                                    "already exists in this record type");
+                  exit(1);
+               }
+            }
+
+            /* Now do all the hard work of adding a record element entry. */
+            MALLOC(new_ele, sizeof(element_lst_t));
+            new_ele->identifier = wcsdup(cur_id->symbol->symbol);
+            new_ele->ty = ast_to_ty (cur_id->ty, stack);
+            new_ele->next = NULL;
+
+            /* Link the new_ele entry into place. */
+            if (retval->record == NULL)
+            {
+               retval->record = new_ele;
+               cur_ele = new_ele;
+            }
+            else
+            {
+               cur_ele->next = new_ele;
+               cur_ele = cur_ele->next;
+            }
+         }
+
+         return retval;
+         break;
+      }
    }
-   
-   tmp1 = check_expr (node->then_expr, stack);
-   tmp2 = check_expr (node->else_expr, stack);
 
-   if (!equal_types (tmp1, tmp2))
+   return retval;
+}
+
+/* +================================================================+
+ * | TYPE CHECKING FUNCTIONS - ONE PER AST NODE TYPE                |
+ * +================================================================+
+ */
+
+static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
+{
+   absyn_decl_lst_t *tmp;
+
+   /* Round 1:  Add skeleton entries for types, and do modules completely. */
+   for (tmp = node; tmp != NULL; tmp = tmp->next)
    {
-      TYPE_ERROR (compiler_config.filename, node->else_expr->lineno,
-                  "then-expr and else-expr must have the same type",
-                  "then-expr", ty_to_str(tmp1), "else-expr", ty_to_str(tmp2));
-      exit(1);
+      switch (tmp->decl->type) {
+         case ABSYN_MODULE_DECL:
+            check_module_decl (tmp->decl->module_decl, stack);
+            break;
+
+         case ABSYN_TY_DECL:
+         {
+            absyn_id_expr_t *sym = tmp->decl->ty_decl->symbol;
+            symbol_t *new_sym = NULL;
+
+            /* Skeleton entries have a NULL ty pointer, which will be a magic
+             * value later on indicating the entry can be overwritten.
+             */
+            MALLOC (new_sym, sizeof(symbol_t));
+            new_sym->kind = SYM_TYPE;
+            new_sym->name = wcsdup (sym->symbol);
+            new_sym->info.ty = NULL;
+
+            /* Here's where we check for a duplicate symbol - don't have to
+             * do this in check_ty_decl.
+             */
+            if (symtab_add_entry (stack, new_sym) == -1)
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno,
+                                 sym->symbol, "duplicate symbol already "
+                                 "exists in this scope");
+               exit(1);
+            }
+
+            break;
+         }
+
+         case ABSYN_FUN_DECL:
+         case ABSYN_VAL_DECL:
+            break;
+      }
    }
 
-   return tmp1;
+   /* Round 2:  Add full entries for each type, overwriting the skeletons
+    * we made in round 1.  We also need to hook up ty pointers in the AST for
+    * these things, so aliased types work.  Skip modules.
+    */
+   for (tmp = node; tmp != NULL; tmp = tmp->next)
+   {
+      switch (tmp->decl->type) {
+         case ABSYN_TY_DECL:
+            check_ty_decl (tmp->decl->ty_decl, stack);
+            break;
+
+         case ABSYN_FUN_DECL:
+         case ABSYN_MODULE_DECL:
+         case ABSYN_VAL_DECL:
+            break;
+      }
+   }
 }
 
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 {
-   symbol_t *new;
+   symbol_t *new_sym;
 
    if (node->symbol->sub != NULL)
    {
@@ -662,17 +466,17 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
       exit(1);
    }
 
-   MALLOC (new, sizeof (symbol_t));
+   MALLOC (new_sym, sizeof (symbol_t));
 
    /* Build symtab entry in lexical parent's table for this module. */
-   new->kind = SYM_MODULE;
-   new->name = wcsdup (node->symbol->symbol);
-   new->stack = enter_scope (new->stack);
+   new_sym->kind = SYM_MODULE;
+   new_sym->name = wcsdup (node->symbol->symbol);
+   new_sym->info.stack = enter_scope (new_sym->info.stack);
    
    /* Add the module's symbol table entry, with its pointer to initialized
     * inner symbol table.
     */
-   if (symtab_add_entry (stack, new) == -1)
+   if (symtab_add_entry (stack, new_sym) == -1)
    {
       BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
                         node->symbol->symbol,
@@ -681,10 +485,10 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    }
 
    /* Check the guts of the module against the module's new environment. */
-   check_decl_lst (node->decl_lst, new->stack);
+   check_decl_lst (node->decl_lst, new_sym->info.stack);
 
    if (compiler_config.debug.dump_symtabs)
-      symtab_dump (new->stack, node->symbol->symbol);
+      symtab_dump (new_sym->info.stack, node->symbol->symbol);
 }
 
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
@@ -698,139 +502,37 @@ static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
    }
 }
 
-static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
-{
-   absyn_record_lst_t *tmp = node;
-
-   while (tmp != NULL)
-   {
-      check_id (tmp->symbol, stack);
-      check_expr (tmp->expr, stack);
-      tmp = tmp->next;
-   }
-}
-
-static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
-{
-   ty_t *retval = NULL;
-
-   switch (node->kind) {
-      case ABSYN_TY_ID:
-      {
-         /* First check the local symbol table stack (to take into account any
-          * modules we might be inside of).  If that fails, also check the
-          * global symbol table for those basic types.
-          */
-         symbol_t *s = symtab_lookup_entry (stack, node->identifier->symbol,
-                                            SYM_TYPE);
-
-         if (s == NULL)
-         {
-            s = symtab_lookup_entry (global, node->identifier->symbol,
-                                     SYM_TYPE);
-
-            if (s == NULL)
-            {
-               BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                                 node->identifier->symbol,
-                                 "unknown symbol referenced");
-               exit(1);
-            }
-         }
-
-         if (s->ty == NULL)
-         {
-            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                              node->identifier->symbol, "symbol has no type");
-            exit(1);
-         }
-
-         return s->ty;
-      }
-
-      /* Lists aren't so hard - make a type for the list and set its base
-       * type to whatever's linked to by the AST node.
-       */
-      case ABSYN_TY_LIST:
-         MALLOC(retval, sizeof(ty_t));
-         retval->ty = TY_LIST;
-         retval->list_base_ty = check_ty (node->list, stack);
-         return retval;
-
-      /* Records are a little bit complicated. */
-      case ABSYN_TY_RECORD:
-      {
-         absyn_id_lst_t *cur = node->record;
-         absyn_id_lst_t *tmp;
-
-         /* Step 1.  Check all record identifiers to make sure they're not
-          * trying to be in some sort of namespace.
-          */
-         for (tmp = cur; tmp != NULL; tmp = tmp->next)
-         {
-            if (tmp->symbol->sub != NULL)
-            {
-               BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
-                                 tmp->symbol->symbol,
-                                 "symbol may not contain a namespace");
-               exit(1);
-            }
-         }
-
-         /* Step 2.  Check all record identifiers for proper typing and no
-          * duplicates.
-          */
-         while (cur != NULL)
-         {
-            /* First, check the type of the record member. */
-            check_ty (cur->ty, stack);
-
-            /* Now make sure there's no other member with the same name. */
-            for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
-            {
-               if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
-               {
-                  BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
-                                    tmp->symbol->symbol, "duplicate symbol "
-                                    "already exists in this scope");
-                  exit(1);
-               }
-            }
-
-            cur = cur->next;
-         }
-
-         return NULL;
-      }
-   }
-
-   return NULL;
-}
-
-/* TODO:  handle new types */
+/* Check the right hand side of a type declaration and add that new type
+ * information into the symbol table.  The skeleton entry representing the
+ * left hand side was already added in by check_decl.  We just need to
+ * overwrite it with complete type information.
+ */
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 {
-   add_simple_type (node->symbol, stack);
-   check_ty (node->ty, stack);
-}
+   symbol_t        *new = NULL;
+   absyn_id_expr_t *lhs = node->symbol;
+   ty_t            *rhs = ast_to_ty (node->ty, stack);
 
-static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
-{
-   ty_t *val_ty, *expr_ty;
-
-   val_ty = check_ty (node->ty, stack);
-   expr_ty = check_expr (node->init, stack);
-
-   if (!equal_types (val_ty, expr_ty))
+   if (rhs == NULL)
    {
-      TYPE_ERROR (compiler_config.filename, node->lineno,
-                  "type of value initializer does not match value's type",
-                  "declared", ty_to_str (val_ty), "initializer",
-                  ty_to_str(expr_ty));
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, lhs->symbol,
+                        "type declaration has no right hand side");
       exit(1);
    }
 
-   add_simple_funval (node->symbol, stack, val_ty);
+   /* Make a new symbol from the pieces we've assembled. */
+   MALLOC(new, sizeof(symbol_t));
+   new->kind = SYM_TYPE;
+   new->name = wcsdup (lhs->symbol);
+   new->info.ty = rhs;
+
+   /* Now obliterate the skeleton entry for this symbol with the real thing. */
+   if (table_update_entry (stack->symtab, lhs->symbol, SYM_TYPE, new) != 1)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, lhs->lineno, lhs->symbol,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
 }
 
 /* vim: set tags=../tags: */
