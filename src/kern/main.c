@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.14 2004/10/26 04:36:18 chris Exp $
+ * $Id: main.c,v 1.15 2004/10/26 13:59:46 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -53,7 +53,8 @@ static struct option longopts[] = {
 };
 
 /* Stash all the command line arguments in here. */
-compiler_config_t compiler_config = { .debug.parser_debug = 0 };
+compiler_config_t compiler_config = { .debug.parser_debug = 0,
+                                      .debug.dump_absyn = 0 };
 
 static void help_internal_debug ()
 {
@@ -80,15 +81,13 @@ static void help (const char *progname)
 
 static void version (const char *progname)
 {
-   printf ("%s version WHATEVER\n(C) 2004 Chris Lumens\n", progname);
+   printf ("%s version Preview 2\n(C) 2004 Chris Lumens\n", progname);
    exit (0);
 }
 
 static void handle_arguments (int argc, char **argv)
 {
    int index, retval;
-
-   GC_INIT();
 
    if (argc == 1)
       help (argv[0]);
