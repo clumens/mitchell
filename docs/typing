@@ -1,0 +1,50 @@
+⊢ t : boolean     [true-expr]
+⊢ f : boolean     [false-expr]
+⊢ integer-constant : integer     [integer]
+⊢ string-constant: string     [string]
+
+A[I : T] ⊢ I : T     [id]  
+
+      ∀i . (A ⊢ Ei : T)
+----------------------------     [list]
+A ⊢ [ E1, ..., En ] : T list
+
+                          ∀i . (A ⊢ Ei : Ti)
+-----------------------------------------------------------------     [record]
+A ⊢ { I1 ← E1: T1, ..., In ← En: Tn } : { I1 : T1, ..., In : Tn }
+
+                     A ⊢ Et : Tt 
+                 ∀i . (A ⊢ Ebi : Tt) 
+                  ∀i . (A ⊢ Ei : T)
+-----------------------------------------------------     [case-expr-1]
+   A ⊢ case Et in Eb1 → E1, ..., Ebn → En end : T
+
+                         A ⊢ Et : Tt
+                     ∀i . (A ⊢ Ebi : Tt) 
+                      ∀i . (A ⊢ Ei : T) 
+                         A ⊢ Ee : T
+------------------------------------------------------------     [case-expr-2]
+   A ⊢ case Et in Eb1 → E1, ..., Ebn → En, else → Ee end : T
+
+      A' = A[I1 : T1, ..., In : Tn]
+           ∀i . (A' ⊢ Ii : Ti)
+               A' ⊢ E : Te
+------------------------------------------     [decl-expr]
+A ⊢ decl I1: T1, ..., In: Tn in E end : Te
+
+A ⊢ E1 : boolean ; A ⊢ E2 : T ; A ⊢ E3 : T
+------------------------------------------     [if-expr]
+       A ⊢ if E1 then E2 else E3 : T
+
+A ⊢ Ip : ⊥ → Tb
+---------------     [call-empty]
+A ⊢ Ip () : Tb
+
+A ⊢ Ip : (T1, ..., Tn) → Tb
+    ∀i . (A ⊢ Ei : Ti)
+---------------------------     [call-args]
+ A ⊢ Ip (E1, ..., En) : Tb
+
+            A[I1 : T1, ..., In : Tn] ⊢ Eb : Tb
+------------------------------------------------------------     [fun-decl]
+A ⊢ ƒ If: Tb (I1: T1, ..., In: Tn) ← Eb : (T1, ..., Tn) → Tb
