@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.2 2004/11/24 03:56:04 chris Exp $
+ * $Id: symtab_printer.c,v 1.3 2004/11/30 04:31:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,12 @@
 #include "basic_types.h"
 #include "symtab.h"
 
+/* Maps a type to an identifying string.  Note that the order of these strings
+ * must hatch the order of the type enumeration in basic_types.h.
+ */
+static const char *ty_map[] = {
+   "ALIAS", "BOOLEAN", "BOTTOM", "INTEGER", "LIST", "RECORD", "STRING"};
+
 /* Print the single symbol table. */
 void table_dump (symtab_t *symtab, mstring_t *scope_name)
 {
@@ -52,7 +58,10 @@ void table_dump (symtab_t *symtab, mstring_t *scope_name)
                case SYM_TYPE: printf ("TYPE("); break;
             }
             
-            printf ("%ls), ", tmp->symbol->name);
+            printf ("%ls):%s, ", tmp->symbol->name,
+                    tmp->symbol->ty == NULL ? "NOTYPE" :
+                    ty_map[tmp->symbol->ty->ty]);
+
             tmp = tmp->next;
          }
 
