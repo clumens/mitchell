@@ -8,5 +8,5 @@ in
       if Integer.= (1, 0) then
          47
       else
-         if true then false else true
+         if t then f else t
 end

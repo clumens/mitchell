@@ -6,10 +6,10 @@
 in
    ƒ foo: integer () ←
       case Main.asdf() in
-         true → case "something" in
-                   1 → 1,
-                   0 → 0
-                end,
-         false → 1
+         t → case "something" in
+                1 → 1,
+                0 → 0
+             end,
+         f → 1
       end
 end

@@ -5,9 +5,9 @@
    ƒ foo: integer ()
 in
    ƒ foo: integer () ←
-      if true then
+      if t then
          case 40 in
-            true → 1,
+            t → 1,
             40 → 40
       else
          25

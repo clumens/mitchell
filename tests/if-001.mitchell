@@ -5,5 +5,5 @@
    ƒ foo: integer ()
 in
    ƒ foo: integer () ←
-      if 47 then true else false
+      if 47 then t else f
 end
