@@ -1,0 +1,79 @@
+
+
+                         Readme for the Mitchell
+
+                    Programming Language and Compiler
+
+                             by Chris Lumens
+
+
+
+1. Introduction
+===============
+This is the readme for the Mitchell programming language and the reference
+compiler for that language.  Mitchell is a special-purpose language that
+exists only for bootstrapping purposes.  That is, the Mitchell compiler
+definition will eventually contain only the features required to rewrite
+the compiler in itself.  The runtime library will likewise have only the
+features required for bootstrap.
+
+While bootstrapping is the primary design decision, the language should
+still contain enough features to be used as a general-purpose language.
+However, there are no guarantees about the language or runtime definition.
+Features may be added or removed at any time throughout development.  So
+for anyone who might want to use Mitchell for their own project, you have
+been warned.
+
+The current status of Mitchell is very limited.  It can only check the
+syntax of an input source code file.
+
+
+2. Features
+===========
+The following are features of the Mitchell language and compiler:
+
+   * All Unicode characters are valid identifiers.  In fact, several
+     Unicode characters are already defined by the language.  Make sure
+     you have your terminal and editor set up right.  See the grammar for
+     specifics of which characters are defined.
+
+   * The syntax unit is the expression.  In fact, the entire language is
+     built around using expressions instead of long expression sequences.
+     Additionally, each expression carries a type with it and expressions
+     can be used in all sorts of places you may not be used to.  This is
+     similar to how things are done in functional languages, though I do
+     not aspire to that level of sophistication.
+
+   * All code is packaged in modules to aid modularity and reuse.
+
+   * Almost everything is a function - including arithmetic and boolean
+     operators.  Looping is also done via tail recursion instead of a for
+     and while loop construct.  Again, this is functional in style though
+     not nearly as complicated.  The idea is keeping the syntax as simple
+     as possible.
+
+
+3. Installation
+===============
+Building the Mitchell compiler is easy:
+
+   # make
+
+If you would like to run the automated test suite, all you need to do is:
+
+   # make test
+
+The built compiler may then be found in src/kern.  There is currently no
+installation target since all the compiler can do is check the syntax of a
+source file.  As the compiler becomes more featured, so will the build and
+installation process.  Additionally, there is currently no way to
+customize the build process for different options or build flags.
+
+
+4. Other Documentation
+======================
+The docs directory contains some additional documentation for this system.
+In particular, the grammar file describes the exact syntax of source files
+recognized by the compiler.  Examples may be found in the tests directory.
+Additionally, the man page describes exact usage of the compiler including
+all command line options.
