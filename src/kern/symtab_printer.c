@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.6 2004/12/22 00:33:51 chris Exp $
+ * $Id: symtab_printer.c,v 1.7 2004/12/23 02:56:30 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,7 +36,8 @@ void symbol_dump (symbol_t *sym)
 
    switch (sym->kind) {
       case SYM_FUNCTION:
-         printf ("FUNCTION(%ls)", sym->name);
+         printf ("FUNCTION(%ls):%ls", sym->name,
+                 ty_to_str(sym->info.function->retval));
          break;
 
       case SYM_MODULE:
