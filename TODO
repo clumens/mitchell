@@ -1,10 +1,13 @@
 - documentation:
    - lots and lots of documentation explaining syntax definition
    - add doxygen docs to all the source
+- grammar:
+- misc:
 - output:
    - parser error messages can always be better
    - all error messages should have the same form
+- symbol table:
+   - real error messages for duplicate symbols (does this require bringing
+     line numbers into the AST?)
 - testing:
    - more test cases for parser
-- grammar:
-- misc:

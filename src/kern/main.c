@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.17 2004/11/13 14:08:55 chris Exp $
+ * $Id: main.c,v 1.18 2004/11/14 17:16:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,7 @@
 #include "config.h"
 #include "memory.h"
 #include "parse.h"
+#include "semant.h"
 
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
@@ -190,6 +191,8 @@ int main (int argc, char **argv)
 
    if (compiler_config.debug.dump_absyn)
       print_absyn (ast, &compiler_config);
+
+   check_program (ast);
 
    return 0;
 }
