@@ -1,0 +1,11 @@
+# Description:  Nested module tries to use fully qualified value from
+#               outer module.
+# Expected:  PASS
+
+ℳ Outer ← decl
+   ʋ outer_v: boolean ← t
+
+   ℳ Inner ← decl
+      ʋ inner_v: boolean ← Outer.outer_v
+   end
+end

@@ -1,0 +1,6 @@
+# Description:  Record field has a name with a dot in it.
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ people ← {the.name: string, age: integer}
+end

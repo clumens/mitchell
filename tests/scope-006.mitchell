@@ -1,0 +1,10 @@
+# Description:  Local value hides argument of the same name
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: boolean (x: integer) ← decl
+      ʋ x: string ← "asdf"
+   in
+      t
+   end
+end

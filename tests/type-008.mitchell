@@ -1,0 +1,7 @@
+# Description:  Record with a field name the same as a visible value
+# Expected:  PASS
+
+ℳ Main ← decl
+   ʋ name: string ← "joe"
+   τ people ← {name: string, age: integer}
+end

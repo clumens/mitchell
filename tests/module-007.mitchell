@@ -1,0 +1,16 @@
+# Description:  Two modules making mutually recursive calls.
+# Expected:  PASS
+
+ℳ First ← decl
+   ƒ one: integer () ← 1
+
+   ƒ main: integer () ←
+      Second.two()
+end
+
+ℳ Second ← decl
+   ƒ two: integer () ← 2
+
+   ƒ main: integer () ←
+      First.one()
+end

@@ -1,0 +1,14 @@
+# Description:  Accessing a member of a nested module.
+# Expected:  PASS
+
+ℳ Outer ← decl
+   ʋ outer_v: boolean ← t
+
+   ℳ Inner ← decl
+      ʋ inner_v: boolean ← Outer.outer_v
+   end
+end
+
+ℳ Main ← decl
+   ʋ val: boolean ← Outer.Inner.inner_v
+end

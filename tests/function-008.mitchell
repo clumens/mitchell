@@ -1,0 +1,6 @@
+# Description:  Function with duplicate argument names.
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ asdf: integer (a: boolean, a: boolean) ← 47
+end

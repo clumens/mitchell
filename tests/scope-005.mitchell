@@ -1,0 +1,8 @@
+# Description:  Function argument has the same name as visible value
+# Expected:  PASS
+
+ℳ Main ← decl
+   ʋ x: integer ← 47
+
+   ƒ a: boolean (x: boolean) ← t
+end
