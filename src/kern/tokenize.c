@@ -1,11 +1,11 @@
-/* This file is the tokenizer for michell, which breaks up the input file
+/* This file is the tokenizer for mitchell, which breaks up the input file
  * into a stram of tokens for use by the parser.  I am generally a big fan
  * of using automated tools to generate lexers, but I've decided to make
  * this one by hand since I don't believe flex supports wide characters
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.3 2004/09/01 16:27:08 chris Exp $
+ * $Id: tokenize.c,v 1.4 2004/09/02 15:29:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
