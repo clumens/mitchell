@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.19 2005/01/09 20:25:36 chris Exp $
+# $Id: Makefile,v 1.20 2005/02/11 01:38:29 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -11,8 +11,8 @@ else
 	CFLAGS = $(BASE_CFLAGS)
 endif
 
-OBJS = absyn_printer.o list.o main.o parse.o semant.o symtab.o \
-		 symtab_printer.o tokenize.o
+OBJS = absyn_printer.o desugar.o desugar_decls.o list.o main.o parse.o \
+		 semant.o str.o symtab.o symtab_printer.o tokenize.o
 
 all: mitchell
 
@@ -27,13 +27,20 @@ absyn_printer.o: absyn_printer.c \
 	../include/absyn.h ../include/config.h ../include/basic_types.h \
 	../include/error.h ../include/list.h
 
+desugar.o: desugar.c \
+	../include/absyn.h ../include/desugar.h
+
+desugar_decls.o: desugar_decls.c \
+	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
+	../include/list.h ../include/memory.h ../include/str.h
+
 list.o: list.c \
 	../include/list.h ../include/memory.h
 
 main.o: main.c \
-	../include/absyn.h ../include/config.h ../include/error.h \
-	../include/memory.h ../include/parse.h ../include/semant.h \
-	../include/version.h
+	../include/absyn.h ../include/config.h ../include/desugar.h \
+	../include/error.h ../include/memory.h ../include/parse.h \
+	../include/semant.h ../include/version.h
 
 parse.o: parse.c \
 	../include/absyn.h ../include/config.h ../include/error.h \
@@ -42,6 +49,9 @@ parse.o: parse.c \
 semant.o: semant.c \
 	../include/absyn.h ../include/basic_types.h ../include/error.h \
 	../include/list.h ../include/memory.h ../include/symtab.h
+
+str.o: str.c \
+	../include/basic_types.h ../include/memory.h ../include/str.h
 
 symtab.o: symtab.c \
 	../include/basic_types.h ../include/config.h ../include/error.h \

@@ -1,3 +1,5 @@
+- desugar:
+   - output option for simplified AST separate from -Idump-absyn
 - documentation:
    - documentation aimed more at actual users
    - write a formal semantics

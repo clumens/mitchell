@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.26 2005/01/19 03:32:06 chris Exp $
+ * $Id: main.c,v 1.27 2005/02/11 01:38:30 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
 
 #include "absyn.h"
 #include "config.h"
+#include "desugar.h"
 #include "error.h"
 #include "memory.h"
 #include "parse.h"
@@ -240,7 +241,7 @@ static void handle_arguments (int argc, char **argv)
 
 int main (int argc, char **argv)
 {
-   ast_t *ast;
+   ast_t *ast, *simple_ast;
 
    /* Grab locale information from the environment. */
    setlocale (LC_ALL, "");
@@ -272,6 +273,10 @@ int main (int argc, char **argv)
 
    if (compiler_config.last_phase == LAST_TYPECHECK)
       return 0;
+
+   simple_ast = desugar_ast (ast);
+   if (compiler_config.debug.dump_absyn)
+      print_absyn (simple_ast, &compiler_config);
 
    return 0;
 }
