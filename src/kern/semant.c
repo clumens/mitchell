@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.19 2004/12/12 17:39:44 chris Exp $
+ * $Id: semant.c,v 1.20 2004/12/14 02:01:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -79,9 +79,11 @@ static tabstack_t *global = NULL;
 
 /* More mutually recursive functions for yet another tree walk. */
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
+static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
+static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
 
 /* Semantic analysis entry point. */
 void check_program (ast_t *ast)
@@ -213,6 +215,35 @@ wchar_t *ty_to_str (const ty_t *ty)
  * | UTILITY FUNCTIONS                                              |
  * +================================================================+
  */
+
+static unsigned int equal_types (ty_t *left, ty_t *right)
+{
+   /* Basic sanity checking. */
+   if (left == NULL || right == NULL)
+      return 0;
+
+   switch (left->ty) {
+      case TY_ALIAS:
+         if (right->ty == TY_ALIAS)
+            return equal_types (left->alias->info.ty, right->alias->info.ty);
+         else
+            return equal_types (left->alias->info.ty, right);
+
+      case TY_LIST:
+         if (right->ty == TY_LIST)
+            return equal_types (left->list_base_ty, right->list_base_ty);
+         else
+            return 0;
+
+      case TY_RECORD:
+         break;
+
+      default:
+         return left->ty == right->ty;
+   }
+
+   return 0;
+}
 
 /* Look up the identifier provided by node in the given symbol table stack.
  * Returns the symbol table entry if it exists (from which type information
@@ -361,7 +392,7 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
             /* Now do all the hard work of adding a record element entry. */
             MALLOC(new_ele, sizeof(element_lst_t));
-            new_ele->identifier = wcsdup(cur_id->symbol->symbol);
+            new_ele->identifier = cur_id->symbol->symbol;
             new_ele->ty = ast_to_ty (cur_id->ty, stack);
             new_ele->next = NULL;
 
@@ -391,11 +422,34 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
  * +================================================================+
  */
 
+/* Extend the current environment with new types, records, functions, and
+ * values.  Types and functions can be recursive, possibly even mutually
+ * recursive.  This takes a special two-pass system to handle - first we
+ * extend the environment with just the names for all the types and functions.
+ * Then, we add in the full type information for each as checked against that
+ * extended environment.
+ *
+ * This has the following effects:
+ *    - In a block of declarations, all functions and types within that
+ *      block may refer to each other.  This works even if values and modules
+ *      break up the list.
+ *    - Types, functions, and values may refer to types and functions that
+ *      are defined later.  However, values may only refer to previously
+ *      defined values.  This makes sense.
+ *    - Modules are a special case.  They may only occur in the decl-list of
+ *      other modules and their symbol tables stick around permanently.  For
+ *      now, we'll completely take care of them when we're adding in the
+ *      names of other things.  This may have to change in the future since
+ *      modules will only be able to reference things in previously defined
+ *      modules.
+ */
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
 {
    absyn_decl_lst_t *tmp;
 
-   /* Round 1:  Add skeleton entries for types, and do modules completely. */
+   /* Round 1:  Add skeleton entries for types and functions, and take care
+    * of modules completely.  Skip values for now.
+    */
    for (tmp = node; tmp != NULL; tmp = tmp->next)
    {
       switch (tmp->decl->type) {
@@ -413,7 +467,7 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
              */
             MALLOC (new_sym, sizeof(symbol_t));
             new_sym->kind = SYM_TYPE;
-            new_sym->name = wcsdup (sym->symbol);
+            new_sym->name = sym->symbol;
             new_sym->info.ty = NULL;
 
             /* Here's where we check for a duplicate symbol - don't have to
@@ -431,6 +485,32 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
          }
 
          case ABSYN_FUN_DECL:
+         {
+            absyn_id_expr_t *sym = tmp->decl->fun_decl->symbol;
+            symbol_t *new_sym = NULL;
+
+            /* Skeleton entries have a NULL function pointer, which will be
+             * a magic value later on indicating the entry can be overwritten.
+             */
+            MALLOC (new_sym, sizeof(symbol_t));
+            new_sym->kind = SYM_FUNCTION;
+            new_sym->name = sym->symbol;
+            new_sym->info.function = NULL;
+
+            /* Here's where we check for a duplicate symbol - don't have to
+             * do this in check_fun_decl.
+             */
+            if (symtab_add_entry (stack, new_sym) == -1)
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno,
+                                 sym->symbol, "duplicate symbol already "
+                                 "exists in this scope");
+               exit(1);
+            }
+
+            break;
+         }
+         
          case ABSYN_VAL_DECL:
             break;
       }
@@ -448,11 +528,112 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
             break;
 
          case ABSYN_FUN_DECL:
+            check_fun_decl (tmp->decl->fun_decl, stack);
+            break;
+
          case ABSYN_MODULE_DECL:
+            break;
+
          case ABSYN_VAL_DECL:
+            check_val_decl (tmp->decl->val_decl, stack);
             break;
       }
    }
+}
+
+/* Check a function declaration and add that new type information into the
+ * symbol table.  The skeleton entry representing the function's name was
+ * already added in by check_decl.  We just need to overwrite it with complete
+ * type information.
+ */
+static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
+{
+   absyn_id_expr_t *fun_name = node->symbol;
+   absyn_id_lst_t  *formals_ast;
+   symbol_t        *fun_sym, *tmp_sym;
+   element_lst_t   *tmp;
+   
+   /* Add the function's symbol to the outer scope, since the function may
+    * be referenced from within its own body.
+    */
+   MALLOC(fun_sym, sizeof(symbol_t));
+   MALLOC(fun_sym->info.function, sizeof(function_symbol_t));
+
+   fun_sym->kind = SYM_FUNCTION;
+   fun_sym->name = fun_name->symbol;
+   fun_sym->info.function->retval = ast_to_ty (node->retval, stack);
+   fun_sym->info.function->formals = NULL;
+
+   tmp = fun_sym->info.function->formals;
+
+   /* Round up all the formal parameters into a list. */
+   for (formals_ast = node->formals; formals_ast != NULL;
+        formals_ast = formals_ast->next)
+   {
+      if (tmp == NULL)
+      {
+         MALLOC(fun_sym->info.function->formals, sizeof(element_lst_t));
+         tmp = fun_sym->info.function->formals;
+         tmp->identifier = formals_ast->symbol->symbol;
+         tmp->ty = ast_to_ty (formals_ast->ty, stack);
+         tmp->next = NULL;
+      }
+      else
+      {
+         MALLOC(tmp->next, sizeof(element_lst_t));
+         tmp = tmp->next;
+         tmp->identifier = formals_ast->symbol->symbol;
+         tmp->ty = ast_to_ty (formals_ast->ty, stack);
+         tmp->next = NULL;
+      }
+   }
+
+   /* Now obliterate the skeleton entry for this symbol with the real thing. */
+   if (table_update_entry (stack->symtab, fun_sym->name, SYM_FUNCTION,
+                           fun_sym) != 1)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol->symbol, "duplicate symbol already "
+                        "exists in this scope");
+      exit(1);
+   }
+
+   /* Add all the formal parameters to the inner scope of the function itself
+    * since they don't make sense outside.  We constructed the symbol's
+    * formal parameter list in the same order as the AST represented them, so
+    * we can reference the AST for printing out debugging messages.
+    */
+   stack = enter_scope (stack);
+
+   formals_ast = node->formals;
+   tmp = fun_sym->info.function->formals;
+
+   while (tmp != NULL)
+   {
+      MALLOC(tmp_sym, sizeof(symbol_t));
+      tmp_sym->kind = SYM_VALUE;
+      tmp_sym->name = tmp->identifier;
+      tmp_sym->info.ty = tmp->ty;
+
+      if (symtab_add_entry (stack, tmp_sym) == -1)
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, formals_ast->lineno,
+                           formals_ast->symbol->symbol,
+                           "duplicate formal parameter already exists");
+         exit(1);
+      }
+
+      tmp = tmp->next;
+      formals_ast = formals_ast->next;
+   }
+
+   /* Now check the function body within this augmented environment. */
+
+   /* Check that the body's return value matches with what the stated return
+    * type was.
+    */
+
+   stack = leave_scope (stack, node->symbol->symbol);
 }
 
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
@@ -470,7 +651,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 
    /* Build symtab entry in lexical parent's table for this module. */
    new_sym->kind = SYM_MODULE;
-   new_sym->name = wcsdup (node->symbol->symbol);
+   new_sym->name = node->symbol->symbol;
    new_sym->info.stack = enter_scope (new_sym->info.stack);
    
    /* Add the module's symbol table entry, with its pointer to initialized
@@ -523,13 +704,46 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
    /* Make a new symbol from the pieces we've assembled. */
    MALLOC(new, sizeof(symbol_t));
    new->kind = SYM_TYPE;
-   new->name = wcsdup (lhs->symbol);
+   new->name = lhs->symbol;
    new->info.ty = rhs;
 
    /* Now obliterate the skeleton entry for this symbol with the real thing. */
    if (table_update_entry (stack->symtab, lhs->symbol, SYM_TYPE, new) != 1)
    {
       BAD_SYMBOL_ERROR (compiler_config.filename, lhs->lineno, lhs->symbol,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
+}
+
+static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
+{
+   symbol_t *new_sym;
+   ty_t *val_ty, *expr_ty;
+
+   val_ty = ast_to_ty (node->ty, stack);
+   /* expr_ty = check_expr (node->init, stack); */
+
+   if (!equal_types (val_ty, expr_ty))
+   {
+      TYPE_ERROR (compiler_config.filename, node->lineno,
+                  "type of value initializer does not match value's type",
+                  "declared", ty_to_str (val_ty), "initializer",
+                  ty_to_str (expr_ty));
+      exit(1);
+   }
+   
+
+   MALLOC (new_sym, sizeof (symbol_t));
+
+   new_sym->kind = SYM_VALUE;
+   new_sym->name = node->symbol->symbol;
+   new_sym->info.ty = val_ty;
+   
+   if (symtab_add_entry (stack, new_sym) == -1)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol->symbol,
                         "duplicate symbol already exists in this scope");
       exit(1);
    }

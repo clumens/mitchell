@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.3 2004/12/02 05:40:11 chris Exp $
+ * $Id: error.h,v 1.4 2004/12/14 02:00:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -41,7 +41,7 @@
 
 #define TYPE_ERROR(file, line, msg, ty1_msg, ty1, ty2_msg, ty2) \
    fprintf (stderr, "%s:%d Error:  type check error: %s\n" \
-                    "\t%s type: %s\n\t%s type: %s\n", (file), (line), msg, \
+                    "\t%s type: %ls\n\t%s type: %ls\n", (file), (line), msg, \
                     ty1_msg, (ty1), ty2_msg, (ty2))
 
 #define USAGE_ERROR(file, msg) \
