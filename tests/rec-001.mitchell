@@ -1,0 +1,20 @@
+# Testing record type generation.
+# Requires: preview 2
+# Expected: PASS
+
+ℳ Main ← decl
+   ƒ rec1a: {a: integer, b: string} () ←
+      {b ← "Narf", a ← 1}
+
+   ƒ rec1b: {b: integer, a: string} () ←
+      {a ← 1, b ← "Narf"}
+
+   ƒ rec2a: {spiff: {gar: integer}} (b: {zoop: string}) ←
+      {spiff ← {gar ← 1}}
+
+   ƒ rec2b: {spiff: {gar: integer}} () ←
+      rec2a ({b ← {zoop ← "Greeblenicknicknick"}})
+
+   ƒ main: string () ← ""
+end
+
