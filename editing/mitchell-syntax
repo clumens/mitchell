@@ -1,6 +1,3 @@
-" Add this to your $HOME/.vim/syntax (or global vim syntax file directory)
-" to get vim to understand and highlight mitchell source files.
-
 " Vim syntax file
 " Language:    Mitchell
 " Filenames:   *.mitchell
@@ -37,7 +34,7 @@ syntax keyword mitTodo     contained TODO FIXME XXX
 syntax keyword mitBoolean  t f
 syntax match   mitNumber   /\<-\=\d\+\>/
 syntax region  mitString   start=/\"/ end=/\"/
-syntax keyword mitType     boolean integer list string
+syntax keyword mitType     ⊥ boolean integer list string
 
 " Define the default highlighting.
 " For version 5.7 and earlier: only when not done already
