@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.3 2004/11/20 19:42:01 chris Exp $
+ * $Id: symtab.h,v 1.4 2004/11/21 05:34:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -67,6 +67,9 @@ symtab_t *symtab_new ();
 int table_add_entry (symtab_t *symtab, symbol_t *symbol);
 void table_dump (symtab_t *symtab);
 unsigned int table_entry_exists (symtab_t *symtab, symbol_t *symbol);
+
+/* This one should be useful all over the place. */
+symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind);
 
 /* Symbol table nesting for scope. */
 typedef struct tabstack_t {

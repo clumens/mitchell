@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.5 2004/11/20 21:13:19 chris Exp $
+ * $Id: symtab.c,v 1.6 2004/11/21 05:34:53 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -148,21 +148,27 @@ void table_dump (symtab_t *symtab)
    }
 }
 
+/* Lookup an entry in the given symbol table. */
+symbol_t *lookup_entry (symtab_t *symtab, mstring_t *name, unsigned int kind)
+{
+   unsigned int row = hash (name, kind);
+   symtab_entry_t *tmp;
+
+   if (symtab == NULL || (*symtab)[row] == NULL)
+      return NULL;
+
+   for (tmp = (*symtab)[row] ; tmp != NULL ; tmp = tmp->next)
+      if (wcscmp ((wchar_t *) name, (wchar_t *) tmp->symbol->name) == 0 &&
+          kind == tmp->symbol->kind)
+         return tmp->symbol;
+
+   return NULL;
+}
+
 /* Does the given string exist in the symbol table?  Return success or not. */
 unsigned int table_entry_exists (symtab_t *symtab, symbol_t *sym)
 {
-   unsigned int row = hash(sym->name, sym->kind);
-   symtab_entry_t *tmp;
-   
-   if (symtab == NULL || (*symtab)[row] == NULL)
-      return 0;
-
-   for (tmp = (*symtab)[row]; tmp != NULL; tmp = tmp->next)
-      if (wcscmp ((wchar_t*) sym->name, (wchar_t *) tmp->symbol->name) == 0 &&
-          sym->kind == tmp->symbol->kind)
-         return 1;
-
-   return 0;
+   return lookup_entry (symtab, sym->name, sym->kind) == NULL ? 0 : 1;
 }
 
 /* +================================================================+
