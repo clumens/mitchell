@@ -1,0 +1,14 @@
+# Description:  Calculate the Fibonacci number using single recursion
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ l: int (n1: int, n2: int, n: int)
+   ƒ fib: int (n: int)
+in
+   ƒ l: int (n1: int, n2: int, n: int) ←
+      if Boolean.< (n, 2) then n1
+      else l (Integer.+ (n1, n2), n1, Integer.- (n, 1))
+
+   ƒ fib: int (n: int) ←
+      l (1, 1, n)
+end

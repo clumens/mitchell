@@ -1,0 +1,10 @@
+# Description:  Calculate the Fibonacci number using slow, simple recursion
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ fib: int (n: int)
+in
+   ƒ fib: int (n: int) ←
+      if Boolean.or (Boolean.= (n, 0), Boolean.= (n, 1)) then 1
+      else Integer.+ (fib (Integer.- (n, 1)), fib (Integer.- (n, 2)))
+end
