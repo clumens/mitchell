@@ -12,4 +12,3 @@
    - types should be fully described in the proto-lst of a module, just
      like everything else is
 - misc:
-   - check for UTF-8 locale and fail if not found

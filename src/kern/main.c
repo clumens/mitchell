@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.15 2004/10/26 13:59:46 chris Exp $
+ * $Id: main.c,v 1.16 2004/10/28 18:51:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,6 +22,7 @@
  */
 #include <gc.h>
 #include <getopt.h>
+#include <langinfo.h>
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -168,6 +169,24 @@ int main (int argc, char **argv)
 
    /* Grab locale information from the environment. */
    setlocale (LC_ALL, "");
+
+   /* Make sure we are in a UTF-8 aware locale.  If not, bail out.  We have to
+    * do this because if the environment is wrong, the tokenizer will explode
+    * on reading the source file and the user will get some horrible message.
+    */
+   if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
+   {
+      fprintf (stderr, "*** Mitchell compiler error:\n");
+      fprintf (stderr, "Your current locale is not UTF-8 aware.  The mitchell "
+                       "compiler requires the\n");
+      fprintf (stderr, "proper environment settings to be able to read source "
+                       "files.  You will need\n");
+      fprintf (stderr, "to set your $LANG or $LC_ALL envirnoment variables to "
+                       "a locale which is\n");
+      fprintf (stderr, "UTF-8 aware.  A good setting might be en_US.UTF-8 "
+                       "for $LANG.  Exiting.\n");
+      exit(1);
+   }
 
    handle_arguments (argc, argv);
    ast = parse (compiler_config.filename);
