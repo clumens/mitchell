@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.2 2004/11/14 17:24:10 chris Exp $
+ * $Id: symtab.c,v 1.3 2004/11/18 03:59:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -40,6 +40,11 @@ static unsigned int hash (const mstring_t *str, const subtable_t kind)
    return h % SYMTAB_ROWS;
 }
 
+/* +================================================================+
+ * | FUNCTIONS FOR MANIPULATING A SINGLE SYMBOL TABLE               |
+ * +================================================================+
+ */
+
 /* Create a new symbol table, initializing all its buckets to NULL.  Return
  * a pointer to the new table.
  */
@@ -57,7 +62,7 @@ symtab_t *symtab_new ()
 }
 
 /* Add a new entry into the symbol table, returning success or not. */
-unsigned int table_add_entry (symtab_t *symtab, symbol_t *sym)
+int table_add_entry (symtab_t *symtab, symbol_t *sym)
 {
    symtab_entry_t *tmp;
    unsigned int row = hash(sym->name, sym->kind);
@@ -66,15 +71,15 @@ unsigned int table_add_entry (symtab_t *symtab, symbol_t *sym)
       return 0;
 
    if (table_entry_exists (symtab, sym))
-   {
-      fprintf (stderr, "duplicate symbol\nexiting.\n");
-      exit (1);
-   }
+      return -1;
    
    if ((*symtab)[row] == NULL)
    {
       MALLOC ((*symtab)[row], sizeof (symtab_entry_t))
-      (*symtab)[row]->symbol = sym;
+      MALLOC ((*symtab)[row]->symbol, sizeof (symbol_t))
+      (*symtab)[row]->symbol->kind = sym->kind;
+      (*symtab)[row]->symbol->name =
+         (mstring_t *) wcsdup ((wchar_t *) sym->name);
       (*symtab)[row]->next = NULL;
    }
    else
@@ -84,11 +89,33 @@ unsigned int table_add_entry (symtab_t *symtab, symbol_t *sym)
          tmp = tmp->next;
 
       MALLOC (tmp->next, sizeof (symtab_entry_t))
-      tmp->next->symbol = sym;
+      MALLOC (tmp->next->symbol, sizeof (symbol_t))
+      tmp->next->symbol->kind = sym->kind;
+      tmp->next->symbol->name = (mstring_t *) wcsdup ((wchar_t *) sym->name);
       tmp->next->next = NULL;
    }
 
    return 1;
+}
+
+void table_dump (symtab_t *symtab)
+{
+   symtab_entry_t *tmp;
+   unsigned int i;
+
+   for (i = 0; i < SYMTAB_ROWS; i++)
+   {
+      printf ("row %d:\t", i);
+      tmp = (*symtab)[i];
+
+      while (tmp != NULL)
+      {
+         printf ("%ls, ", (wchar_t *) tmp->symbol->name);
+         tmp = tmp->next;
+      }
+
+      printf ("NULL\n");
+   }
 }
 
 /* Does the given string exist in the symbol table?  Return success or not. */
@@ -107,6 +134,11 @@ unsigned int table_entry_exists (symtab_t *symtab, symbol_t *sym)
 
    return 0;
 }
+
+/* +================================================================+
+ * | FUNCTIONS FOR MANIPULATING A STACK OF SYMBOL TABLES            |
+ * +================================================================+
+ */
 
 /* Enter a new level of scope by creating a new symbol table and putting it
  * on the top of the symbol table stack, ensuring it will be the first to be
@@ -142,14 +174,21 @@ tabstack_t *leave_scope (tabstack_t *tabstack)
    return tabstack;
 }
 
-unsigned int symtab_add_entry (tabstack_t *tabstack, symbol_t *sym)
+int symtab_add_entry (tabstack_t *tabstack, symbol_t *sym)
 {
    return table_add_entry (tabstack->symtab, sym);
 }
 
-unsigned int symtab_entry_exists_local (tabstack_t *tabstack, symbol_t *sym)
+void symtab_dump (tabstack_t *tabstack)
 {
-   return table_entry_exists (tabstack->symtab, sym);
+   tabstack_t *tmp = tabstack;
+
+   while (tmp != NULL)
+   {
+      table_dump (tmp->symtab);
+      printf ("==================================================\n");
+      tmp = tmp->upper;
+   }
 }
 
 unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *sym)
@@ -165,6 +204,11 @@ unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *sym)
    }
 
    return 0;
+}
+
+unsigned int symtab_entry_exists_local (tabstack_t *tabstack, symbol_t *sym)
+{
+   return table_entry_exists (tabstack->symtab, sym);
 }
 
 /* vim: set tags=../tags: */
