@@ -1,6 +1,6 @@
 /* Basic mitchell types, defined in terms of C types.
  *
- * $Id: basic_types.h,v 1.3 2004/11/30 02:13:07 chris Exp $
+ * $Id: basic_types.h,v 1.4 2004/12/01 05:15:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,6 +37,10 @@ typedef enum { TY_ALIAS, TY_BOOLEAN, TY_BOTTOM, TY_INTEGER, TY_LIST,
 
 typedef struct ty_t {
    ty_kind ty;
+
+   union {
+      struct ty_t *list_base_ty;
+   };
 } ty_t;
 
 #endif

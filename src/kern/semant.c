@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.14 2004/11/30 04:41:43 chris Exp $
+ * $Id: semant.c,v 1.15 2004/12/01 05:15:45 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -25,6 +25,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 #include "absyn.h"
@@ -50,6 +51,12 @@ static symbol_t base_env[] = {
    { SYM_TYPE, &string_ty, L"string" },
    { SYM_TYPE, NULL, NULL }
 };
+
+/* Maps a type to an identifying string.  Note that the order of these strings
+ * must hatch the order of the type enumeration in basic_types.h.
+ */
+static char *ty_map[] = {
+   "alias", "boolean", "bottom", "integer", "list", "record", "string"};
 
 /* XXX: These are temporary environments to allow me to keep working on stuff
  * without getting stuck on the problem of how external modules get loaded in.
@@ -81,7 +88,7 @@ static void check_decl (absyn_decl_t *node, tabstack_t *stack);
 static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
-static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
+static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack);
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
@@ -130,6 +137,47 @@ void check_program (ast_t *ast)
 
    check_module_lst (ast, global);
    global = leave_scope (global, L"global");
+}
+
+char *ty_to_str (const ty_t *ty)
+{
+   if (ty == NULL)
+      return NULL;
+
+   switch (ty->ty) {
+      case TY_BOOLEAN:
+      case TY_BOTTOM:
+      case TY_INTEGER:
+      case TY_STRING:
+         return ty_map[ty->ty];
+         break;
+
+      case TY_ALIAS:
+         return "some alias";
+         break;
+
+      case TY_LIST:
+      {
+         char *retval;
+         char *tmp = ty_to_str(ty->list_base_ty);
+
+         MALLOC(retval, strlen(tmp)+1)
+         retval = strcpy (retval, tmp);
+
+         REALLOC(retval, strlen(retval)+6)
+         retval = strcat (retval, " list");
+         return retval;
+         break;
+      }
+
+      case TY_RECORD:
+         return "some record";
+         break;
+
+      default:
+         return NULL;
+         break;
+   }
 }
 
 /* +================================================================+
@@ -196,13 +244,30 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
    }
 }
 
-/* Compare two types for equality.  This is really simple right now.  Expect
- * it to get a lot more complicated in the near future - especially after
- * aliases are in place.
- */
+/* Compare two types for equality. */
 static unsigned int equal_types (ty_t *left, ty_t *right)
 {
-   return (left->ty == right->ty ? 1 : 0);
+   /* Basic sanity checking. */
+   if (left == NULL || right == NULL)
+      return 0;
+
+   /* If the two types are lists, apply the list-= rule, which states that two
+    * list types are equivalent if the two underlying types are equivalent.
+    * Of course if only one's a list, that's an error.
+    */
+   if (left->ty == TY_LIST && right->ty == TY_LIST)
+   {
+      return equal_types (left->list_base_ty, right->list_base_ty);
+   }
+   else if ((left->ty == TY_LIST && right->ty != TY_LIST) ||
+            (left->ty != TY_LIST && right->ty == TY_LIST))
+   {
+      return 0;
+   }
+   else
+   {
+      return (left->ty == right->ty ? 1 : 0);
+   }
 }
 
 /* +================================================================+
@@ -244,6 +309,8 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
             TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
             fprintf (stderr, "\tbranch test must have the same type as the "
                              "case's test-expr\n");
+            fprintf (stderr, "\tbranch test type: %s\n\ttest-expr type: %s\n",
+                             ty_to_str(branch_ty), ty_to_str(test_ty));
             exit(1);
          }
       }
@@ -255,6 +322,8 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
          {
             TYPE_ERROR (compiler_config.filename, tmp->branch->lineno);
             fprintf (stderr, "\tinconsistent types in case expression\n");
+            fprintf (stderr, "\tprevious test type: %s\n\tthis test type: "
+                             "%s\n", ty_to_str (branch_ty), ty_to_str(t));
             exit(1);
          }
       }
@@ -274,6 +343,8 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
          {
             TYPE_ERROR (compiler_config.filename, tmp->expr->lineno);
             fprintf (stderr, "\tinconsistent types in case branch exprs\n");
+            fprintf (stderr, "\tprevious expr type: %s\n\tthis expr type: "
+                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
             exit(1);
          }
       }
@@ -295,6 +366,8 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
          {
             TYPE_ERROR (compiler_config.filename, node->default_expr->lineno);
             fprintf (stderr, "\tinconsistent types in case branch exprs\n");
+            fprintf (stderr, "\tprevious expr type: %s\n\tdefault-expr type: "
+                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
             exit(1);
          }
       }
@@ -365,9 +438,8 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty = check_decl_expr (node->decl_expr, stack);
          break;
 
-      /* TODO: set type to a list of the type of the expr_lst */
       case ABSYN_EXPR_LST:
-         check_expr_lst (node->expr_lst, stack);
+         node->ty = check_expr_lst (node->expr_lst, stack);
          break;
 
       /* TODO: check types of arguments against types of formals, set type
@@ -375,7 +447,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
        */
       case ABSYN_FUN_CALL:
          check_id (node->fun_call_expr.identifier, stack);
-         check_expr_lst (node->fun_call_expr.arg_lst, stack);
+         /* check_expr_lst (node->fun_call_expr.arg_lst, stack); */
          break;
 
       case ABSYN_ID:
@@ -405,18 +477,45 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
    return node->ty;
 }
 
-/* TODO: check that each expression has the same type, return a type that
- * is a list of those
- */
-static void check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
+static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
 {
    absyn_expr_lst_t *tmp = node;
+   ty_t *t = NULL;
+   ty_t *expr_ty = NULL;
+   ty_t *retval = NULL;
 
+   /* Check that each expression in the list has the same type as the first
+    * expression in the list.
+    */
    while (tmp != NULL)
    {
-      check_expr (tmp->expr, stack);
+      if (expr_ty == NULL)
+         expr_ty = check_expr (tmp->expr, stack);
+      else
+      {
+         t = check_expr (tmp->expr, stack);
+
+         if (!equal_types (expr_ty, t))
+         {
+            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno);
+            fprintf (stderr, "\tinconsistent types in expression list\n");
+            fprintf (stderr, "\tprevious expr type: %s\n\tthis expr type: "
+                             "%s\n", ty_to_str (expr_ty), ty_to_str(t));
+            exit(1);
+         }
+      }
+
       tmp = tmp->next;
    }
+
+   /* Now that we've verified all the expressions have the same type, create
+    * a list type with the expression type as the base.
+    */
+   MALLOC(retval, sizeof(ty_t))
+   retval->ty = TY_LIST;
+   retval->list_base_ty = expr_ty;
+
+   return retval;
 }
 
 /* TODO: add type information to symbol table entry */
@@ -535,6 +634,7 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
    {
       TYPE_ERROR (compiler_config.filename, node->lineno);
       fprintf (stderr, "\tif-expr test must return boolean type\n");
+      fprintf (stderr, "\tif-expr type: %s\n", ty_to_str (tmp1));
       exit(1);
    }
    
@@ -545,6 +645,8 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
    {
       TYPE_ERROR (compiler_config.filename, node->else_expr->lineno);
       fprintf (stderr, "\tthen-expr and else-expr must have the same type\n");
+      fprintf (stderr, "\tthen-expr type: %s\n\telse-expr type: %s\n",
+                       ty_to_str (tmp1), ty_to_str(tmp2));
       exit(1);
    }
 
@@ -614,6 +716,8 @@ static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
 /* TODO:  something about is_list */
 static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
 {
+   ty_t *retval = NULL;
+
    /* Records are a little bit complicated. */
    if (node->is_record)
    {
@@ -686,7 +790,15 @@ static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
          exit(1);
       }
 
-      return s->ty;
+      if (node->is_list)
+      {
+         MALLOC(retval, sizeof(ty_t))
+         retval->ty = TY_LIST;
+         retval->list_base_ty = s->ty;
+         return retval;
+      }
+      else
+         return s->ty;
    }
 
    return NULL;
@@ -710,7 +822,9 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    {
       TYPE_ERROR (compiler_config.filename, node->lineno);
       fprintf (stderr, "\ttype of value initializer does not match value's "
-                       "type\n");
+                       "declared type\n");
+      fprintf (stderr, "\tdeclared type: %s\n\tinitializer type: %s\n",
+                       ty_to_str (val_ty), ty_to_str(expr_ty));
       exit(1);
    }
 

@@ -1,6 +1,6 @@
 /* Semantic analysis - symbol table management, type checking, etc.
  *
- * $Id: semant.h,v 1.1 2004/11/14 17:16:51 chris Exp $
+ * $Id: semant.h,v 1.2 2004/12/01 05:15:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,9 +22,13 @@
 #ifndef _SEMANT_H
 #define _SEMANT_H 1
 
+#include <stdio.h>
+
 #include "absyn.h"
+#include "basic_types.h"
 
 void check_program (ast_t *ast);
+char *ty_to_str (const ty_t *ty);
 
 #endif
 
