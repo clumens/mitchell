@@ -1,12 +1,14 @@
-# Description:  Expressions in branching of a case
-# Expected:  FAIL
+# Description:  Basic branch-expr possibilities
+# Expected:  PASS
 
 ℳ Main ← decl
    ƒ foo: int ()
 in
    ƒ foo: int () ←
       case Main.asdf() in
-         Base.+ (3, 4) → true,
-         10 → false
+         X.Y → 1,
+         "one" → 1,
+         0 → 0,
+         false → 0
       end
 end

@@ -6,7 +6,7 @@
 in
    ƒ foo: int () ←
       case Main.asdf() in
-         Base.+ (3, 4) → true,
+         Integer.+ (3, 4) → true,
          10 → false
       end
 end
