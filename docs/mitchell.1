@@ -1,0 +1,66 @@
+.\" Manual page for the Mitchell compiler
+.\" $Id: mitchell.1,v 1.1 2004/10/19 21:44:05 chris Exp $
+.TH mitchell 1 "October 19, 2004" "USER COMMANDS"
+.SH NAME
+mitchell \- compiler for the mitchell programming language
+.SH SYNOPSIS
+.B mitchell
+[options] \fR\fIinfile\fR
+.PP
+Only the most important options are listed here.  All command line options
+are listed below in the OPTIONS section.
+.SH DESCRIPTION
+This is the standard compiler for the mitchell programming language.
+While mitchell is featured enough to be a general-purpose language and
+compiler set, its specific purpose is to bootstrap itself.  Towards this
+goal, the mitchell language and runtime specification only defines enough
+features to make bootstrapping the system easier.  Any features which make
+the language suitable to another task is purely coincidence.
+.PP
+This manual page documents the usage of the mitchell compiler.  The
+definition of the mitchell language is included with the compiler source
+and should have come as part of your installation.
+.PP
+In its current state, mitchell can only check the syntactic validity of
+\fR\fIinfile\fR.  If the syntax is invalid, a descriptive error message is
+printed to the screen and the compiler exits.  If the syntax is correct,
+the compiler exits silently.
+.SH OPTIONS
+Compilers tend to have many many options for controlling the compilation
+process.  mitchell isn't there quite yet, but the number of options is
+expected to grow quite a bit as the compiler gets more complicated.  For
+this reason, the options have been broken up into categories.
+.SS Help Options
+These options control the amount and type of help output from the
+compiler.  The compiler exits immediately after processing each of these
+options.
+.TP
+.B \-h | \-help
+Print a brief help summary of the most important options.
+.TP
+.B \-v | \-version
+Print the version and configuration information of the compiler.
+.TP
+.B -verbose-help
+Print all command line options and a one-line summary of each.
+.SS Internals Options
+These options control the internal workings of the mitchell compiler and
+are not intended for general purpose use.  They affect things like the
+amount of internal debugging output.  Enable if you are developing the
+compiler or are just entirely too curious.  All internal options begin
+with
+.B \-I
+which strangely enough stands for "Internal".
+.TP
+.B \-Idebug-parser=\fR\fIN\fR
+Sets the debug level for the tokenizer and parser stages of the front end.
+Possible values for \fIN\fR:
+.RS
+.IP 0
+Normal use; no debugging output.
+.IP 1
+Emit debugging output upon consuming a token, entering a parser rule, and
+leaving a parser rule.
+.RE
+.SH AUTHOR
+Chris Lumens <chris@bangmoney.org>
