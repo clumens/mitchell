@@ -8,5 +8,8 @@ all: mitchell
 mitchell: $(OBJS)
 	gcc $(CFLAGS) -o $@ $^
 
+tags:
+	( cd .. && ctags -R )
+
 clean:
-	-rm mitchell *.o
+	-rm mitchell *.o ../tags

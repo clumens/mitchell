@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.1 2004/10/15 13:57:28 chris Exp $
+ * $Id: parse.c,v 1.2 2004/10/15 14:36:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -576,3 +576,5 @@ static void parse_var_decl_proto()
    parse_ty();
    printf ("leaving %s\n", __FUNCTION__);
 }
+
+/* vim: set tags=../tags: */

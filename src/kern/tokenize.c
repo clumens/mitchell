@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.7 2004/10/15 13:37:02 chris Exp $
+ * $Id: tokenize.c,v 1.8 2004/10/15 14:36:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -399,3 +399,5 @@ token_t *next_token (FILE *f)
 
    return NULL;
 }
+
+/* vim: set tags=../tags: */

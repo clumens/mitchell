@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.6 2004/10/15 13:57:28 chris Exp $
+ * $Id: main.c,v 1.7 2004/10/15 14:36:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -41,3 +41,5 @@ int main (int argc, char **argv)
 
    return 0;
 }
+
+/* vim: set tags=../tags: */

@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.6 2004/10/15 13:35:38 chris Exp $
+ * $Id: tokens.h,v 1.7 2004/10/15 14:36:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -83,3 +83,5 @@ extern const char *token_map[];
 token_t *next_token (FILE *f);
 
 #endif
+
+/* vim: set tags=../tags: */
