@@ -5,7 +5,7 @@
  * any discrepancy between the rules and the explanation, the rules are
  * always correct.
  *
- * $Id: typing,v 1.4 2004/12/12 21:53:04 chris Exp $
+ * $Id: typing,v 1.5 2005/01/05 03:14:13 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -168,8 +168,8 @@ At the top level, there is an implicit layer of scope that contains all
 the base types and identifiers, as well as all modules that are not
 declared inside another module.  This layer also contains the base types -
 integer, boolean, string, and so on.  So, the modules of the standard
-library would exist inside this top-level scope, as would the module that
-makes up the main module of a program.  With the exception of a
+library would exist inside this top-level scope, as would the modules that
+make up the main modules of a program.  With the exception of a
 potentially large collection of modules, the top-level environment is very
 small.
 
@@ -201,9 +201,17 @@ complications.  The rules are as follows:
      table going downwards.
 
    * Within a block of declarations, new type and function declarations
-     may reference other types and functions that are not yet declared.
+     may reference other types and functions that are not yet defined.
      This is to allow recursive declarations for tree structures,
-     recursive functions, and so forth.  The only requirement is that
-     these recursive definitions must eventually reference a valid type.
-     Modules or values do not break up a block of declarations.  Values may
-     not forward reference other values.
+     recursive functions, and so forth.  However, restrictions are placed
+     on how this works.  A group of type declarations is defined as
+     several type declarations with no value, function, or module
+     declarations.  A group of function declarations is defined similarly.
+
+     In a group of type declarations, any type may refer to any other type
+     in the group, to allow for recursive definitions.  However, all types
+     must be resolved at the end of the group.  Similarly, in a group of
+     function declarations, any function may refer to any other function
+     in the group.
+
+   * Values may not make reference to values that are not yet defined.
