@@ -6,7 +6,7 @@
    ƒ rec1a: {a: integer, b: string} () ←
       {b ← "Narf", a ← 1}
 
-   ƒ rec1b: {b: integer, a: string} () ←
+   ƒ rec1b: {b: string, a: integer} () ←
       {a ← 1, b ← "Narf"}
 
    ƒ rec2a: {spiff: {gar: integer}} (b: {zoop: string}) ←
