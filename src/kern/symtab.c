@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.1 2004/11/14 17:16:53 chris Exp $
+ * $Id: symtab.c,v 1.2 2004/11/14 17:24:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -156,7 +156,7 @@ unsigned int symtab_entry_exists (tabstack_t *tabstack, symbol_t *sym)
 {
    tabstack_t *tmp = tabstack;
 
-   while (tabstack != NULL)
+   while (tmp != NULL)
    {
       if (table_entry_exists (tmp->symtab, sym) == 1)
          return 1;

@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -O2 -Wall -I../include
+CFLAGS = -O2 -Wall -I../include -g
 
 OBJS = absyn_printer.o main.o parse.o semant.o symtab.o tokenize.o
 
