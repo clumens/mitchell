@@ -16,6 +16,8 @@ Internals:
   after every round of simplification.
 - Modified AST output to be much more verbose and readable.
 - absyn_expr_t has a pointer to an exception handler.
+- Added AST simplification passes to convert arbitrary trees into a more
+  regular format for IR generation.
 Misc:
 - Added the beginnings of a language reference.
 

@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.4 2005/03/29 05:52:55 chris Exp $
+ * $Id: desugar.c,v 1.5 2005/03/30 02:02:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -70,6 +70,13 @@ ast_t *desugar_ast (ast_t *ast)
       print_absyn (ast, &cconfig, "decl-promoted abstract syntax tree");
 
    if (cconfig.last_phase == LAST_DESUGAR_DECL)
+      exit(0);
+
+   ast = rename_identifiers (ast);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (ast, &cconfig, "renamed identifier abstract syntax tree");
+
+   if (cconfig.last_phase == LAST_DESUGAR_RENAME)
       exit(0);
 
    return ast;

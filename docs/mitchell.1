@@ -1,5 +1,5 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.12 2005/03/29 05:52:43 chris Exp $
+.\" $Id: mitchell.1,v 1.13 2005/03/30 02:02:11 chris Exp $
 .TH mitchell 1 "February 12, 2005" "mitchell preview 4"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
@@ -57,9 +57,14 @@ since that is not a separate phase.
 .IP typecheck
 Stop after the typechecking/semantic analysis phase.
 .IP desugar-case
-Stop after eliminating case-exprs from the abstract syntax tree.
+Stop after the case-exprs elimination pass of abstract syntax tree
+simplification.
 .IP desugar-decl
-Stop after promoting decl-exprs to functions in the abstract syntax tree.
+Stop after the promoting decl-exprs to functions pass of abstract syntax
+tree simplification.
+.IP rename
+Stop after the unique identifier renaming pass of abstract syntax tree
+simplification.
 .RE
 .SS Internals Options
 These options control the internal workings of the mitchell compiler and
