@@ -11,7 +11,6 @@
      suck in a symbol table for them during semantic analysis (preview-5)
    - proposal for C interface module
    - outline contents for runtime library
-   - command line option to stop after a certain phase (preview-4)
 - output:
    - audit line number assignments in absyn to make sure they're right
      (preview-4)

@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.23 2005/01/07 05:31:23 chris Exp $
+ * $Id: main.c,v 1.24 2005/01/10 05:22:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,6 +38,7 @@
 
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
+               OPT_LAST_PHASE,
                OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN,
                OPT_IDUMP_SYMTAB } config_vals_t;
 
@@ -50,6 +51,9 @@ static struct option longopts[] = {
    { "verbose-help", 0, NULL, OPT_VERBOSE_HELP },
    { "version", 0, NULL, OPT_VERSION },
 
+   /* General options */
+   { "last-phase", 1, NULL, OPT_LAST_PHASE },
+
    /* Internal compiler options */
    { "Idebug-parser", 1, NULL, OPT_IDEBUG_PARSER },
    { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
@@ -59,9 +63,16 @@ static struct option longopts[] = {
 };
 
 /* Stash all the command line arguments in here. */
-compiler_config_t compiler_config = { .debug.parser_debug = 0,
+compiler_config_t compiler_config = { .last_phase = 0,
+                                      .debug.parser_debug = 0,
                                       .debug.dump_absyn = 0,
                                       .debug.dump_symtab = 0};
+
+static void help_general ()
+{
+   printf ("General Options:\n");
+   printf ("-last-phase=phase\tStop compilation after the given phase\n");
+}
 
 static void help_internal_debug ()
 {
@@ -77,6 +88,8 @@ static void help_internal_debug ()
 static void verbose_help (const char *progname)
 {
    printf ("usage:  %s <infile>\n", progname);
+   help_general();
+   printf ("\n");
    help_internal_debug();
    exit (0);
 }
@@ -120,12 +133,31 @@ static void handle_arguments (int argc, char **argv)
             version (argv[0]);
             break;
 
+         case OPT_LAST_PHASE:
+            if (!optarg)
+            {
+               USAGE_ERROR ("<none>", "-last-phase requires an argument.  See "                             "the man page for details.");
+               exit(1);
+            }
+
+            if (strcmp (optarg, "parser") == 0)
+               compiler_config.last_phase = LAST_PARSER;
+            else if (strcmp (optarg, "typecheck") == 0)
+               compiler_config.last_phase = LAST_TYPECHECK;
+            else
+            {
+               USAGE_ERROR ("<none>", "Invalid option supplied to "
+                            "-last-phase.  See the man page for details.");
+               exit(1);
+            }
+
          case OPT_IDEBUG_PARSER:
             if (optarg)
                compiler_config.debug.parser_debug = atoi(optarg);
             else
             {
-               printf ("-Idebug-parser requires an argument\n");
+               USAGE_ERROR ("<none>", "-Idebug-parser requires an argument.  "
+                            "See the man page for details.");
                exit(1);
             }
 
@@ -218,7 +250,13 @@ int main (int argc, char **argv)
    if (compiler_config.debug.dump_absyn)
       print_absyn (ast, &compiler_config);
 
+   if (compiler_config.last_phase == LAST_PARSER)
+      return 0;
+
    check_program (ast);
+
+   if (compiler_config.last_phase == LAST_TYPECHECK)
+      return 0;
 
    return 0;
 }

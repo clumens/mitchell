@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.8 2005/01/08 03:38:18 chris Exp $
-.TH mitchell 1 "January 7, 2005" "mitchell preview 3"
+.\" $Id: mitchell.1,v 1.9 2005/01/10 05:21:58 chris Exp $
+.TH mitchell 1 "January 10, 2005" "mitchell preview 4"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -42,6 +42,21 @@ Print the version and configuration information of the compiler.
 .TP
 .B -verbose-help
 Print all command line options and a one-line summary of each.
+.SS General Options
+These options control the general compliation process.
+.TP
+.B \-last-phase=\fR\fIphase\fR
+Stops compilation after the given required phase.  If this option is not given,
+compilation will proceed until it terminates.  If it is given, compilation will
+halt after the given phase leaving any temporary or debugging output files.
+Possible values are (in order of phase execution):
+.RS
+.IP parser
+Stop after parsing and tokenizing.  It is not possible to stop after tokenizing,
+since that is not a separate phase.
+.IP typecheck
+Stop after the typechecking/semantic analysis phase.
+.RE
 .SS Internals Options
 These options control the internal workings of the mitchell compiler and
 are not intended for general purpose use.  They affect things like the
