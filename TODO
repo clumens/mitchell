@@ -4,9 +4,7 @@
 - output:
    - parser error messages can always be better
    - all error messages should have the same form
-   - make fgetwc errors more helpful and descriptive
 - testing:
    - more test cases for parser
 - grammar:
-   - modules should be able to contain other modules
 - misc:
