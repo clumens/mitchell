@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.18 2004/12/21 18:18:54 chris Exp $
+# $Id: Makefile,v 1.19 2005/01/09 20:25:36 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -21,3 +21,36 @@ mitchell: $(OBJS)
 
 clean:
 	-rm -f *.o mitchell
+
+# Dependancies
+absyn_printer.o: absyn_printer.c \
+	../include/absyn.h ../include/config.h ../include/basic_types.h \
+	../include/error.h ../include/list.h
+
+list.o: list.c \
+	../include/list.h ../include/memory.h
+
+main.o: main.c \
+	../include/absyn.h ../include/config.h ../include/error.h \
+	../include/memory.h ../include/parse.h ../include/semant.h \
+	../include/version.h
+
+parse.o: parse.c \
+	../include/absyn.h ../include/config.h ../include/error.h \
+	../include/memory.h ../include/tokens.h
+
+semant.o: semant.c \
+	../include/absyn.h ../include/basic_types.h ../include/error.h \
+	../include/list.h ../include/memory.h ../include/symtab.h
+
+symtab.o: symtab.c \
+	../include/basic_types.h ../include/config.h ../include/error.h \
+	../include/memory.h ../include/symtab.h
+
+symtab_printer.o: symtab_printer.c \
+	../include/basic_types.h ../include/config.h ../include/semant.h \
+	../include/symtab.h
+
+tokenize.o: tokenize.c \
+	../include/basic_types.h ../include/config.h ../include/error.h \
+	../include/memory.h ../include/tokens.h
