@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.3 2004/10/26 04:36:18 chris Exp $
+ * $Id: absyn_printer.c,v 1.4 2004/10/26 13:54:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -84,6 +84,11 @@ void print_absyn (ast_t *ast, compiler_config_t *config)
       }
    }
 }
+
+/* +=================================================================+
+ * | AST PRINTING FUNCTIONS - ONE PER NODE TYPE                      |
+ * +=================================================================+
+ */
 
 static void print_branch_lst_t (absyn_branch_lst_t *node, unsigned int indent)
 {

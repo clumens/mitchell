@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.15 2004/10/26 04:33:36 chris Exp $
+ * $Id: parse.c,v 1.16 2004/10/26 13:54:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -249,7 +249,8 @@ static void match (const unsigned int type)
 }
 
 /* Main parser entry point - open the file, read the first token, and try
- * to parse the start symbol.
+ * to parse the start symbol.  Returns the abstract syntax tree, which is
+ * built as a side-effect of the parsing.
  */
 ast_t *parse (const char *filename)
 {
@@ -273,6 +274,11 @@ ast_t *parse (const char *filename)
    fclose (in);
    return retval;
 }
+
+/* +=================================================================+
+ * | PARSER FUNCTIONS - ONE PER RULE                                 |
+ * +=================================================================+
+ */
 
 /* branch-expr ::= id
  *               | INTEGER
