@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.23 2005/01/22 01:04:15 chris Exp $
+ * $Id: absyn_printer.c,v 1.24 2005/02/02 02:25:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -75,7 +75,7 @@ void print_absyn (ast_t *ast, compiler_config_t *config)
 
    if (config->debug.absyn_outfile != NULL)
    {
-      if (fclose (out) != 0)
+      if (out != stdout && fclose (out) != 0)
       {
          FCLOSE_ERROR (config->debug.absyn_outfile);
          exit(1);
