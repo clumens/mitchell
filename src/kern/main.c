@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.29 2005/02/12 17:07:43 chris Exp $
+ * $Id: main.c,v 1.30 2005/03/11 01:48:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -169,6 +169,8 @@ static void handle_arguments (int argc, char **argv)
                       "page for details.");
                exit(1);
             }
+
+            break;
 
          case OPT_IDEBUG_PARSER:
             if (optarg)
