@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.13 2004/10/23 19:17:42 chris Exp $
+ * $Id: tokenize.c,v 1.14 2004/10/23 19:34:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -45,7 +45,7 @@ const char *token_map[] = {
 
    "ASSIGN", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
    "FUNCTION", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO", "MODULE",
-   "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAR",
+   "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAL",
    
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
@@ -270,7 +270,7 @@ token_t *next_token (FILE *f)
 
          case L'ʋ':
             retval->lineno = lineno;
-            retval->type = VAR;
+            retval->type = VAL;
             return retval;
 
          case L'#':
