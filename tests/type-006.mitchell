@@ -1,0 +1,8 @@
+# Description:  Record definition missing types
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ person
+in
+   τ person ← {name, age}
+end
