@@ -1,0 +1,9 @@
+# Description:  Function that takes multiple arguments, mangled argument list
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ asdf: int (a: int, b: string, c: boolean)
+in
+   ƒ asdf: int (a: int, b: string c: boolean) ←
+      a
+end

@@ -1,0 +1,9 @@
+# Description:  Function definition tries to define body as well
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ asdf: int () ← 47
+in
+   ƒ asdf: int () ←
+      47
+end

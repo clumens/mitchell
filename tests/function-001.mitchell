@@ -1,0 +1,9 @@
+# Description:  Very basic function definition.
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ asdf: int ()
+in
+   ƒ asdf: int () ←
+      47
+end

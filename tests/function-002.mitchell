@@ -1,0 +1,9 @@
+# Description:  Function that takes a single argument
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ asdf: int (a: int)
+in
+   ƒ asdf: int (a: int) ←
+      47
+end

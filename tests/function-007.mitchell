@@ -1,0 +1,10 @@
+# Description:  Function with a more complicated but empty body
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ asdf: int ()
+in
+   ƒ asdf: int () ← decl
+   in
+   end
+end

@@ -1,0 +1,12 @@
+# Description:  Function with a more complicated body
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ asdf: int ()
+in
+   ƒ asdf: int () ← decl
+      ʋ foo: int ← 47
+   in
+      foo
+   end
+end
