@@ -1,0 +1,12 @@
+- documentation:
+   - polish grammar to a blinding finish
+   - add doxygen docs to all the source
+- output:
+   - internal deugging output framework (various levels of verbosity)
+   - parser error messages can always be better
+- testing:
+   - comprehensive test cases for parser
+- grammar:
+   - record variable declarations should use braces, just like access does
+   - empty expressions in decl..in..end should not be allowed (check for
+     this elsewhere too)
