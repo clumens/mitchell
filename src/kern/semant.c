@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.21 2004/12/16 23:41:51 chris Exp $
+ * $Id: semant.c,v 1.22 2004/12/17 03:20:27 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -78,11 +78,16 @@ static symbol_t boolean_env[] = {
 static tabstack_t *global = NULL;
 
 /* More mutually recursive functions for yet another tree walk. */
+static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack);
+static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
+static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
+static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
+static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
 static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
 
@@ -224,6 +229,20 @@ static int __element_cmp (void *lst_data, void *user_data)
 {
    return wcscmp (((element_t *) lst_data)->identifier,
                   ((element_t *) user_data)->identifier);
+}
+
+static unsigned int is_ty_kind (ty_t *ty, ty_kind kind)
+{
+   if (ty == NULL)
+      return 0;
+
+   switch (ty->ty) {
+      case TY_ALIAS:
+         return is_ty_kind (ty->alias->info.ty, kind);
+
+      default:
+         return ty->ty == kind;
+   }
 }
 
 static unsigned int equal_types (ty_t *left, ty_t *right)
@@ -456,6 +475,94 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
  * +================================================================+
  */
 
+static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
+{
+   absyn_branch_lst_t *tmp = node->branch_lst;
+
+   /* Check the type of the test expression.  All branch tests will have to
+    * have this same type.  Also, it must be one of the basic types (for now).
+    */
+   node->test->ty = check_expr (node->test, stack);
+
+   if (!is_ty_kind (node->test->ty, TY_BOOLEAN) &&
+       !is_ty_kind (node->test->ty, TY_INTEGER) &&
+       !is_ty_kind (node->test->ty, TY_STRING))
+   {
+      TYPE_ERROR (compiler_config.filename, node->test->lineno,
+                  "text expression is not a basic type", "test-expr",
+                  ty_to_str (node->test->ty), "expected",
+                  L"boolean, integer, string");
+      exit(1);
+   }
+
+   while (tmp != NULL)
+   {
+      /* Check the branch test-expr against the case's test-expr. */
+      tmp->branch->ty = check_expr (tmp->branch, stack);
+
+      if (!equal_types (node->test->ty, tmp->branch->ty))
+      {
+         TYPE_ERROR (compiler_config.filename, tmp->branch->lineno,
+                     "branch test must have the same type as the test-expr",
+                     "branch test", ty_to_str (node->test->ty), "test-expr",
+                     ty_to_str (tmp->branch->ty));
+         exit(1);
+      }
+
+      /* Check each branch-expr for consistency. */
+      node->ty = tmp->expr->ty = check_expr (tmp->expr, stack);
+
+      if (!equal_types (node->ty, tmp->expr->ty))
+      {
+         TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
+                     "inconsistent types in case branch exprs",
+                     "previous expr", ty_to_str (node->ty), "this expr",
+                     ty_to_str (tmp->expr->ty));
+         exit(1);
+      }
+
+      tmp = tmp->next;
+   }
+
+   /* If there is a default expression, make sure it has the same type as all
+    * the previous experssions.  If could also be the only branch, so take
+    * care of that possibility as well.
+    */
+   if (node->default_expr != NULL)
+   {
+      node->default_expr->ty = check_expr (node->default_expr, stack);
+
+      /* If the default branch is the only possibility, we need to use its
+       * type as the type of the whole case-expr.
+       */
+      if (node->branch_lst != NULL)
+      {
+         if (!equal_types (node->branch_lst->expr->ty, node->default_expr->ty))
+         {
+            TYPE_ERROR (compiler_config.filename, node->default_expr->lineno,
+                        "default expr type does not match branch-expr types",
+                        "branch-expr", ty_to_str (node->branch_lst->expr->ty),
+                        "default-expr", ty_to_str (node->default_expr->ty));
+            exit(1);
+         }
+      }
+      else
+         node->ty = node->default_expr->ty;
+   }
+
+   return node->ty;
+}
+
+static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
+{
+   stack = enter_scope (stack);
+   check_decl_lst (node->decl_lst, stack);
+   node->ty = check_expr (node->expr, stack);
+   stack = leave_scope (stack, L"decl-expr");
+
+   return node->ty;
+}
+
 /* Extend the current environment with new types, records, functions, and
  * values.  Types and functions can be recursive, possibly even mutually
  * recursive.  This takes a special two-pass system to handle - first we
@@ -577,7 +684,87 @@ static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack)
 
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
 {
-   return NULL;
+   switch (node->kind) {
+      case ABSYN_BOOLEAN:
+         MALLOC (node->ty, sizeof (ty_t));
+         node->ty->ty = TY_BOOLEAN;
+         break;
+
+      case ABSYN_CASE:
+         node->ty = check_case_expr (node->case_expr, stack);
+         break;
+
+      case ABSYN_DECL:
+         node->ty = check_decl_expr (node->decl_expr, stack);
+         break;
+
+      case ABSYN_EXPR_LST:
+         node->ty = check_expr_lst (node->expr_lst, stack);
+         break;
+
+      case ABSYN_IF:
+         node->ty = check_if_expr (node->if_expr, stack);
+         break;
+
+      case ABSYN_INTEGER:
+         MALLOC (node->ty, sizeof (ty_t));
+         node->ty->ty = TY_INTEGER;
+         break;
+
+      case ABSYN_RECORD_LST:
+         node->ty = check_record_lst (node->record_assn_lst, stack);
+         break;
+
+      case ABSYN_STRING:
+         MALLOC (node->ty, sizeof (ty_t));
+         node->ty->ty = TY_STRING;
+         break;
+
+      default:
+         break;
+   }
+
+   return node->ty;
+}
+
+static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
+{
+   absyn_expr_lst_t *tmp = node;
+   ty_t *expr_ty = NULL;
+   ty_t *retval;
+
+   /* Check that each expression in the list has the same type as the first
+    * expression in the list.
+    */
+   while (tmp != NULL)
+   {
+      if (expr_ty == NULL)
+         expr_ty = tmp->expr->ty = check_expr (tmp->expr, stack);
+      else
+      {
+         tmp->expr->ty = check_expr (tmp->expr, stack);
+
+         if (!equal_types (tmp->expr->ty, expr_ty))
+         {
+            TYPE_ERROR (compiler_config.filename, tmp->expr->lineno,
+                        "inconsistent types in expression list",
+                        "previous expr", ty_to_str (expr_ty),
+                        "this expr", ty_to_str (tmp->expr->ty));
+            exit(1);
+         }
+      }
+
+      tmp = tmp->next;
+   }
+
+   /* Now that we've verified all the expressions have the same type, create
+    * a list type with the expr type as the base.
+    */
+   MALLOC (retval, sizeof (ty_t));
+   retval->ty = TY_LIST;
+   retval->list_base_ty = expr_ty;
+
+   return retval;
 }
 
 /* Check a function declaration and add that new type information into the
@@ -679,6 +866,32 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    stack = leave_scope (stack, node->symbol->symbol);
 }
 
+static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
+{
+   node->test_expr->ty = check_expr (node->test_expr, stack);
+   node->then_expr->ty = check_expr (node->then_expr, stack);
+   node->else_expr->ty = check_expr (node->else_expr, stack);
+
+   if (!is_ty_kind (node->test_expr->ty, TY_BOOLEAN))
+   {
+      TYPE_ERROR (compiler_config.filename, node->test_expr->lineno,
+                  "if-expr test must return bolean type", "if-expr",
+                  ty_to_str (node->test_expr->ty), "expected", L"boolean");
+      exit(1);
+   }
+
+   if (!equal_types (node->then_expr->ty, node->else_expr->ty))
+   {
+      TYPE_ERROR (compiler_config.filename, node->else_expr->lineno,
+                  "then-expr and else-expr must have the same type",
+                  "then-expr", ty_to_str (node->then_expr->ty),
+                  "else-expr", ty_to_str (node->else_expr->ty));
+      exit(1);
+   }
+
+   return node->then_expr->ty;
+}
+
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 {
    symbol_t *new_sym;
@@ -724,6 +937,43 @@ static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
       check_module_decl (tmp->module, stack);
       tmp = tmp->next;
    }
+}
+
+/* Convert an expression consisting of assignment to elements of a record
+ * into a record type.  This is useful for initializing record values and
+ * returning from a function.
+ */
+static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
+{
+   ty_t *retval;
+   absyn_record_lst_t *tmp = node;
+   element_t *new_ele;
+
+   MALLOC (retval, sizeof (ty_t));
+   retval->ty = TY_RECORD;
+   retval->record = NULL;
+
+   /* Loop over all assignments in the record expression. */
+   while (tmp != NULL)
+   {
+      MALLOC (new_ele, sizeof(element_t));
+      new_ele->identifier = tmp->symbol->symbol;
+      new_ele->ty = check_expr (tmp->expr, stack);
+
+      retval->record = list_insert_unique (retval->record, new_ele,
+                                           __element_cmp);
+      if (retval->record == NULL)
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
+                           tmp->symbol->symbol, "duplicate symbol already "
+                           "exists in this record type");
+         exit(1);
+      }
+
+      tmp = tmp->next;
+   }
+
+   return retval;
 }
 
 /* Check the right hand side of a type declaration and add that new type
