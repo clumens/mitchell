@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.22 2004/12/17 03:20:27 chris Exp $
+ * $Id: semant.c,v 1.23 2004/12/19 17:15:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -83,6 +83,7 @@ static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack);
 static void check_decl_lst (absyn_decl_lst_t *node, tabstack_t *stack);
 static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
+static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
@@ -283,8 +284,7 @@ static unsigned int equal_types (ty_t *left, ty_t *right)
              */
             if (left_lst == NULL && right_lst == NULL)
                break;
-            else if ((left_lst == NULL && right_lst != NULL) ||
-                     (left_lst != NULL && right_lst == NULL))
+            else if (!(left_lst != NULL && right_lst != NULL))
                return 0;
 
             left_ele = (element_t *) left_lst->data;
@@ -702,6 +702,13 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty = check_expr_lst (node->expr_lst, stack);
          break;
 
+      case ABSYN_FUN_CALL:
+         node->ty = check_fun_call (node->fun_call_expr, stack);
+         break;
+
+      case ABSYN_ID:
+         break;
+
       case ABSYN_IF:
          node->ty = check_if_expr (node->if_expr, stack);
          break;
@@ -765,6 +772,79 @@ static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
    retval->list_base_ty = expr_ty;
 
    return retval;
+}
+
+static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
+{
+   symbol_t *s;
+   absyn_expr_lst_t *arg_lst;
+   list_t *formal_lst;
+
+   /* Look up the function call first in the local symbol table, then check the
+    * global one too.
+    */
+   if ((s = lookup_id (node->identifier, SYM_FUNCTION, stack)) == NULL)
+   {
+      if ((s = lookup_id (node->identifier, SYM_FUNCTION, global)) == NULL)
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                           node->identifier->symbol, "unknown symbol "
+                           "referenced");
+         exit(1);
+      }
+   }
+
+   /* Values and functions exist in the same namespace, so check what we got. */
+   if (s->kind != SYM_FUNCTION)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->identifier->symbol, "symbol is not a function");
+      exit(1);
+   }
+
+   /* Check that each argument's type matches against the corresponding formal
+    * parameter's type.
+    */
+   arg_lst = node->arg_lst;
+   formal_lst = s->info.function->formals;
+
+   while (1)
+   {
+      element_t *ele;
+
+      /* If both lists are at NULL, they were the same length and passed all
+       * the other tests, so return success.  If only one list is at NULL, they
+       * weren't the same length so fail.
+       */
+      if (arg_lst == NULL && formal_lst == NULL)
+         break;
+      else if (!(arg_lst != NULL && formal_lst != NULL))
+         return 0;
+
+      /* If the argument does not have the same type as the formal in the
+       * same position, fail.  Otherwise, we cycle around to the next one.
+       * Also, we need to check the types of each actual parameter as we go
+       * along.
+       */
+      ele = (element_t *) formal_lst->data;
+      arg_lst->expr->ty = check_expr (arg_lst->expr, stack);
+
+      if (!equal_types (arg_lst->expr->ty, ele->ty))
+      {
+         TYPE_ERROR (compiler_config.filename, arg_lst->lineno,
+                     "type of actual parameter does not match type of formal",
+                     "actual parameter", ty_to_str (arg_lst->expr->ty),
+                     "formal parameter", ty_to_str (ele->ty));
+         exit(1);
+      }
+
+      arg_lst = arg_lst->next;
+      formal_lst = formal_lst->next;
+   }
+
+   /* If it passes, set node->ty to the return type of the function. */
+   node->ty = s->info.function->retval;
+   return s->info.function->retval;
 }
 
 /* Check a function declaration and add that new type information into the
