@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.6 2004/10/13 14:02:37 chris Exp $
+ * $Id: tokenize.c,v 1.7 2004/10/15 13:37:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,19 @@
 #include <wctype.h>
 
 #include "tokens.h"
+
+/* Maps a token value to an identifying string, for error reporting
+ * purposes.  Note that the order of these strings must match up with the
+ * order of the token definitions in tokens.h.
+ */
+const char *token_map[] = {
+   "BOOLEAN", "IDENTIFIER", "INTEGER", "LIST", "STRING",
+
+   "ASSIGN", "CASE", "COLON", "COMMA", "CONST", "DECL", "DOT", "ELSE", "END",
+   "FUNCTION", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO", "MODULE",
+   "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAR",
+   
+   "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
 static wchar_t *reserved = L"←:,.ɕƒ[(→ℳ])τʋ#\"";
@@ -178,7 +191,11 @@ token_t *next_token (FILE *f)
        * next token and return the one we just finished reading.
        */
       if (ch == WEOF)
-         return NULL;
+      {
+         retval->lineno = lineno;
+         retval->type = ENDOFFILE;
+         return retval;
+      }
       else if (iswspace (ch))
       {
          /* Update line number for proper error reporting. */
@@ -220,6 +237,11 @@ token_t *next_token (FILE *f)
             retval->type = FUNCTION;
             return retval;
 
+         case L'{':
+            retval->lineno = lineno;
+            retval->type = LBRACE;
+            return retval;
+
          case L'[':
             retval->lineno = lineno;
             retval->type = LBRACK;
@@ -238,6 +260,11 @@ token_t *next_token (FILE *f)
          case L'ℳ':
             retval->lineno = lineno;
             retval->type = MODULE;
+            return retval;
+
+         case L'}':
+            retval->lineno = lineno;
+            retval->type = RBRACE;
             return retval;
 
          case L']':
@@ -347,6 +374,11 @@ token_t *next_token (FILE *f)
             {
                free (str);
                retval->type = IN;
+            }
+            else if (wcscmp (str, L"list") == 0)
+            {
+               free (str);
+               retval->type = LIST;
             }
             else if (wcscmp (str, L"then") == 0)
             {
