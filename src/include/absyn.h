@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.24 2005/01/09 20:28:53 chris Exp $
+ * $Id: absyn.h,v 1.25 2005/01/10 04:53:29 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -44,20 +44,19 @@ typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL,
                ABSYN_STRING } expr_type;
 
 typedef struct absyn_id_expr_t {
-   unsigned int lineno;
-
+   unsigned int lineno, column;
    mstring_t *symbol;
    struct absyn_id_expr_t *sub;
 } absyn_id_expr_t;
 
 typedef struct absyn_record_assn_t {
-   unsigned int lineno;
+   unsigned int lineno, column;
    absyn_id_expr_t *symbol;
    struct absyn_expr_t *expr;
 } absyn_record_assn_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    ty_t *ty;
 
    absyn_id_expr_t *identifier;           /* everything before the first PIPE */
@@ -65,7 +64,7 @@ typedef struct {
 } absyn_record_ref_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    ty_t *ty;
 
    list_t *decl_lst;                      /* list of absyn_decl_t */
@@ -73,19 +72,19 @@ typedef struct {
 } absyn_decl_expr_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    ty_t *ty;
    struct absyn_expr_t *test_expr, *then_expr, *else_expr;
 } absyn_if_expr_t;
 
 typedef struct absyn_branch_lst_t {
-   unsigned int lineno;
+   unsigned int lineno, column;
    struct absyn_expr_t *branch;
    struct absyn_expr_t *expr;
 } absyn_branch_lst_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    ty_t *ty;
 
    struct absyn_expr_t *test;
@@ -94,7 +93,7 @@ typedef struct {
 } absyn_case_expr_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    ty_t *ty;
 
    absyn_id_expr_t *identifier;
@@ -102,7 +101,7 @@ typedef struct {
 } absyn_fun_call_t;
 
 typedef struct absyn_expr_t {
-   unsigned int lineno;
+   unsigned int lineno, column;
 
    expr_type kind;
    ty_t *ty;
@@ -128,14 +127,14 @@ typedef struct absyn_expr_t {
  */
 
 typedef struct absyn_id_lst_t {
-   unsigned int lineno;
+   unsigned int lineno, column;
 
    absyn_id_expr_t *symbol;
    struct absyn_ty_t *ty;
 } absyn_id_lst_t;
 
 typedef struct absyn_ty_t {
-   unsigned int lineno;
+   unsigned int lineno, column;
    enum { ABSYN_TY_BOTTOM, ABSYN_TY_ID, ABSYN_TY_LIST, ABSYN_TY_RECORD } kind;
 
    union {
@@ -154,7 +153,7 @@ typedef enum { ABSYN_FUN_DECL, ABSYN_MODULE_DECL, ABSYN_TY_DECL,
                ABSYN_VAL_DECL } decl_type;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    
    absyn_id_expr_t *symbol;
    absyn_ty_t *retval;
@@ -163,14 +162,14 @@ typedef struct {
 } absyn_fun_decl_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
 
    absyn_id_expr_t *symbol;
    absyn_ty_t *ty;
 } absyn_ty_decl_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
 
    absyn_id_expr_t *symbol;
    absyn_ty_t *ty;
@@ -178,14 +177,14 @@ typedef struct {
 } absyn_val_decl_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
 
    absyn_id_expr_t *symbol;
    list_t *decl_lst;                      /* list of absyn_decl_t */
 } absyn_module_decl_t;
 
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    decl_type type;
 
    union {

@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.20 2005/01/06 23:48:21 chris Exp $
+ * $Id: tokenize.c,v 1.21 2005/01/10 04:53:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -52,6 +52,7 @@ const char *token_map[] = {
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
+static unsigned int column = 0;
 static wchar_t *reserved = L"←⊥:,.ƒ{[(→ℳ|}])τʋ#\"";
 
 /* Is this one of our reserved characters? */
@@ -78,7 +79,12 @@ static __inline__ wint_t read_char (FILE *f)
    }
 
    if (ch == L'\n')
+   {
       lineno++;
+      column = 0;
+   }
+   else
+      column++;
 
    return ch;
 }
@@ -98,6 +104,8 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
 
    if (ch == L'\n')
       lineno--;
+   else
+      column--;
 }
 
 /* A comment extends from the comment marker to the end of the line. */
@@ -196,6 +204,7 @@ token_t *next_token (FILE *f)
       if (ch == WEOF)
       {
          retval->lineno = lineno;
+         retval->column = column;
          retval->type = ENDOFFILE;
          return retval;
       }
@@ -208,86 +217,103 @@ token_t *next_token (FILE *f)
       switch (ch) {
          case L'←':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = ASSIGN;
             return retval;
 
          case L'⊥':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = BOTTOM;
             return retval;
 
          case L':':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = COLON;
             return retval;
 
          case L',':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = COMMA;
             return retval;
 
          case L'.':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = DOT;
             return retval;
 
          case L'ƒ':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = FUNCTION;
             return retval;
 
          case L'{':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = LBRACE;
             return retval;
 
          case L'[':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = LBRACK;
             return retval;
 
          case L'(':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = LPAREN;
             return retval;
 
          case L'→':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = MAPSTO;
             return retval;
 
          case L'ℳ':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = MODULE;
             return retval;
 
          case L'|':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = PIPE;
             return retval;
 
          case L'}':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = RBRACE;
             return retval;
 
          case L']':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = RBRACK;
             return retval;
 
          case L')':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = RPAREN;
             return retval;
 
          case L'τ':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = TYPE;
             return retval;
 
          case L'ʋ':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = VAL;
             return retval;
 
@@ -297,6 +323,7 @@ token_t *next_token (FILE *f)
 
          case L'"':
             retval->lineno = lineno;
+            retval->column = column;
             retval->type = STRING;
             retval->string = word_state (f, string_member);
 
@@ -310,6 +337,10 @@ token_t *next_token (FILE *f)
          {
             mint_t n;
 
+            retval->lineno = lineno;
+            retval->column = column;
+            retval->type = INTEGER;
+
             unget_char (ch, f);
             n = wcstol (word_state (f, number_member), NULL, 0);
 
@@ -321,8 +352,6 @@ token_t *next_token (FILE *f)
                exit (1);
             }
 
-            retval->lineno = lineno;
-            retval->type = INTEGER;
             retval->integer = n;
             return retval;
          }
@@ -334,8 +363,10 @@ token_t *next_token (FILE *f)
          {
             wchar_t *str;
 
-            unget_char (ch, f);
+            retval->lineno = lineno;
+            retval->column = column;
 
+            unget_char (ch, f);
             str = word_state (f, word_member);
 
             if (wcscmp (str, L"f") == 0)
@@ -370,7 +401,6 @@ token_t *next_token (FILE *f)
                retval->string = str;
             }
 
-            retval->lineno = lineno;
             return retval;
          }
       }

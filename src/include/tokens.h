@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.14 2005/01/06 23:48:19 chris Exp $
+ * $Id: tokens.h,v 1.15 2005/01/10 04:53:29 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,7 +38,7 @@ typedef enum { BOOLEAN, IDENTIFIER, INTEGER, LIST, STRING,
 
 /* How the lexer represents a token. */
 typedef struct {
-   unsigned int lineno;
+   unsigned int lineno, column;
    token_val_t type;       /* can be any value from the defines below */
 
    union {

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.34 2005/01/09 20:28:54 chris Exp $
+ * $Id: parse.c,v 1.35 2005/01/10 04:53:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -221,7 +221,7 @@ static void describe_token (const token_t *t)
  */
 static void parse_error(const token_t *t, const int accepted[])
 {
-   PARSE_ERROR (compiler_config.filename, t->lineno);
+   PARSE_ERROR (compiler_config.filename, t->lineno, t->column);
    fprintf (stderr, "\texpected token from set ");
    print_set (accepted);
    fprintf (stderr, ", but got { ");
@@ -241,7 +241,7 @@ static void match (const unsigned int type)
 
    if (tok == NULL)
    {
-      PARSE_ERROR (compiler_config.filename, 0);
+      PARSE_ERROR (compiler_config.filename, 0, 0);
       fprintf (stderr, "\tpremature end of input file\n");
       exit (1);
    }
@@ -257,7 +257,7 @@ static void match (const unsigned int type)
       /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
       {
-         PARSE_ERROR (compiler_config.filename, 0);
+         PARSE_ERROR (compiler_config.filename, 0, 0);
          fprintf (stderr, "\tpremature end of input file\n");
          exit (1);
       }
@@ -306,6 +306,7 @@ static absyn_expr_t *parse_branch_expr()
    MALLOC (retval, sizeof(absyn_expr_t));
 
    retval->lineno = tok->lineno;
+   retval->column = tok->column;
 
    switch (tok->type) {
       case BOOLEAN:
@@ -362,6 +363,7 @@ static list_t *parse_branch_lst()
 
          match(ELSE);
          else_ele->lineno = last_tok->lineno;
+         else_ele->column = last_tok->column;
          match(MAPSTO);
          else_ele->branch = NULL;
          else_ele->expr = parse_expr();
@@ -372,6 +374,7 @@ static list_t *parse_branch_lst()
 
          new_ele->branch = parse_branch_expr();
          new_ele->lineno = new_ele->branch->lineno;
+         new_ele->column = new_ele->branch->column;
          match(MAPSTO);
          new_ele->expr = parse_expr();
 
@@ -403,6 +406,7 @@ static absyn_case_expr_t *parse_case_expr()
 
    match(CASE);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
    retval->test = parse_expr();
    match(IN);
 
@@ -438,6 +442,7 @@ static absyn_decl_t *parse_decl()
    MALLOC (retval, sizeof(absyn_decl_t));
 
    retval->lineno = tok->lineno;
+   retval->column = tok->column;
 
    switch (tok->type) {
       case FUNCTION:
@@ -476,6 +481,7 @@ static absyn_decl_expr_t *parse_decl_expr()
 
    match(DECL);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
    retval->decl_lst = parse_decl_lst();
    match(IN);
    retval->expr = parse_expr();
@@ -527,6 +533,7 @@ static absyn_expr_t *parse_expr()
    MALLOC (retval, sizeof(absyn_expr_t));
 
    retval->lineno = tok->lineno;
+   retval->column = tok->column;
 
    switch (tok->type) {
       case BOOLEAN:
@@ -631,6 +638,7 @@ static absyn_expr_t *parse_fun_call_or_id()
    tmp = parse_id();
 
    retval->lineno = tmp->lineno;
+   retval->column = tmp->column;
 
    switch (tok->type) {
       case LPAREN:
@@ -638,6 +646,7 @@ static absyn_expr_t *parse_fun_call_or_id()
 
          retval->kind = ABSYN_FUN_CALL;
          retval->fun_call_expr->lineno = retval->lineno;
+         retval->fun_call_expr->column = retval->column;
          retval->fun_call_expr->identifier = tmp;
 
          match(LPAREN);
@@ -660,6 +669,7 @@ static absyn_expr_t *parse_fun_call_or_id()
 
          retval->kind = ABSYN_RECORD_REF;
          retval->record_ref->lineno = retval->lineno;
+         retval->record_ref->column = retval->column;
          retval->record_ref->identifier = tmp;
 
          match(PIPE);
@@ -690,11 +700,13 @@ static absyn_fun_decl_t *parse_fun_decl()
 
    match(FUNCTION);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
+   sym->column = last_tok->column;
 
    retval->symbol = sym;
 
@@ -733,6 +745,7 @@ static absyn_id_expr_t *parse_id()
 
    match(IDENTIFIER);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
    retval->symbol = last_tok->string;
 
    if (tok->type == DOT)
@@ -763,10 +776,12 @@ static list_t *parse_id_lst()
 
       match(IDENTIFIER);
       new_ele->lineno = last_tok->lineno;
+      new_ele->column = last_tok->column;
 
       sym->symbol = last_tok->string;
       sym->sub = NULL;
       sym->lineno = last_tok->lineno;
+      sym->column = last_tok->column;
       new_ele->symbol = sym;
 
       match(COLON);
@@ -794,6 +809,7 @@ static absyn_if_expr_t *parse_if_expr()
 
    match(IF);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
    retval->test_expr = parse_expr();
    match(THEN);
    retval->then_expr = parse_expr();
@@ -816,11 +832,13 @@ static absyn_module_decl_t *parse_module_decl()
 
    match (MODULE);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
 
    match (IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
+   sym->column = last_tok->column;
    
    retval->symbol = sym;
 
@@ -877,10 +895,12 @@ static list_t *parse_record_assn_lst()
 
       match(IDENTIFIER);
       new_ele->lineno = last_tok->lineno;
+      new_ele->column = last_tok->column;
 
       sym->symbol = last_tok->string;
       sym->sub = NULL;
       sym->lineno = last_tok->lineno;
+      sym->column = last_tok->column;
 
       new_ele->symbol = sym;
       match(ASSIGN);
@@ -910,6 +930,7 @@ static absyn_id_expr_t *parse_record_ref()
 
    match(IDENTIFIER);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
    retval->symbol = last_tok->string;
 
    if (tok->type == PIPE)
@@ -938,6 +959,7 @@ static absyn_decl_t *parse_top_decl()
          MALLOC (retval, sizeof (absyn_decl_t));
          retval->type = ABSYN_MODULE_DECL;
          retval->lineno = tok->lineno;
+         retval->column = tok->column;
          retval->module_decl = parse_module_decl();
          break;
 
@@ -946,6 +968,7 @@ static absyn_decl_t *parse_top_decl()
       case VAL:
          retval = parse_decl();
          retval->lineno = tok->lineno;
+         retval->column = tok->column;
          break;
 
       default:
@@ -999,17 +1022,20 @@ static absyn_ty_t *parse_ty()
          match(BOTTOM);
          retval->kind = ABSYN_TY_BOTTOM;
          retval->lineno = last_tok->lineno;
+         retval->column = last_tok->column;
          break;
 
       case IDENTIFIER:
          retval->kind = ABSYN_TY_ID;
          retval->identifier = parse_id();
          retval->lineno = retval->identifier->lineno;
+         retval->column = retval->identifier->column;
          break;
 
       case LBRACE:
          match(LBRACE);
          retval->lineno = last_tok->lineno;
+         retval->column = last_tok->column;
          retval->kind = ABSYN_TY_RECORD;
          retval->record = parse_id_lst();
          match(RBRACE);
@@ -1018,6 +1044,7 @@ static absyn_ty_t *parse_ty()
       case LIST:
          match(LIST);
          retval->lineno = last_tok->lineno;
+         retval->column = last_tok->column;
          retval->kind = ABSYN_TY_LIST;
          retval->list = parse_ty();
          break;
@@ -1042,11 +1069,13 @@ static absyn_ty_decl_t *parse_ty_decl()
 
    match(TYPE);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
+   sym->column = last_tok->column;
 
    retval->symbol = sym;
 
@@ -1069,11 +1098,13 @@ static absyn_val_decl_t *parse_val_decl()
 
    match(VAL);
    retval->lineno = last_tok->lineno;
+   retval->column = last_tok->column;
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
+   sym->column = last_tok->column;
 
    retval->symbol = sym;
 
