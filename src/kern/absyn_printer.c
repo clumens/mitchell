@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.16 2004/12/22 02:06:21 chris Exp $
+ * $Id: absyn_printer.c,v 1.17 2005/01/06 23:48:21 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -294,6 +294,10 @@ static void print_ty_t (absyn_ty_t *node, unsigned int indent)
    fprintf (out, "\n%*sty_t", indent, "");
 
    switch (node->kind) {
+      case ABSYN_TY_BOTTOM:
+         fprintf (out, "⊥");
+         break;
+
       case ABSYN_TY_ID:
          print_id_expr_t (node->identifier, indent+1);
          break;

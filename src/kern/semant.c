@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.25 2005/01/05 03:14:17 chris Exp $
+ * $Id: semant.c,v 1.26 2005/01/06 23:48:21 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -142,11 +142,10 @@ void check_program (ast_t *ast)
 wchar_t *ty_to_str (const ty_t *ty)
 {
    /* Maps a type to an identifying string.  Note that the order of these
-    * strings must hatch the order of the type enumeration in basic_types.h.
+    * strings must match the order of the ty_kind enumeration in symtab.h.
     */
    static wchar_t *ty_map[] = {
-      L"alias", L"boolean", L"bottom", L"integer", L"list", L"record",
-      L"string" };
+      L"alias", L"boolean", L"⊥", L"integer", L"list", L"record", L"string" };
 
    if (ty == NULL)
       return NULL;
@@ -420,6 +419,11 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
    ty_t *retval = NULL;
 
    switch (node->kind) {
+      case ABSYN_TY_BOTTOM:
+         MALLOC(retval, sizeof(ty_t));
+         retval->ty = TY_BOTTOM;
+         break;
+
       case ABSYN_TY_ID:
       {
          /* First check the local symbol table stack (to take into account any

@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.19 2004/12/22 02:06:22 chris Exp $
+ * $Id: tokenize.c,v 1.20 2005/01/06 23:48:21 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -40,19 +40,19 @@
 
 /* Maps a token value to an identifying string, for error reporting
  * purposes.  Note that the order of these strings must match up with the
- * order of the token definitions in tokens.h.
+ * order of the token_val_t structure in tokens.h.
  */
 const char *token_map[] = {
    "BOOLEAN", "IDENTIFIER", "INTEGER", "LIST", "STRING",
 
-   "ASSIGN", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
+   "ASSIGN", "BOTTOM", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
    "FUNCTION", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO", "MODULE",
    "PIPE", "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAL",
    
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
-static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ|}])τʋ#\"";
+static wchar_t *reserved = L"←⊥:,.ƒ{[(→ℳ|}])τʋ#\"";
 
 /* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
@@ -209,6 +209,11 @@ token_t *next_token (FILE *f)
          case L'←':
             retval->lineno = lineno;
             retval->type = ASSIGN;
+            return retval;
+
+         case L'⊥':
+            retval->lineno = lineno;
+            retval->type = BOTTOM;
             return retval;
 
          case L':':

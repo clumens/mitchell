@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.31 2004/12/22 02:06:21 chris Exp $
+ * $Id: parse.c,v 1.32 2005/01/06 23:48:21 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -84,7 +84,7 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* record-ref */ { IDENTIFIER, -1 },
    /* top-decl */ { FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { FUNCTION, MODULE, TYPE, VAL, -1 },
-   /* ty */ { IDENTIFIER, LBRACE, LIST, -1 },
+   /* ty */ { BOTTOM, IDENTIFIER, LBRACE, LIST, -1 },
    /* ty-decl */ { TYPE, -1 },
    /* val-decl */ { VAL, -1 }
 };
@@ -987,7 +987,8 @@ static absyn_decl_lst_t *parse_top_decl_lst()
    return retval;
 }
 
-/* ty ::= LIST ty
+/* ty ::= BOTTOM
+ *      | LIST ty
  *      | LBRACE id-lst RBRACE
  *      | id
  */
@@ -999,6 +1000,12 @@ static absyn_ty_t *parse_ty()
    MALLOC(retval, sizeof(absyn_ty_t));
 
    switch (tok->type) {
+      case BOTTOM:
+         match(BOTTOM);
+         retval->kind = ABSYN_TY_BOTTOM;
+         retval->lineno = last_tok->lineno;
+         break;
+
       case IDENTIFIER:
          retval->kind = ABSYN_TY_ID;
          retval->identifier = parse_id();
