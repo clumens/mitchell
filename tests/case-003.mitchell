@@ -1,0 +1,10 @@
+# Description:  Empty branch-lst
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      case Main.asdf() in
+      end
+end

@@ -1,0 +1,12 @@
+# Description:  Expressions in branching of a case
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      case Main.asdf() in
+         Base.+ (3, 4) → true,
+         10 → false
+      end
+end
