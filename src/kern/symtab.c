@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.12 2004/12/16 23:41:51 chris Exp $
+ * $Id: symtab.c,v 1.13 2004/12/18 14:57:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -29,28 +29,6 @@
 #include "config.h"
 #include "memory.h"
 #include "symtab.h"
-
-/* In general, I'm against big disgusting macros - and cpp in general.  However,
- * I'm making an exception here because the code is just so similar and I
- * don't feel like making it a function.
- */
-#define COPY_ENTRY(dest, src) \
-   do { \
-      (dest)->symbol->kind = (src)->kind; \
-      (dest)->symbol->name = wcsdup ((wchar_t*) (src)->name); \
-      (dest)->next = NULL; \
-      switch ((src)->kind) { \
-         case SYM_MODULE: \
-            (dest)->symbol->info.stack = (src)->info.stack; \
-            break; \
-         case SYM_FUNCTION: \
-            break; \
-         case SYM_TYPE: \
-         case SYM_VALUE: \
-            (dest)->symbol->info.ty = (src)->info.ty; \
-            break; \
-      } \
-   } while (0)
 
 static unsigned int hash (const mstring_t *str, const subtable_t kind)
 {
@@ -112,6 +90,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_FUNCTION:
+            (*symtab)[row]->symbol->info.function = sym->info.function;
             break;
 
          case SYM_TYPE:
@@ -142,6 +121,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_FUNCTION:
+            (*symtab)[row]->symbol->info.function = sym->info.function;
             break;
 
          case SYM_TYPE:
@@ -214,6 +194,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             break;
 
          case SYM_FUNCTION:
+            cur->symbol->info.function = newsym->info.function;
             break;
 
          case SYM_TYPE:

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.29 2004/12/14 02:01:00 chris Exp $
+ * $Id: parse.c,v 1.30 2004/12/18 14:57:10 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -628,6 +628,7 @@ static absyn_expr_t *parse_fun_call_or_id()
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_expr_t));
+   MALLOC (retval->fun_call_expr, sizeof(absyn_fun_call_t));
 
    tmp = parse_id();
 
@@ -636,20 +637,20 @@ static absyn_expr_t *parse_fun_call_or_id()
    if (tok->type == LPAREN)
    {
       retval->kind = ABSYN_FUN_CALL;
-      retval->fun_call_expr.identifier = tmp;
+      retval->fun_call_expr->identifier = tmp;
+      retval->fun_call_expr->lineno = retval->lineno;
 
       match(LPAREN);
 
       if (tok->type != RPAREN)
       {
-         retval->fun_call_expr.arg_lst =
-            (struct absyn_expr_lst_t *) parse_expr_lst();
+         retval->fun_call_expr->arg_lst = parse_expr_lst();
          match(RPAREN);
       }
       else
       {
          match(RPAREN);
-         retval->fun_call_expr.arg_lst = NULL;
+         retval->fun_call_expr->arg_lst = NULL;
       }
    }
    else
