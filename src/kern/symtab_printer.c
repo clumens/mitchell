@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.5 2004/12/12 17:39:44 chris Exp $
+ * $Id: symtab_printer.c,v 1.6 2004/12/22 00:33:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,6 +28,33 @@
 #include "semant.h"
 #include "symtab.h"
 
+/* Print a single symbol. */
+void symbol_dump (symbol_t *sym)
+{
+   if (sym == NULL)
+      return;
+
+   switch (sym->kind) {
+      case SYM_FUNCTION:
+         printf ("FUNCTION(%ls)", sym->name);
+         break;
+
+      case SYM_MODULE:
+         printf ("MODULE(%ls)", sym->name);
+         break;
+      
+      case SYM_TYPE:
+         printf ("TYPE(%ls):%ls", sym->name,
+                 sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         break;
+         
+      case SYM_VALUE:
+         printf ("VALUE(%ls):%ls", sym->name,
+                 sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         break;
+   }
+}
+
 /* Print the single symbol table. */
 void table_dump (symtab_t *symtab, mstring_t *scope_name)
 {
@@ -43,36 +70,18 @@ void table_dump (symtab_t *symtab, mstring_t *scope_name)
       
       if (tmp != NULL)
       {
-         printf ("row %2d:\t", i);
+         printf ("[%2d] => ", i);
 
          while (tmp != NULL)
          {
-            switch (tmp->symbol->kind) {
-               case SYM_FUNCTION:
-                  printf ("FUNCTION(%ls), ", tmp->symbol->name);
-                  break;
-
-               case SYM_MODULE:
-                  printf ("MODULE(%ls), ", tmp->symbol->name);
-                  break;
-               
-               case SYM_TYPE:
-                  printf ("TYPE(%ls):%ls, ", tmp->symbol->name,
-                          tmp->symbol->info.ty == NULL ? L"" :
-                          ty_to_str(tmp->symbol->info.ty));
-                  break;
-                  
-               case SYM_VALUE:
-                  printf ("VALUE(%ls):%ls¸ ", tmp->symbol->name,
-                          tmp->symbol->info.ty == NULL ? L"" :
-                          ty_to_str(tmp->symbol->info.ty));
-                  break;
-            }
-
+            symbol_dump (tmp->symbol);
             tmp = tmp->next;
+
+            if (tmp != NULL)
+               printf (", ");
          }
 
-         printf ("NULL\n");
+         printf ("\n");
       }
    }
 }

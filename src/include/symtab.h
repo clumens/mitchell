@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.8 2004/12/16 23:41:49 chris Exp $
+ * $Id: symtab.h,v 1.9 2004/12/22 00:33:49 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -137,6 +137,7 @@ unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name,
                                         subtable_t kind);
 
 /* Functions to dump the symbol tables. */
+void symbol_dump (symbol_t *sym);
 void symtab_dump (tabstack_t *tabstack, mstring_t *scope_name);
 void table_dump (symtab_t *symtab, mstring_t *scope_name);
 
