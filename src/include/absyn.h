@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.6 2004/10/29 04:04:13 chris Exp $
+ * $Id: absyn.h,v 1.7 2004/11/01 05:11:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,10 @@
 #include "basic_types.h"
 #include "config.h"
 
+#ifdef __cplusplus
+    extern "C" {
+#endif
+
 /* +================================================================+
  * | EXPRESSION AST TYPES                                           |
  * +================================================================+
@@ -36,7 +40,7 @@ typedef enum { ABSYN_BOOLEAN, ABSYN_CASE, ABSYN_DECL, ABSYN_EXPR_LST,
                ABSYN_FUN_CALL, ABSYN_ID, ABSYN_IF, ABSYN_INTEGER,
                ABSYN_RECORD_LST, ABSYN_STRING } expr_type;
 
-typedef struct {
+typedef struct absyn_id_expr_t {
    mstring_t symbol;
    struct absyn_id_expr_t *ns;         /* "namespace" is reserved for gcc */
 } absyn_id_expr_t;
@@ -67,7 +71,7 @@ typedef struct {
    absyn_branch_lst_t *branch_lst;
 } absyn_case_expr_t;
 
-typedef struct {
+typedef struct absyn_expr_t {
    expr_type type;
 
    union {
@@ -92,7 +96,7 @@ typedef struct {
 /* A list of expressions - used for function call arguments and record
  * assignments.
  */
-typedef struct {
+typedef struct absyn_expr_lst_t {
    absyn_expr_t *expr;
    struct absyn_expr_lst_t *next;
 } absyn_expr_lst_t;
@@ -102,13 +106,13 @@ typedef struct {
  * +================================================================+
  */
 
-typedef struct {
+typedef struct absyn_id_lst_t {
    absyn_id_expr_t *symbol;
    struct absyn_ty_t *ty;
    struct absyn_id_lst_t *next;
 } absyn_id_lst_t;
 
-typedef struct {
+typedef struct absyn_ty_t {
    unsigned int is_list;
    unsigned int is_record;
 
@@ -146,7 +150,7 @@ typedef struct {
    };
 } absyn_proto_t;
 
-typedef struct {
+typedef struct absyn_proto_lst_t {
    absyn_proto_t *proto;
    struct absyn_proto_lst_t *next;
 } absyn_proto_lst_t;
@@ -172,7 +176,7 @@ typedef struct {
    struct absyn_decl_lst_t *decl_lst;
 } absyn_module_decl_t;
 
-typedef struct {
+typedef struct absyn_module_lst_t {
    absyn_module_decl_t *module;
    struct absyn_module_lst_t *next;
 } absyn_module_lst_t;
@@ -188,7 +192,7 @@ typedef struct {
 } absyn_decl_t;
 
 /* A list of declarations - used in decl-in-end constructs. */
-typedef struct {
+typedef struct absyn_decl_lst_t {
    absyn_decl_t *decl;
    struct absyn_decl_lst_t *next;
 } absyn_decl_lst_t;
@@ -201,6 +205,10 @@ typedef absyn_module_lst_t ast_t;
 
 /* Interface to the AST printer. */
 void print_absyn (ast_t *ast, compiler_config_t *config);
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif
 
