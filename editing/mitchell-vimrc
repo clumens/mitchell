@@ -1,12 +1,12 @@
 " Add this to your .vimrc to make editing files in mitchell much easier.
-" $Id: mitchell-vimrc,v 1.2 2004/10/23 19:17:39 chris Exp $
+" $Id: mitchell-vimrc,v 1.3 2004/11/11 04:17:52 chris Exp $
 
 if has ("autocmd")
    au BufEnter *.mitchell call Mitchell_edit()
 endif
 
 " Add a bunch of abbreviations so you don't have to remember the Unicode
-" values for these characters.
+" values for these characters.  Also, set the filetype appropriately.
 function! Mitchell_edit()
    iab \< ←
    iab \f ƒ
@@ -14,4 +14,6 @@ function! Mitchell_edit()
    iab \M ℳ
    iab \T τ
    iab \v ʋ
+
+   set filetype=mitchell
 endfunction
