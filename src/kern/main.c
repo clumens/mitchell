@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.19 2004/11/24 03:41:01 chris Exp $
+ * $Id: main.c,v 1.20 2004/11/24 20:45:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
 
 #include "absyn.h"
 #include "config.h"
+#include "error.h"
 #include "memory.h"
 #include "parse.h"
 #include "semant.h"
@@ -183,15 +184,13 @@ int main (int argc, char **argv)
     */
    if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
    {
-      fprintf (stderr, "*** Mitchell compiler error:\n");
-      fprintf (stderr, "Your current locale is not UTF-8 aware.  The mitchell "
-                       "compiler requires the\n");
-      fprintf (stderr, "proper environment settings to be able to read source "
-                       "files.  You will need\n");
-      fprintf (stderr, "to set your $LANG or $LC_ALL envirnoment variables to "
-                       "a locale which is\n");
-      fprintf (stderr, "UTF-8 aware.  A good setting might be en_US.UTF-8 "
-                       "for $LANG.  Exiting.\n");
+      USAGE_ERROR("<none>",
+                  "Your current locale is not UTF-8 aware.  The mitchell "
+                  "compiler requires\n\tthe proper environment settings to be "
+                  "able to read source files.  You\n\twill need to set your "
+                  "$LANG or $LC_ALL environment variables to a locale\n\t"
+                  "which is UTF-8 aware.  A good setting for $LANG might be "
+                  "en_US-UTF-8.\n\tExiting.");
       exit(1);
    }
 

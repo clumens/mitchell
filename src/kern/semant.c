@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.9 2004/11/24 03:56:04 chris Exp $
+ * $Id: semant.c,v 1.10 2004/11/24 20:45:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -22,11 +22,13 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #define _GNU_SOURCE
+#include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <wchar.h>
 
 #include "absyn.h"
+#include "error.h"
 #include "memory.h"
 #include "symtab.h"
 
@@ -126,39 +128,6 @@ void check_program (ast_t *ast)
 }
 
 /* +================================================================+
- * | COMMON ERROR HANDLING FUNCTIONS                                |
- * +================================================================+
- */
-
-static void duplicate_name_error (absyn_id_expr_t *s, unsigned int lineno)
-{
-   fprintf (stderr, "*** duplicate symbol referenced on line %d:  %ls\n",
-                    lineno, s->symbol);
-   exit (1);
-}
-
-static void duplicate_symbol_error (symbol_t *s, unsigned int lineno)
-{
-   fprintf (stderr, "*** duplicate symbol referenced on line %d:  %ls\n",
-                    lineno, s->name);
-   exit (1);
-}
-
-static void invalid_name_error (absyn_id_expr_t *ns, unsigned int lineno)
-{
-   fprintf (stderr, "*** error on line %d:  name includes "
-                    "namespace:  %ls\n", lineno, ns->symbol);
-   exit (1);
-}
-
-static void unknown_symbol_error (symbol_t *s, unsigned int lineno)
-{
-   fprintf (stderr, "*** unknown symbol referenced on line %d:  %ls\n",
-                    lineno, s->name);
-   exit (1);
-}
-
-/* +================================================================+
  * | UTILITY FUNCTIONS                                              |
  * +================================================================+
  */
@@ -175,14 +144,22 @@ static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack)
     * them simple anymore.
     */
    if (sym->sub != NULL)
-      invalid_name_error (sym, sym->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
+                        "unknown symbol referenced");
+      exit(1);
+   }
 
    MALLOC (new, sizeof (symbol_t))
    new->name = wcsdup (sym->symbol);
    new->kind = SYM_FUNVAL;
 
    if (symtab_add_entry (stack, new) == -1)
-      duplicate_symbol_error (new, sym->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
 }
 
 /* Similar to the above, except for types. */
@@ -194,14 +171,22 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
     * them simple anymore.
     */
    if (sym->sub != NULL)
-      invalid_name_error (sym, sym->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
+                        "symbol may not contain a namespace");
+      exit(1);
+   }
 
    MALLOC (new, sizeof (symbol_t))
    new->name = wcsdup (sym->symbol);
    new->kind = SYM_TYPE;
 
    if (symtab_add_entry (stack, new) == -1)
-      duplicate_symbol_error (new, sym->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, sym->lineno, sym->symbol,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
 }
 
 /* +================================================================+
@@ -365,7 +350,11 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
       symbol_t s = { SYM_FUNVAL, node->symbol };
 
       if (!symtab_entry_exists (stack, &s))
-         unknown_symbol_error (&s, node->lineno);
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, s.name,
+                           "unknown symbol referenced");
+         exit(1);
+      }
    }
    else
    {
@@ -390,22 +379,21 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
             symbol_t *retval;
 
             if ((retval = lookup_entry (tbl, s.name, s.kind)) == NULL)
-               unknown_symbol_error (&s, ns->lineno);
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno, s.name,
+                                 "unknown symbol referenced");
+               exit(1);
+            }
+
+            /* Really, this should never happen (kiss of death, I know). */
+            assert (retval != NULL);
+            assert (retval->stack != NULL);
+            assert (retval->stack->symtab != NULL);
 
             /* Traverse down into the next module's symbol table and strip off
              * one layer of the namespace path from the identifier to set up
              * for another pass.
              */
-            if (retval == NULL || retval->stack == NULL ||
-                retval->stack->symtab == NULL)
-            {
-               fprintf (stderr, "*** Mitchell compiler error:\n");
-               fprintf (stderr, "Unable to read module symbol table.  This is "
-                                "an internal error.\n");
-               fprintf (stderr, "Exiting.\n");
-               exit(1);
-            }
-
             tbl = retval->stack->symtab;
             ns = ns->sub;
          }
@@ -418,7 +406,11 @@ static void check_id (absyn_id_expr_t *node, tabstack_t *stack)
              * to resolve the identifier.
              */
             if (!table_entry_exists (tbl, &s))
-               unknown_symbol_error (&s, ns->lineno);
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, ns->lineno, s.name,
+                                 "unknown symbol referenced");
+               exit(1);
+            }
             else
                break;
          }
@@ -438,7 +430,12 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    symbol_t *new;
 
    if (node->symbol->sub != NULL)
-      invalid_name_error (node->symbol->sub, node->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol->symbol,
+                        "symbol may not contain a namespace");
+      exit(1);
+   }
 
    MALLOC (new, sizeof (symbol_t))
 
@@ -451,7 +448,12 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
     * inner symbol table.
     */
    if (symtab_add_entry (stack, new) == -1)
-      duplicate_symbol_error (new, node->lineno);
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol->symbol,
+                        "duplicate symbol already exists in this scope");
+      exit(1);
+   }
 
    /* Check the guts of the module against the module's new environment. */
    check_decl_lst (node->decl_lst, new->stack);
@@ -498,7 +500,12 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
        */
       for (tmp = cur; tmp != NULL; tmp = tmp->next)
          if (tmp->symbol->sub != NULL)
-            invalid_name_error (tmp->symbol, tmp->lineno);
+         {
+            BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
+                              tmp->symbol->symbol,
+                              "symbol may not contain a namespace");
+            exit(1);
+         }
 
       /* Step 2.  Check all record identifiers for proper typing and no
        * duplicates.
@@ -511,7 +518,12 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
          /* Now make sure there's no other record member with the same name. */
          for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
             if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
-               duplicate_name_error (tmp->symbol, tmp->lineno);
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
+                                 tmp->symbol->symbol, "duplicate symbol "
+                                 "already exists in this scope");
+               exit(1);
+            }
 
          cur = cur->next;
       }
@@ -525,7 +537,11 @@ static void check_ty (absyn_ty_t *node, tabstack_t *stack)
        * symbol table for those basic types.
        */
       if (!symtab_entry_exists (stack, &s) && !symtab_entry_exists (global, &s))
-         unknown_symbol_error (&s, node->lineno);
+      {
+         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno, s.name,
+                           "unknown symbol referenced");
+         exit(1);
+      }
    }
 }
 

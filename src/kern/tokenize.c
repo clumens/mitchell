@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.16 2004/11/24 03:56:04 chris Exp $
+ * $Id: tokenize.c,v 1.17 2004/11/24 20:45:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,6 +33,8 @@
 #include <wctype.h>
 
 #include "basic_types.h"
+#include "config.h"
+#include "error.h"
 #include "memory.h"
 #include "tokens.h"
 
@@ -67,11 +69,10 @@ static __inline__ wint_t read_char (FILE *f)
 
    if (errno == EILSEQ)
    {
-      fprintf (stderr, "*** Mitchell compiler error:\n");
-      fprintf (stderr, "fgetwc returned EILSEQ.  Please check that $LANG is "
-                       "set to a UTF-8 aware locale\n");
-      fprintf (stderr, "and that mitchell was compiled with gcc-3.4 or more "
-                       "recent.  Exiting\n");
+      USAGE_ERROR (compiler_config.filename,
+                   "fgetwc returned EILSEQ.  Please check that $LANG is set "
+                   "to a UTF-8 aware locale\n\tand that mitchell was compiled "
+                   "with gcc-3.4 or more recent.  Exiting.");
       fclose (f);
       exit (1);
    }
@@ -87,12 +88,10 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
 {
    if (ungetwc (ch, f) == WEOF && errno == EILSEQ)
    {
-      fprintf (stderr, "*** Mitchell compiler error:\n");
-      fprintf (stderr, "ungetwc returned EILSEQ.  Please check that $LANG is "
-                       "set to a UTF-8 aware\n");
-      fprintf (stderr, "locale and that mitchell was compiled with gcc-3.4 or "
-                       "more recent.  Exiting\n");
-      fprintf (stderr, "ungetwc returned EILSEQ\n");
+      USAGE_ERROR (compiler_config.filename,
+                   "ungetwc returned EILSEQ.  Please check that $LANG is set "
+                   "to a UTF-8 aware locale\n\tand that mitchell was compiled "
+                   "with gcc-3.4 or more recent.  Exiting.");
       fclose (f);
       exit (1);
    }
@@ -306,7 +305,8 @@ token_t *next_token (FILE *f)
 
             if (n == 0 && (errno == ERANGE || errno == EINVAL))
             {
-               fprintf (stderr, "could not perform number conversion\n");
+               MITCHELL_INTERNAL_ERROR(compiler_config.filename,
+                                       "Could not perform number conversion");
                fclose (f);
                exit (1);
             }

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.24 2004/11/21 05:36:38 chris Exp $
+ * $Id: parse.c,v 1.25 2004/11/24 20:45:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -35,6 +35,7 @@
 
 #include "absyn.h"
 #include "config.h"
+#include "error.h"
 #include "memory.h"
 #include "tokens.h"
 
@@ -220,12 +221,12 @@ static void describe_token (const token_t *t)
  */
 static void parse_error(const token_t *t, const int accepted[])
 {
-   fprintf (stderr, "*** parse error on line %d:\n", t->lineno);
-   fprintf (stderr, "*** expected token from set ");
+   PARSE_ERROR (compiler_config.filename, t->lineno);
+   fprintf (stderr, "\texpected token from set ");
    print_set (accepted);
-   fprintf (stderr, ", but got ");
+   fprintf (stderr, ", but got { ");
    describe_token(t);
-   fprintf (stderr, " instead\n");
+   fprintf (stderr, " } instead\n");
    exit(1);
 }
 
@@ -240,7 +241,8 @@ static void match (const unsigned int type)
 
    if (tok == NULL)
    {
-      fprintf (stderr, "*** parse error:  premature end of input file\n");
+      PARSE_ERROR (compiler_config.filename, 0);
+      fprintf (stderr, "\tpremature end of input file\n");
       exit (1);
    }
 
@@ -255,7 +257,8 @@ static void match (const unsigned int type)
       /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
       {
-         fprintf (stderr, "*** parse error:  premature end of input file\n");
+         PARSE_ERROR (compiler_config.filename, 0);
+         fprintf (stderr, "\tpremature end of input file\n");
          exit (1);
       }
    }
@@ -273,7 +276,7 @@ ast_t *parse (const char *filename)
 
    if ((in = fopen (filename, "r")) == NULL)
    {
-      fprintf (stderr, "could not open for reading: %s\n", filename);
+      COULD_NOT_OPEN_ERROR (filename, "reading");
       exit(1);
    }
 

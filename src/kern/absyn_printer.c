@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.10 2004/11/21 05:36:38 chris Exp $
+ * $Id: absyn_printer.c,v 1.11 2004/11/24 20:45:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,7 @@
 #include "absyn.h"
 #include "config.h"
 #include "basic_types.h"
+#include "error.h"
 
 /* More mutually recursive functions means more forward declarations. */
 static void print_branch_lst_t (absyn_branch_lst_t *node, unsigned int indent);
@@ -60,8 +61,7 @@ void print_absyn (ast_t *ast, compiler_config_t *config)
    {
       if ((out = fopen (config->debug.absyn_outfile, "w")) == NULL)
       {
-         fprintf (stderr, "error: unable to open dump file '%s' for writing\n",
-                  config->debug.absyn_outfile);
+         COULD_NOT_OPEN_ERROR (config->debug.absyn_outfile, "writing");
          exit(1);
       }
    }
@@ -73,8 +73,7 @@ void print_absyn (ast_t *ast, compiler_config_t *config)
    {
       if (fclose (out) != 0)
       {
-         fprintf (stderr, "error:  could not close dump file '%s'\n",
-                  config->debug.absyn_outfile);
+         FCLOSE_ERROR (config->debug.absyn_outfile);
          exit(1);
       }
    }
