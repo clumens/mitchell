@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.7 2004/10/19 03:25:05 chris Exp $
+ * $Id: parse.c,v 1.8 2004/10/20 14:12:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -181,23 +181,26 @@ static void describe_token (const token_t *t)
    if (t == NULL)
       return;
 
-   fprintf (stderr, "%s", token_map[t->type]);
-
    switch (t->type) {
       case BOOLEAN:
-         fprintf (stderr, "(%s)", t->boolean == 0 ? "f" : "t");
+         fprintf (stderr, "%s(%s)", token_map[t->type],
+                                    t->boolean == 0 ? "f" : "t");
          break;
 
       case IDENTIFIER:
-         fprintf (stderr, "(%ls)", t->string);
+         fprintf (stderr, "%s(%ls)", token_map[t->type], t->string);
          break;
 
       case INTEGER:
-         fprintf (stderr, "(%li)", t->integer);
+         fprintf (stderr, "%s(%li)", token_map[t->type], t->integer);
          break;
 
       case STRING:
-         fprintf (stderr, "(%ls)", t->string);
+         fprintf (stderr, "%s(%ls)", token_map[t->type], t->string);
+         break;
+
+      default:
+         fprintf (stderr, "%s", token_map[t->type]);
          break;
    }
 }

@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.9 2004/10/18 17:01:38 chris Exp $
+ * $Id: main.c,v 1.10 2004/10/20 14:12:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -29,11 +29,9 @@
 #include "config.h"
 #include "parse.h"
 
-/* Defines for what we want getopt_long to return. */
-#define OPT_HELP                 100
-#define OPT_VERBOSE_HELP         101
-#define OPT_VERSION              102
-#define OPT_IDEBUG_PARSER        103
+/* What we want getopt_long to return. */
+typedef enum { OPT_HELP = 100, OPT_VERBOSE_HELP, OPT_VERSION,
+               OPT_IDEBUG_PARSER } config_vals_t;
 
 /* The command line arguments we accept. */
 static char *shortopts = "hv";
