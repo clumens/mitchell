@@ -1,8 +1,0 @@
-# Description:  Constant initialized from an if expression
-# Expected:  PASS
-
-ℳ Main ← decl
-   ɕ foo: integer
-in
-   ɕ foo: integer ← if 47 then 1 else 0
-end

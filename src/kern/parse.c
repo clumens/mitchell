@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.11 2004/10/22 19:41:55 chris Exp $
+ * $Id: parse.c,v 1.12 2004/10/23 19:17:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,77 +51,73 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
-#define NRULES   27        /* number of parser rules in each set */
+#define NRULES   25        /* number of parser rules in each set */
 #define SET_SIZE 13        /* max number of elements in each rule */
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* 0: branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
    /* 1: branch-lst */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
    /* 2: case-expr */ { CASE, -1 },
-   /* 3: const-decl */ { CONST, -1 },
-   /* 4: const-decl-proto */ { CONST, -1 },
-   /* 5: decl */ { CONST, FUNCTION, TYPE, VAR, -1 },
-   /* 6: decl-expr */ { DECL, -1 },
-   /* 7: decl-lst */ { CONST, FUNCTION, TYPE, VAR, -1 },
-   /* 8: expr */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK,
+   /* 3: decl */ { FUNCTION, TYPE, VAR, -1 },
+   /* 4: decl-expr */ { DECL, -1 },
+   /* 5: decl-lst */ { FUNCTION, TYPE, VAR, -1 },
+   /* 6: expr */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK,
                    STRING, -1, },
-   /* 9: expr-lst */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
+   /* 7: expr-lst */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
                        LBRACK, STRING, -1 },
-   /* 10: fun-call-or-id */ { IDENTIFIER, -1 },
-   /* 11: fun-decl */ { FUNCTION, -1 },
-   /* 12: fun-decl-proto */ { FUNCTION, -1 },
-   /* 13: id */ { IDENTIFIER, -1 },
-   /* 14: id-lst */ { IDENTIFIER, -1 },
-   /* 15: if-expr */ { IF, -1 },
-   /* 16: module-decl */ { MODULE, -1 },
-   /* 17: module-decl-lst */ { MODULE, -1 },
-   /* 18: proto */ { CONST, FUNCTION, TYPE, VAR, -1 },
-   /* 19: proto-lst */ { CONST, FUNCTION, TYPE, VAR, -1 },
-   /* 20: record-assn-lst */ { IDENTIFIER, -1 },
-   /* 21: single-ty */ { IDENTIFIER, LBRACE, -1 },
-   /* 22: ty */ { IDENTIFIER, LBRACE, -1 },
-   /* 23: ty-decl */ { TYPE, -1 },
-   /* 24: ty-decl-proto */ { TYPE, -1 },
-   /* 25: var-decl */ { VAR, -1 },
-   /* 26: var-decl-proto */ { VAR, -1 }
+   /* 8: fun-call-or-id */ { IDENTIFIER, -1 },
+   /* 9: fun-decl */ { FUNCTION, -1 },
+   /* 10: fun-decl-proto */ { FUNCTION, -1 },
+   /* 11: id */ { IDENTIFIER, -1 },
+   /* 12: id-lst */ { IDENTIFIER, -1 },
+   /* 13: if-expr */ { IF, -1 },
+   /* 14: module-decl */ { MODULE, -1 },
+   /* 15: module-decl-lst */ { MODULE, -1 },
+   /* 16: proto */ { FUNCTION, TYPE, VAR, -1 },
+   /* 17: proto-lst */ { FUNCTION, TYPE, VAR, -1 },
+   /* 18: record-assn-lst */ { IDENTIFIER, -1 },
+   /* 19: single-ty */ { IDENTIFIER, LBRACE, -1 },
+   /* 20: ty */ { IDENTIFIER, LBRACE, -1 },
+   /* 21: ty-decl */ { TYPE, -1 },
+   /* 22: ty-decl-proto */ { TYPE, -1 },
+   /* 23: var-decl */ { VAR, -1 },
+   /* 24: var-decl-proto */ { VAR, -1 }
 };
 
 static const int FOLLOW_SET[NRULES][SET_SIZE] = {
    /* 0: branch-expr */ { MAPSTO, -1 },
    /* 1: branch-lst */ { END, -1 },
-   /* 2: case-expr */ { COMMA, CONST, ELSE, END, FUNCTION, IN, THEN, RBRACE,
+   /* 2: case-expr */ { COMMA, ELSE, END, FUNCTION, IN, THEN, RBRACE,
                         RBRACK, RPAREN, TYPE, VAR, -1 },
-   /* 3: const-decl */ { CONST, END, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 4: const-decl-proto */ { ASSIGN, CONST, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 5: decl */ { CONST, END, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 6: decl-expr */ { COMMA, CONST, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
+   /* 3: decl */ { END, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 4: decl-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
                         RPAREN, THEN, TYPE, VAR, -1 },
-   /* 7: decl-lst */ { END, IN, -1 },
-   /* 8: expr */ { COMMA, CONST, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
+   /* 5: decl-lst */ { END, IN, -1 },
+   /* 6: expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
                    RPAREN, THEN, TYPE, VAR, -1 },
-   /* 9: expr-lst */ { RBRACK, RPAREN, -1 },
-   /* 10: fun-call-or-id */ { COMMA, CONST, ELSE, END, FUNCTION, IN, RBRACK,
+   /* 7: expr-lst */ { RBRACK, RPAREN, -1 },
+   /* 8: fun-call-or-id */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK,
                               RBRACE, RPAREN, THEN, TYPE, VAR, -1 },
-   /* 11: fun-decl */ { CONST, END, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 12: fun-decl-proto */ { ASSIGN, CONST, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 13: id */ { ASSIGN, CONST, COMMA, END, FUNCTION, IN, LIST, LPAREN,
+   /* 9: fun-decl */ { END, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 10: fun-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 11: id */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN,
                   RBRACE, RPAREN, TYPE, VAR, -1 },
-   /* 14: id-lst */ { RBRACE, RPAREN, -1 },
-   /* 15: if-expr */ { COMMA, CONST, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
+   /* 12: id-lst */ { RBRACE, RPAREN, -1 },
+   /* 13: if-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
                        RPAREN, THEN, TYPE, VAR, -1 },
-   /* 16: module-decl */ { ENDOFFILE, MODULE, -1 },
-   /* 17: module-decl-lst */ { ENDOFFILE, -1 },
-   /* 18: proto */ { CONST, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 19: proto-lst */ { IN, -1 },
-   /* 20: record-assn-lst */ { RBRACE, -1 },
-   /* 21: single-ty */ { ASSIGN, CONST, COMMA, END, FUNCTION, IN, LIST, LPAREN,
+   /* 14: module-decl */ { ENDOFFILE, MODULE, -1 },
+   /* 15: module-decl-lst */ { ENDOFFILE, -1 },
+   /* 16: proto */ { FUNCTION, IN, TYPE, VAR, -1 },
+   /* 17: proto-lst */ { IN, -1 },
+   /* 18: record-assn-lst */ { RBRACE, -1 },
+   /* 19: single-ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN,
                          RBRACE, RPAREN, TYPE, VAR, -1 },
-   /* 22: ty */ { ASSIGN, CONST, COMMA, END, FUNCTION, IN, LPAREN, RBRACE,
+   /* 20: ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE,
                   RPAREN, TYPE, VAR, -1 },
-   /* 23: ty-decl */ { CONST, END, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 24: ty-decl-proto */ { ASSIGN, CONST, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 25: var-decl */ { CONST, END, FUNCTION, IN, TYPE, VAR, -1 },
-   /* 26: var-decl-proto */ { ASSIGN, CONST, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 21: ty-decl */ { END, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 22: ty-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 23: var-decl */ { END, FUNCTION, IN, TYPE, VAR, -1 },
+   /* 24: var-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAR, -1 },
 };
 
 /* These functions are seriously mutually recursive, so put forward
@@ -130,8 +126,6 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
 static absyn_expr_t *parse_branch_expr();
 static absyn_branch_lst_t *parse_branch_lst();
 static absyn_case_expr_t *parse_case_expr();
-static void parse_const_decl();
-static void parse_const_decl_proto();
 static absyn_decl_t *parse_decl();
 static absyn_decl_expr_t *parse_decl_expr();
 static absyn_decl_lst_t *parse_decl_lst();
@@ -267,7 +261,7 @@ void parse (const char *filename)
 
    tok = next_token (in);
 
-   if (in_set (tok, FIRST_SET[17]))
+   if (in_set (tok, FIRST_SET[15]))
       parse_module_decl_lst();
    else
       parse_error (tok, "MODULE");
@@ -368,34 +362,8 @@ static absyn_case_expr_t *parse_case_expr()
    return retval;
 }
 
-/* const-decl ::= const-decl-proto ASSIGN expr */
-static void parse_const_decl()
-{
-   ENTERING (__FUNCTION__);
-
-   parse_const_decl_proto();
-   match(ASSIGN);
-   parse_expr();
-
-   LEAVING(__FUNCTION__);
-}
-
-/* const-decl-proto ::= CONST IDENTIFIER COLON ty */
-static void parse_const_decl_proto()
-{
-   ENTERING (__FUNCTION__);
-
-   match(CONST);
-   match(IDENTIFIER);
-   match(COLON);
-   parse_ty();
-
-   LEAVING(__FUNCTION__);
-}
-
 /* decl ::= ty-decl
  *        | var-decl
- *        | const-decl
  *        | fun-decl
  */
 static absyn_decl_t *parse_decl()
@@ -403,10 +371,6 @@ static absyn_decl_t *parse_decl()
    ENTERING (__FUNCTION__);
 
    switch (tok->type) {
-      case CONST:
-         parse_const_decl();
-         break;
-
       case FUNCTION:
          parse_fun_decl();
          break;
@@ -420,11 +384,11 @@ static absyn_decl_t *parse_decl()
          break;
 
       default:
-         parse_error (tok, "CONST FUNCTION TYPE VAR");
+         parse_error (tok, "FUNCTION TYPE VAR");
    }
 
-   if (!in_set (tok, FOLLOW_SET[5]))
-      parse_error (tok, "CONST END FUNCTION IN TYPE VAR");
+   if (!in_set (tok, FOLLOW_SET[3]))
+      parse_error (tok, "END FUNCTION IN TYPE VAR");
 
    LEAVING(__FUNCTION__);
    return NULL;
@@ -458,12 +422,12 @@ static absyn_decl_lst_t *parse_decl_lst()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_decl_lst_t))
 
-   if (!in_set (tok, FIRST_SET[7]))
-      parse_error (tok, "CONST FUNCTION TYPE VAR");
+   if (!in_set (tok, FIRST_SET[5]))
+      parse_error (tok, "FUNCTION TYPE VAR");
 
    retval->decl = parse_decl();
 
-   if (!in_set (tok, FOLLOW_SET[7]))
+   if (!in_set (tok, FOLLOW_SET[5]))
       retval->next = (struct decl_lst_t *) parse_decl_lst();
    else
       retval->next = NULL;
@@ -729,7 +693,7 @@ static void parse_module_decl()
    parse_decl_lst();
    match (END);
 
-   if (!in_set (tok, FOLLOW_SET[16]))
+   if (!in_set (tok, FOLLOW_SET[14]))
       parse_error (tok, "ENDOFFILE MODULE");
 
    LEAVING(__FUNCTION__);
@@ -742,14 +706,14 @@ static void parse_module_decl_lst()
 {
    ENTERING (__FUNCTION__);
 
-   if (in_set (tok, FIRST_SET[16]))
+   if (in_set (tok, FIRST_SET[14]))
    {
       parse_module_decl();
       parse_module_decl_lst();
    }
    else
    {
-      if (!in_set (tok, FOLLOW_SET[17]))
+      if (!in_set (tok, FOLLOW_SET[15]))
          parse_error (tok, "MODULE");
    }
 
@@ -758,7 +722,6 @@ static void parse_module_decl_lst()
 
 /* proto ::= ty-decl-proto
  *         | var-decl-proto
- *         | const-decl-proto
  *         | fun-decl-proto
  */
 static void parse_proto()
@@ -766,10 +729,6 @@ static void parse_proto()
    ENTERING (__FUNCTION__);
 
    switch (tok->type) {
-      case CONST:
-         parse_const_decl_proto();
-         break;
-
       case FUNCTION:
          parse_fun_decl_proto();
          break;
@@ -783,11 +742,11 @@ static void parse_proto()
          break;
 
       default:
-         parse_error (tok, "CONST FUNCTION TYPE VAR");
+         parse_error (tok, "FUNCTION TYPE VAR");
    }
 
-   if (!in_set (tok, FOLLOW_SET[18]))
-      parse_error (tok, "CONST FUNCTION IN TYPE VAR");
+   if (!in_set (tok, FOLLOW_SET[16]))
+      parse_error (tok, "FUNCTION IN TYPE VAR");
 
    LEAVING(__FUNCTION__);
 }
@@ -799,12 +758,12 @@ static void parse_proto_lst()
 {
    ENTERING (__FUNCTION__);
 
-   if (!in_set (tok, FIRST_SET[19]))
-      parse_error (tok, "CONST FUNCTION TYPE VAR");
+   if (!in_set (tok, FIRST_SET[17]))
+      parse_error (tok, "FUNCTION TYPE VAR");
 
    parse_proto();
 
-   if (!in_set (tok, FOLLOW_SET[19]))
+   if (!in_set (tok, FOLLOW_SET[17]))
       parse_proto_lst();
 
    LEAVING(__FUNCTION__);
@@ -825,7 +784,7 @@ static absyn_record_lst_t *parse_record_assn_lst()
    match(ASSIGN);
    retval->expr = (struct absyn_expr_t *) parse_expr();
 
-   if (!in_set (tok, FOLLOW_SET[20]))
+   if (!in_set (tok, FOLLOW_SET[18]))
    {
       match(COMMA);
       retval->next = (struct absyn_record_lst_t *) parse_record_assn_lst();

@@ -1,8 +1,0 @@
-# Description:  Basic constant declaration
-# Expected:  PASS
-
-ℳ Main ← decl
-   ɕ foo: int
-in
-   ɕ foo: int ← 47
-end

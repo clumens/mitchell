@@ -1,8 +1,0 @@
-# Description:  List constant
-# Expected:  PASS
-
-ℳ Main ← decl
-   ɕ foo: integer list
-in
-   ɕ foo: integer list ← [1, 2, 3, 4, 5]
-end

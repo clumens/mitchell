@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.5 2004/10/19 18:38:25 chris Exp $
+ * $Id: grammar,v 1.6 2004/10/23 19:17:38 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -65,7 +65,6 @@ expr-lst ::= expr COMMA expr-lst
 /* Declarations {{{ */
 decl ::= ty-decl
        | var-decl
-       | const-decl
        | fun-decl
 
 decl-lst ::= decl decl-lst
@@ -75,7 +74,6 @@ decl-expr ::= DECL decl-lst IN expr END
 
 proto ::= ty-decl-proto
         | var-decl-proto
-        | const-decl-proto
         | fun-decl-proto
 
 proto-lst ::= proto
@@ -112,13 +110,6 @@ id ::= IDENTIFIER
 /* }}} */
 
 
-/* Constants {{{ */
-const-decl-proto ::= CONST IDENTIFIER COLON ty
-
-const-decl ::= const-decl-proto ASSIGN expr
-/* }}} */
-
-
 /* Functions {{{ */
 fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
                  | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN
@@ -142,8 +133,6 @@ CASE ::= case
 COLON ::= :
 
 COMMA ::= ,
-
-CONST ::= ɕ
 
 DECL ::= decl
 
