@@ -2,8 +2,6 @@
    - lots and lots of documentation explaining syntax definition
 - grammar:
    - allow empty lists (preview-3)
-   - come up with something besides a "." to separate records from their
-     elements when accessing (preview-3)
    - remove DECL from module-decl (preview-4)
    - provide an escape mechanism for strings - way to insert literal
      double quotes, tabs, escapes for colors, etc. (preview-4)
