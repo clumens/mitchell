@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.1 2005/02/12 16:26:19 chris Exp $
+ * $Id: desugar_case.c,v 1.2 2005/02/20 03:26:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,6 +37,7 @@
 #include "list.h"
 #include "memory.h"
 #include "str.h"
+#include "semant.h"
 
 static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node);
 static absyn_decl_expr_t *handle_decl_expr (absyn_decl_expr_t *node);
@@ -67,6 +68,23 @@ ast_t *desugar_case_exprs (ast_t *ast)
  * +================================================================+
  */
 
+/* Wrap an expr in a branch-lst element. */
+static absyn_branch_lst_t *expr_to_branch_lst (absyn_expr_t *in, backlink_t *bl)
+{
+   absyn_branch_lst_t *retval;
+
+   MALLOC (retval, sizeof(absyn_branch_lst_t));
+
+   retval->lineno = in->lineno;
+   retval->column = in->column;
+   retval->parent = bl;
+   retval->branch = NULL;
+   retval->expr = in;
+
+   retval->expr->parent = make_bl (LINK_BRANCH_LST, retval);
+   return retval;
+}
+
 /* Convert a generic expr into a val-decl. */
 static absyn_val_decl_t *expr_to_val_decl (absyn_expr_t *in, backlink_t *bl)
 {
@@ -85,6 +103,138 @@ static absyn_val_decl_t *expr_to_val_decl (absyn_expr_t *in, backlink_t *bl)
    /* Reparent the val's init-expr. */
    retval->init->parent = make_bl (LINK_VAL_DECL, retval);
 
+   return retval;
+}
+
+/* Build the subtree for calling a comparison function with a list of arguments
+ * to see if we should follow this then-expr branch or not.  This sure is a
+ * lot of work for something that should be so simple.
+ */
+static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
+                                     absyn_expr_t *right)
+{
+   absyn_expr_t *retval, *val_expr;
+   absyn_fun_call_t *fun_call;
+   absyn_id_expr_t *id;
+
+   MALLOC (retval, sizeof (absyn_expr_t));
+   MALLOC (fun_call, sizeof (absyn_fun_call_t));
+   MALLOC (id, sizeof (absyn_id_expr_t));
+   MALLOC (val_expr, sizeof (absyn_expr_t));
+
+   retval->lineno = left->lineno;
+   retval->column = left->column;
+   retval->parent = NULL;
+   retval->kind = ABSYN_FUN_CALL;
+   retval->ty = left->ty;
+   retval->fun_call_expr = fun_call;
+
+   fun_call->lineno = left->lineno;
+   fun_call->column = left->column;
+   fun_call->parent = make_bl (LINK_EXPR, retval);
+   fun_call->ty = left->ty;
+   fun_call->identifier = id;
+
+   /* Now we have to make a reference to the val-decl so we can append it
+    * to the list of function call arguments.  This val-decl is how we're
+    * referring to the result of evaluating the case-expr's test-expr.
+    */
+   val_expr->lineno = left->lineno;
+   val_expr->column = right->lineno;
+   val_expr->parent = make_bl (LINK_FUN_CALL, retval->fun_call_expr);
+   val_expr->kind = ABSYN_ID;
+   val_expr->ty = left->ty;
+
+   MALLOC (val_expr->identifier, sizeof (absyn_id_expr_t));
+   val_expr->identifier->lineno = left->lineno;
+   val_expr->identifier->column = left->column;
+   val_expr->identifier->parent = make_bl (LINK_EXPR, val_expr);
+   val_expr->identifier->symbol = left->symbol->symbol;
+   val_expr->identifier->sub = NULL;
+   
+   /* First append the val-expr for the test result, then append the expr for
+    * the branch-test.
+    */
+   fun_call->arg_lst = list_append (fun_call->arg_lst, val_expr);
+   fun_call->arg_lst = list_append (fun_call->arg_lst, right);
+
+   /* Finally, what's the name of the function we are calling? */
+   id->lineno = left->lineno;
+   id->column = left->lineno;
+   id->parent = make_bl (LINK_FUN_CALL, retval->fun_call_expr);
+
+   switch ((unalias(left->ty))->ty) {
+      case TY_BOOLEAN:
+         id->symbol = wcsdup (L"Boolean");
+         break;
+
+      case TY_INTEGER:
+         id->symbol = wcsdup (L"Integer");
+         break;
+
+      case TY_STRING:
+         id->symbol = wcsdup (L"String");
+         break;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad type for left->ty");
+         exit(1);
+         break;
+   }
+
+   MALLOC (id->sub, sizeof(absyn_id_expr_t));
+   id->sub->lineno = id->lineno;
+   id->sub->column = id->column;
+   id->sub->parent = make_bl (LINK_ID_EXPR, id);
+   id->sub->symbol = wcsdup (L"=");
+   id->sub->sub = NULL;
+
+   return retval;
+}
+
+static absyn_expr_t *build_if_expr (absyn_val_decl_t *val, list_t *lst)
+{
+   absyn_expr_t *retval;
+   absyn_if_expr_t *if_expr;
+   absyn_branch_lst_t *branch = (absyn_branch_lst_t *) lst->data;
+   backlink_t *bl;
+
+   MALLOC (retval, sizeof(absyn_expr_t));
+   MALLOC (if_expr, sizeof(absyn_if_expr_t));
+
+   /* The calling function will need to set the parent link. */
+   retval->lineno = val->lineno;
+   retval->column = val->column;
+   retval->parent = NULL;
+   retval->ty = val->ty;
+   retval->kind = ABSYN_IF;
+
+   bl = make_bl (LINK_IF_EXPR, if_expr);
+
+   if_expr->lineno = val->lineno;
+   if_expr->column = val->column;
+   if_expr->parent = make_bl (LINK_EXPR, retval);
+   if_expr->ty = val->ty;
+
+   if_expr->test_expr = make_test_expr (val, branch->branch);
+   if_expr->test_expr->parent = bl;
+   if_expr->then_expr = handle_expr (branch->expr);
+   if_expr->then_expr->parent = bl;
+
+   /* If this is the last element in the branch-lst, it's the default and
+    * we don't need to make this if-expr any more complicated.  However if
+    * there are other elements, we have to recurse.
+    */
+   if (lst->next->next == NULL)
+   {
+      if_expr->else_expr =
+         handle_expr(((absyn_branch_lst_t *) lst->next->data)->expr);
+      if_expr->else_expr->parent = bl;
+   }
+   else
+      if_expr->else_expr = build_if_expr (val, lst->next);
+
+   retval->if_expr = if_expr;
    return retval;
 }
 
@@ -116,14 +266,28 @@ static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node)
    test_decl->column = node->test->column;
    test_decl->parent = bl;
    test_decl->type = ABSYN_VAL_DECL;
-   test_decl->val_decl = expr_to_val_decl (node->test,
+   test_decl->val_decl = expr_to_val_decl (handle_expr(node->test),
                                            make_bl (LINK_DECL, test_decl));
 
    retval->decl_lst = list_append (retval->decl_lst, test_decl);
 
-   if (node->branch_lst == NULL && node->default_expr != NULL)
+   /* Always try to append a possible default_expr to the branch_lst.  Then
+    * if the branch_lst is only one element long, we can use that as the body
+    * of the decl-expr.  Otherwise, we need to construct the chained if-exprs.
+    */
+   node->branch_lst = list_append (node->branch_lst,
+                                   expr_to_branch_lst(node->default_expr, bl));
+
+   if (list_length (node->branch_lst) == 1)
    {
-      retval->expr = node->default_expr;
+      absyn_branch_lst_t *branch = node->branch_lst->data;
+
+      retval->expr = handle_expr (branch->expr);
+      retval->expr->parent = bl;
+   }
+   else
+   {
+      retval->expr = build_if_expr(test_decl->val_decl, node->branch_lst);
       retval->expr->parent = bl;
    }
 
