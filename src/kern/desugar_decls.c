@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.3 2005/02/12 16:26:19 chris Exp $
+ * $Id: desugar_decls.c,v 1.4 2005/02/20 03:29:08 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,7 +51,6 @@ typedef struct {
    };
 } decl_return_t;
 
-static absyn_case_expr_t *handle_case_expr (absyn_case_expr_t *node);
 static decl_return_t *handle_decl_expr (absyn_decl_expr_t *node,
                                         unsigned int promotable);
 static list_t *handle_decl_lst (list_t *lst);
@@ -141,27 +140,6 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
  * +================================================================+
  */
 
-/* XXX: This is only here until the case-expr phase is written.  Then we
- * won't have to deal with case-exprs anymore.  Hooray.
- */
-static absyn_case_expr_t *handle_case_expr (absyn_case_expr_t *node)
-{
-   list_t *tmp;
-
-   node->test = handle_expr (node->test);
-
-   for (tmp = node->branch_lst; tmp != NULL; tmp = tmp->next)
-   {
-      absyn_branch_lst_t *b = tmp->data;
-      tmp->data = handle_expr (b->expr);
-   }
-
-   if (node->default_expr != NULL)
-      node->default_expr = handle_expr (node->default_expr);
-
-   return node;
-}
-
 /* Promote certain decl-exprs into functions.  This is done by creating a new
  * function inside the scope containing the decl-expr immediately before the
  * decl-expr, moving the contents of the decl-expr into that function, and then
@@ -238,10 +216,6 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
       case ABSYN_STRING:
          break;
 
-      case ABSYN_CASE:
-         node->case_expr = handle_case_expr (node->case_expr);
-         break;
-
       case ABSYN_DECL:
       {
          absyn_decl_t *decl;
@@ -310,6 +284,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
       case ABSYN_RECORD_REF:
          node->record_ref = handle_record_ref (node->record_ref);
          break;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind for expr");
+         exit(1);
    }
 
    return node;
