@@ -1,0 +1,9 @@
+# Description:  Modules have a prototype section, like in the old days
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ main: integer ()
+in
+   ƒ main: integer () ←
+      47
+end
