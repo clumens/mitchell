@@ -3,6 +3,8 @@
    - add doxygen docs to all the source
    - explain the somewhat complicated scoping rules
 - grammar:
+   - visibility declarations (are these really needed?)
+   - Mike still doesn't like the word "decl"
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis
@@ -10,7 +12,10 @@
    - parser error messages can always be better
    - all error messages should have the same form
 - symbol table:
-   - need a good way to dump the entire symtab
+   - functions need to store a list of the types of their formal
+     parameters
+   - option to dump symbol table upon leaving a scope (additionally,
+     providing the name of what's being left would be helpful)
 - testing:
    - more test cases for parser
    - test cases for scope, access of identifiers from modules, etc.
