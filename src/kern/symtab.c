@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.13 2004/12/18 14:57:10 chris Exp $
+ * $Id: symtab.c,v 1.14 2004/12/22 03:20:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,7 +30,7 @@
 #include "memory.h"
 #include "symtab.h"
 
-static unsigned int hash (const mstring_t *str, const subtable_t kind)
+static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
 {
    unsigned int len = strlen ((char *) str);
    unsigned int i;
@@ -40,6 +40,18 @@ static unsigned int hash (const mstring_t *str, const subtable_t kind)
       h += (int) str[i];
 
    return h % SYMTAB_ROWS;
+}
+
+/* Functions and values live in the same namespace, so take some care making
+ * sure they're the same.
+ */
+static inline unsigned int equal_kinds (const subtable_t a, const subtable_t b)
+{
+   if ((a == SYM_VALUE || a == SYM_FUNCTION) &&
+       (b == SYM_VALUE || b == SYM_FUNCTION))
+      return 1;
+   else
+      return a == b;
 }
 
 /* +================================================================+
@@ -146,7 +158,7 @@ symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
 
    for (tmp = (*symtab)[row] ; tmp != NULL ; tmp = tmp->next)
       if (wcscmp ((wchar_t *) name, (wchar_t *) tmp->symbol->name) == 0 &&
-          kind == tmp->symbol->kind)
+          equal_kinds (kind, tmp->symbol->kind))
          return tmp->symbol;
 
    return NULL;
@@ -179,7 +191,8 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
        */
       while (1)
       {
-         if (wcscmp (name, cur->symbol->name) == 0 && kind == cur->symbol->kind)
+         if (wcscmp (name, cur->symbol->name) == 0 &&
+             equal_kinds (kind, cur->symbol->kind))
             break;
          else
             cur = cur->next;
