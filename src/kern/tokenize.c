@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.17 2004/11/24 20:45:40 chris Exp $
+ * $Id: tokenize.c,v 1.18 2004/12/02 05:52:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -136,7 +136,7 @@ static mstring_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
    wint_t      ch;
    int         new_len = 2;
 
-   MALLOC (retval, sizeof(mstring_t))
+   MALLOC (retval, sizeof(mstring_t));
 
    while ((ch = read_char (f)) != WEOF)
    {
@@ -146,7 +146,7 @@ static mstring_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
          break;
       }
 
-      REALLOC (retval, sizeof(wchar_t)*new_len)
+      REALLOC (retval, sizeof(wchar_t)*new_len);
 
       retval[new_len-2] = ch;
       retval[new_len-1] = L'\0';
@@ -184,7 +184,7 @@ token_t *next_token (FILE *f)
    token_t *retval;
    wint_t   ch;
 
-   MALLOC (retval, sizeof (token_t))
+   MALLOC (retval, sizeof (token_t));
 
    while (1)
    {

@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.20 2004/11/24 20:45:40 chris Exp $
+ * $Id: main.c,v 1.21 2004/12/02 05:52:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -163,7 +163,7 @@ static void handle_arguments (int argc, char **argv)
        compiler_config.debug.absyn_outfile == NULL)
    {
       MALLOC (compiler_config.debug.absyn_outfile,
-              strlen(compiler_config.filename)+5)
+              strlen(compiler_config.filename)+5);
       compiler_config.debug.absyn_outfile =
          strcpy(compiler_config.debug.absyn_outfile, compiler_config.filename);
       compiler_config.debug.absyn_outfile =

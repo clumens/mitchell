@@ -1,6 +1,6 @@
 /* Memory management macros and functions.
  *
- * $Id: memory.h,v 1.1 2004/10/22 18:55:03 chris Exp $
+ * $Id: memory.h,v 1.2 2004/12/02 05:52:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -25,18 +25,22 @@
 #include <gc.h>
 
 #define MALLOC(ptr, size) \
-   if (((ptr) = GC_MALLOC(size)) == NULL) \
-   { \
-      fprintf (stderr, "could not malloc at %s: %d\n", __FILE__, __LINE__); \
-      exit (1); \
-   }
+   do { \
+      if (((ptr) = GC_MALLOC(size)) == NULL) \
+      { \
+         fprintf (stderr, "couldn't malloc at %s: %d\n", __FILE__, __LINE__); \
+         exit (1); \
+      } \
+   } while (0)
 
 #define REALLOC(ptr, size) \
-   if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
-   { \
-      fprintf (stderr, "could not realloc at %s: %d\n", __FILE__, __LINE__); \
-      exit (1); \
-   }
+   do { \
+      if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
+      { \
+         fprintf (stderr, "couldn't realloc at %s: %d\n", __FILE__, __LINE__); \
+         exit (1); \
+      } \
+   } while (0)
 
 #endif
 

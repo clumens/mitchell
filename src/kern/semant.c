@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.17 2004/12/02 05:40:12 chris Exp $
+ * $Id: semant.c,v 1.18 2004/12/02 05:52:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -115,7 +115,7 @@ void check_program (ast_t *ast)
     * Boolean, and populate those tables.  This will allow us to continue
     * running the test cases and not getting stuck.
     */
-   MALLOC (integer_symtab, sizeof (symbol_t))
+   MALLOC (integer_symtab, sizeof (symbol_t));
    integer_symtab->kind = SYM_MODULE;
    integer_symtab->name = wcsdup (L"Integer");
    integer_symtab->stack = enter_scope (integer_symtab->stack);
@@ -125,7 +125,7 @@ void check_program (ast_t *ast)
    for (i = 0; integer_env[i].name != NULL; i++)
       symtab_add_entry (integer_symtab->stack, &integer_env[i]);
 
-   MALLOC (boolean_symtab, sizeof (symbol_t))
+   MALLOC (boolean_symtab, sizeof (symbol_t));
    boolean_symtab->kind = SYM_MODULE;
    boolean_symtab->name = wcsdup (L"Boolean");
    boolean_symtab->stack = enter_scope (boolean_symtab->stack);
@@ -161,9 +161,9 @@ char *ty_to_str (const ty_t *ty)
          char *retval;
          char *tmp = ty_to_str(ty->list_base_ty);
 
-         MALLOC(retval, 6)
+         MALLOC(retval, 6);
          retval = strcpy (retval, "list ");
-         REALLOC(retval, strlen(retval)+strlen(tmp)+1)
+         REALLOC(retval, strlen(retval)+strlen(tmp)+1);
          retval = strcat (retval, tmp);
 
          return retval;
@@ -204,7 +204,7 @@ static void add_simple_funval (absyn_id_expr_t *sym, tabstack_t *stack,
       exit(1);
    }
 
-   MALLOC (new, sizeof (symbol_t))
+   MALLOC (new, sizeof (symbol_t));
    new->name = wcsdup (sym->symbol);
    new->ty = ty;
    new->kind = SYM_FUNVAL;
@@ -232,7 +232,7 @@ static void add_simple_type (absyn_id_expr_t *sym, tabstack_t *stack)
       exit(1);
    }
 
-   MALLOC (new, sizeof (symbol_t))
+   MALLOC (new, sizeof (symbol_t));
    new->name = wcsdup (sym->symbol);
    new->kind = SYM_TYPE;
 
@@ -425,7 +425,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
 {
    switch (node->kind) {
       case ABSYN_BOOLEAN:
-         MALLOC (node->ty, sizeof (ty_t))
+         MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_BOOLEAN;
          break;
 
@@ -458,7 +458,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          break;
 
       case ABSYN_INTEGER:
-         MALLOC (node->ty, sizeof (ty_t))
+         MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_INTEGER;
          break;
 
@@ -468,7 +468,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          break;
 
       case ABSYN_STRING:
-         MALLOC (node->ty, sizeof (ty_t))
+         MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_STRING;
          break;
    }
@@ -510,7 +510,7 @@ static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack)
    /* Now that we've verified all the expressions have the same type, create
     * a list type with the expression type as the base.
     */
-   MALLOC(retval, sizeof(ty_t))
+   MALLOC(retval, sizeof(ty_t));
    retval->ty = TY_LIST;
    retval->list_base_ty = expr_ty;
 
@@ -662,7 +662,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
       exit(1);
    }
 
-   MALLOC (new, sizeof (symbol_t))
+   MALLOC (new, sizeof (symbol_t));
 
    /* Build symtab entry in lexical parent's table for this module. */
    new->kind = SYM_MODULE;
@@ -752,7 +752,7 @@ static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
        * type to whatever's linked to by the AST node.
        */
       case ABSYN_TY_LIST:
-         MALLOC(retval, sizeof(ty_t))
+         MALLOC(retval, sizeof(ty_t));
          retval->ty = TY_LIST;
          retval->list_base_ty = check_ty (node->list, stack);
          return retval;

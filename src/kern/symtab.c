@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.9 2004/11/30 03:30:01 chris Exp $
+ * $Id: symtab.c,v 1.10 2004/12/02 05:52:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -54,7 +54,7 @@ symtab_t *symtab_new ()
    symtab_t *retval;
    unsigned int i;
 
-   MALLOC (retval, sizeof (symtab_t))
+   MALLOC (retval, sizeof (symtab_t));
 
    for (i = 0; i < SYMTAB_ROWS; i++)
       (*retval)[i] = NULL;
@@ -76,8 +76,8 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
    
    if ((*symtab)[row] == NULL)
    {
-      MALLOC ((*symtab)[row], sizeof (symtab_entry_t))
-      MALLOC ((*symtab)[row]->symbol, sizeof (symbol_t))
+      MALLOC ((*symtab)[row], sizeof (symtab_entry_t));
+      MALLOC ((*symtab)[row]->symbol, sizeof (symbol_t));
       (*symtab)[row]->symbol->kind = sym->kind;
       (*symtab)[row]->symbol->ty = sym->ty;
       (*symtab)[row]->symbol->name = wcsdup ((wchar_t *) sym->name);
@@ -99,8 +99,8 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       while (tmp->next != NULL)
          tmp = tmp->next;
 
-      MALLOC (tmp->next, sizeof (symtab_entry_t))
-      MALLOC (tmp->next->symbol, sizeof (symbol_t))
+      MALLOC (tmp->next, sizeof (symtab_entry_t));
+      MALLOC (tmp->next->symbol, sizeof (symbol_t));
       tmp->next->symbol->kind = sym->kind;
       tmp->next->symbol->ty = sym->ty;
       tmp->next->symbol->name = wcsdup ((wchar_t *) sym->name);
@@ -160,13 +160,13 @@ tabstack_t *enter_scope (tabstack_t *tabstack)
 
    if (tabstack == NULL)
    {
-      MALLOC (tabstack, sizeof (tabstack_t))
+      MALLOC (tabstack, sizeof (tabstack_t));
       tabstack->symtab = symtab_new();
       tabstack->upper = NULL;
    }
    else
    {
-      MALLOC (tmp, sizeof (tabstack_t))
+      MALLOC (tmp, sizeof (tabstack_t));
       tmp->symtab = symtab_new();
       tmp->upper = tabstack;
       tabstack = tmp;

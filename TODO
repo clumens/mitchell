@@ -15,6 +15,7 @@
 - output:
    - parser error messages can always be better (context, replacements, etc)
    - add column numbers to everything for better error reporting
+   - audit line number assignments in absyn to make sure they're right
 - symbol table:
    - functions need to store a list of the types of their formal
      parameters
