@@ -6,6 +6,6 @@
 - testing:
    - more test cases for parser
 - grammar:
+   - modules should be able to contain other modules
 - misc:
    - check for UTF-8 locale and fail if not found
-   - use libgc instead of having to deal with memory management manually
