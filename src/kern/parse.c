@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.10 2004/10/22 15:18:58 chris Exp $
+ * $Id: parse.c,v 1.11 2004/10/22 19:41:55 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -35,10 +35,12 @@
 
 #include "absyn.h"
 #include "config.h"
+#include "memory.h"
 #include "tokens.h"
 
-static FILE *in;           /* the input file */
-static token_t *tok;       /* lookahead token - not yet examined */
+static FILE *in;                    /* the input file */
+static token_t *tok;                /* lookahead token - not yet examined */
+static token_t *last_tok = NULL;    /* previous token - needed for AST */
 
 /* Macros to control debug printing only if the appropriate level is set. */
 #define ENTERING(fn) do { if (compiler_config.debug.parser_debug > 0) \
@@ -135,10 +137,10 @@ static absyn_decl_expr_t *parse_decl_expr();
 static absyn_decl_lst_t *parse_decl_lst();
 static absyn_expr_t *parse_expr();
 static absyn_expr_lst_t *parse_expr_lst();
-static absyn_expr_t * parse_fun_call_or_id();
+static absyn_expr_t *parse_fun_call_or_id();
 static void parse_fun_decl();
 static void parse_fun_decl_proto();
-static void parse_id();
+static absyn_id_expr_t *parse_id();
 static void parse_id_lst();
 static absyn_if_expr_t *parse_if_expr();
 static void parse_module_decl();
@@ -237,7 +239,11 @@ static void match (const unsigned int type)
    {
       if (compiler_config.debug.parser_debug > 0)
          printf ("  ate %s\n", token_map[type]);
+
+      /* Update pointer to previous token so we can make AST chunks. */
+      last_tok = tok;
       
+      /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
       {
          fprintf (stderr, "*** parse error:  premature end of input file\n");
@@ -278,23 +284,33 @@ void parse (const char *filename)
  */
 static absyn_expr_t *parse_branch_expr()
 {
+   absyn_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_t))
 
    switch (tok->type) {
       case BOOLEAN:
          match(BOOLEAN);
+         retval->type = ABSYN_BOOLEAN;
+         retval->boolean_expr = last_tok->boolean;
          break;
 
       case IDENTIFIER:
-         parse_id();
+         retval->type = ABSYN_ID;
+         retval->identifier = parse_id();
          break;
 
       case INTEGER:
          match(INTEGER);
+         retval->type = ABSYN_INTEGER;
+         retval->integer_expr = last_tok->integer;
          break;
 
       case STRING:
          match(STRING);
+         retval->type = ABSYN_STRING;
+         retval->string_expr = last_tok->string;
          break;
 
       default:
@@ -305,7 +321,7 @@ static absyn_expr_t *parse_branch_expr()
       parse_error (tok, "MAPSTO");
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* branch-lst ::= branch-expr MAPSTO expr
@@ -313,35 +329,43 @@ static absyn_expr_t *parse_branch_expr()
  */
 static absyn_branch_lst_t *parse_branch_lst()
 {
-   ENTERING (__FUNCTION__);
+   absyn_branch_lst_t *retval;
 
-   parse_branch_expr();
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_branch_lst_t))
+
+   retval->branch = (struct absyn_expr_t *) parse_branch_expr();
    match(MAPSTO);
-   parse_expr();
+   retval->expr = (struct absyn_expr_t *) parse_expr();
 
    if (tok->type == COMMA)
    {
       match(COMMA);
-      parse_branch_lst();
+      retval->next = (struct branch_lst *) parse_branch_lst();
    }
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* case-expr ::= CASE expr IN branch-lst END */
 static absyn_case_expr_t *parse_case_expr()
 {
+   absyn_case_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC(retval, sizeof(absyn_case_expr_t))
 
    match(CASE);
-   parse_expr();
+   retval->test = (struct absyn_expr_t *) parse_expr();
    match(IN);
-   parse_branch_lst();
+   retval->branch_lst = parse_branch_lst();
    match(END);
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* const-decl ::= const-decl-proto ASSIGN expr */
@@ -409,16 +433,19 @@ static absyn_decl_t *parse_decl()
 /* decl-expr ::= DECL decl-lst IN expr END */
 static absyn_decl_expr_t *parse_decl_expr()
 {
+   absyn_decl_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_decl_expr_t))
 
    match(DECL);
-   parse_decl_lst();
+   retval->decl_lst = (struct absyn_decl_lst_t *) parse_decl_lst();
    match(IN);
-   parse_expr();
+   retval->expr = (struct absyn_expr_t *) parse_expr();
    match(END);
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* decl-lst ::= decl decl-lst
@@ -426,18 +453,23 @@ static absyn_decl_expr_t *parse_decl_expr()
  */
 static absyn_decl_lst_t *parse_decl_lst()
 {
+   absyn_decl_lst_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_decl_lst_t))
 
    if (!in_set (tok, FIRST_SET[7]))
       parse_error (tok, "CONST FUNCTION TYPE VAR");
 
-   parse_decl();
+   retval->decl = parse_decl();
 
    if (!in_set (tok, FOLLOW_SET[7]))
-      parse_decl_lst();
+      retval->next = (struct decl_lst_t *) parse_decl_lst();
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* expr ::= LBRACK expr-lst RBRACK
@@ -452,47 +484,61 @@ static absyn_decl_lst_t *parse_decl_lst()
  */
 static absyn_expr_t *parse_expr()
 {
+   absyn_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_t))
 
    switch (tok->type) {
       case BOOLEAN:
          match(BOOLEAN);
+         retval->type = ABSYN_BOOLEAN;
+         retval->boolean_expr = last_tok->boolean;
          break;
 
       case CASE:
-         parse_case_expr();
+         retval->type = ABSYN_CASE;
+         retval->case_expr = parse_case_expr();
          break;
 
       case DECL:
-         parse_decl_expr();
+         retval->type = ABSYN_DECL;
+         retval->decl_expr = parse_decl_expr();
          break;
 
       case IDENTIFIER:
-         parse_fun_call_or_id();
+         retval = parse_fun_call_or_id();
          break;
 
       case IF:
-         parse_if_expr();
+         retval->type = ABSYN_IF;
+         retval->if_expr = parse_if_expr();
          break;
 
       case INTEGER:
          match(INTEGER);
+         retval->type = ABSYN_INTEGER;
+         retval->integer_expr = last_tok->integer;
          break;
 
       case LBRACE:
          match(LBRACE);
-         parse_record_assn_lst();
+         retval->type = ABSYN_RECORD_LST;
+         retval->record_assn_lst = parse_record_assn_lst();
          match(RBRACE);
          break;
 
       case LBRACK:
          match(LBRACK);
-         parse_expr_lst();
+         retval->type = ABSYN_EXPR_LST;
+         retval->expr_lst = (struct absyn_expr_lst_t *) parse_expr_lst();
          match(RBRACK);
          break;
 
       case STRING:
          match(STRING);
+         retval->type = ABSYN_STRING;
+         retval->string_expr = last_tok->string;
          break;
 
       default:
@@ -501,7 +547,7 @@ static absyn_expr_t *parse_expr()
    }
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* expr-lst ::= expr COMMA expr-lst
@@ -509,18 +555,23 @@ static absyn_expr_t *parse_expr()
  */
 static absyn_expr_lst_t *parse_expr_lst()
 {
+   absyn_expr_lst_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_lst_t))
    
-   parse_expr();
+   retval->expr = parse_expr();
 
    if (tok->type == COMMA)
    {
       match(COMMA);
-      parse_expr_lst();
+      retval->next = (struct expr_lst_t *) parse_expr_lst();
    }
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* fun-call-or-id ::= id LPAREN expr-lst RPAREN
@@ -529,25 +580,41 @@ static absyn_expr_lst_t *parse_expr_lst()
  */
 static absyn_expr_t *parse_fun_call_or_id()
 {
-   ENTERING (__FUNCTION__);
+   absyn_expr_t *retval;
+   absyn_id_expr_t *tmp;
 
-   parse_id();
+   ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_expr_t))
+
+   tmp = parse_id();
 
    if (tok->type == LPAREN)
    {
+      retval->type = ABSYN_FUN_CALL;
+      retval->fun_call_expr.identifier = tmp;
+
       match(LPAREN);
 
       if (tok->type != RPAREN)
       {
-         parse_expr_lst();
+         retval->fun_call_expr.arg_lst =
+            (struct absyn_expr_lst_t *) parse_expr_lst();
          match(RPAREN);
       }
       else
+      {
          match(RPAREN);
+         retval->fun_call_expr.arg_lst = NULL;
+      }
+   }
+   else
+   {
+      retval->type = ABSYN_ID;
+      retval->identifier = tmp;
    }
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* fun-decl ::= fun-decl-proto ASSIGN expr */
@@ -589,19 +656,24 @@ static void parse_fun_decl_proto()
 /* id ::= IDENTIFIER
  *      | IDENTIFIER DOT id
  */
-static void parse_id()
+static absyn_id_expr_t *parse_id()
 {
+   absyn_id_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_id_expr_t))
 
    match(IDENTIFIER);
+   retval->symbol = last_tok->string;
 
    if (tok->type == DOT)
    {
       match(DOT);
-      parse_id();
+      retval->ns = (struct absyn_id_expr_t *) parse_id();
    }
 
    LEAVING(__FUNCTION__);
+   return retval;
 }
 
 /* id-lst ::= IDENTIFIER COLON ty
@@ -627,17 +699,20 @@ static void parse_id_lst()
 /* if-expr ::= IF expr THEN expr ELSE expr */
 static absyn_if_expr_t *parse_if_expr()
 {
+   absyn_if_expr_t *retval;
+
    ENTERING (__FUNCTION__);
+   MALLOC(retval, sizeof(absyn_if_expr_t))
 
    match(IF);
-   parse_expr();
+   retval->test_expr = (struct absyn_expr_t *) parse_expr();
    match(THEN);
-   parse_expr();
+   retval->then_expr = (struct absyn_expr_t *) parse_expr();
    match(ELSE);
-   parse_expr();
+   retval->else_expr = (struct absyn_expr_t *) parse_expr();
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* module-decl ::= MODULE IDENTIFIER ASSIGN DECL proto-lst IN decl-lst END */
@@ -740,20 +815,26 @@ static void parse_proto_lst()
  */
 static absyn_record_lst_t *parse_record_assn_lst()
 {
+   absyn_record_lst_t *retval;
+   
    ENTERING (__FUNCTION__);
+   MALLOC (retval, sizeof(absyn_record_lst_t))
 
    match(IDENTIFIER);
+   retval->symbol = last_tok->string;
    match(ASSIGN);
-   parse_expr();
+   retval->expr = (struct absyn_expr_t *) parse_expr();
 
    if (!in_set (tok, FOLLOW_SET[20]))
    {
       match(COMMA);
-      parse_record_assn_lst();
+      retval->next = (struct absyn_record_lst_t *) parse_record_assn_lst();
    }
+   else
+      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
-   return NULL;
+   return retval;
 }
 
 /* single-ty ::= LBRACE id-lst RBRACE

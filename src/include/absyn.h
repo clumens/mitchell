@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.1 2004/10/22 15:18:56 chris Exp $
+ * $Id: absyn.h,v 1.2 2004/10/22 19:41:53 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,16 +24,23 @@
 #ifndef _ABSYN_H
 #define _ABSYN_H 1
 
-typedef enum { AST_BOOLEAN, AST_CASE, AST_DECL, AST_EXPR_LST, AST_FUN_CALL,
-               AST_ID, AST_IF, AST_INTEGER, AST_RECORD_LST,
-               AST_STRING } expr_type;
+#include "basic_types.h"
+
+typedef enum { ABSYN_BOOLEAN, ABSYN_CASE, ABSYN_DECL, ABSYN_EXPR_LST,
+               ABSYN_FUN_CALL, ABSYN_ID, ABSYN_IF, ABSYN_INTEGER,
+               ABSYN_RECORD_LST, ABSYN_STRING } expr_type;
 
 typedef struct {
    /* nothing for now */
 } absyn_decl_t;
 
 typedef struct {
-   char *identifier;                   /* XXX: temporary */
+   mstring_t symbol;
+   struct absyn_id_expr_t *ns;         /* "namespace" is reserved for gcc */
+} absyn_id_expr_t;
+
+typedef struct {
+   mstring_t symbol;                   /* XXX: temporary */
    struct absyn_expr_t *expr;
    struct record_assn_lst_t *next;
 } absyn_record_lst_t;
@@ -69,14 +76,14 @@ typedef struct {
       absyn_if_expr_t *if_expr;
 
       struct {
-         char *identifier;             /* XXX: temporary */
+         absyn_id_expr_t *identifier;
          struct absyn_expr_lst_t *arg_lst;
       } fun_call_expr;
 
-      char *identifier;                /* XXX: temporary */
-      unsigned int boolean_expr;
-      long int integer_expr;
-      char *string_expr;
+      absyn_id_expr_t *identifier;
+      mbool_t boolean_expr;
+      mint_t integer_expr;
+      mstring_t string_expr;
    };
 } absyn_expr_t;
 
@@ -85,13 +92,13 @@ typedef struct {
  */
 typedef struct {
    absyn_expr_t *expr;
-   struct expr_lst_t *next;
+   struct absyn_expr_lst_t *next;
 } absyn_expr_lst_t;
 
 /* A list of declarations - used in decl-in-end constructs. */
 typedef struct {
    absyn_decl_t *decl;
-   struct decl_lst_t *next;
+   struct absyn_decl_lst_t *next;
 } absyn_decl_lst_t;
 
 #endif
