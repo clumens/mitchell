@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.23 2004/11/18 03:06:27 chris Exp $
+ * $Id: parse.c,v 1.24 2004/11/21 05:36:38 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -681,7 +681,7 @@ static absyn_fun_decl_t *parse_fun_decl()
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
 
    retval->symbol = sym;
@@ -726,7 +726,7 @@ static absyn_id_expr_t *parse_id()
    if (tok->type == DOT)
    {
       match(DOT);
-      retval->ns = (struct absyn_id_expr_t *) parse_id();
+      retval->sub = (struct absyn_id_expr_t *) parse_id();
    }
 
    LEAVING(__FUNCTION__);
@@ -749,7 +749,7 @@ static absyn_id_lst_t *parse_id_lst()
    retval->lineno = last_tok->lineno;
 
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    retval->symbol = sym;
 
@@ -803,7 +803,7 @@ static absyn_module_decl_t *parse_module_decl()
 
    match (IDENTIFIER);
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    
    retval->symbol = sym;
@@ -863,7 +863,7 @@ static absyn_record_lst_t *parse_record_assn_lst()
    retval->lineno = last_tok->lineno;
 
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
 
    retval->symbol = sym;
@@ -1011,7 +1011,7 @@ static absyn_ty_decl_t *parse_ty_decl()
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
 
    retval->symbol = sym;
@@ -1038,7 +1038,7 @@ static absyn_val_decl_t *parse_val_decl()
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
-   sym->ns = NULL;
+   sym->sub = NULL;
    sym->lineno = last_tok->lineno;
 
    retval->symbol = sym;
