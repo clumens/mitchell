@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.2 2004/10/15 14:36:50 chris Exp $
+ * $Id: parse.c,v 1.3 2004/10/16 05:19:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <wchar.h>
 
 #include "tokens.h"
 
@@ -67,6 +68,37 @@ static void parse_ty_decl_proto();
 static void parse_var_decl();
 static void parse_var_decl_proto();
 
+/* Describe a token more completely so the user has a better idea of what
+ * the parse error is talking about.  An even better idea would be to print
+ * out a bunch of the context around the error, but I'm not feeling that
+ * fancy yet.
+ */
+static void describe_token (token_t *t)
+{
+   if (t == NULL)
+      return;
+
+   fprintf (stderr, "%s", token_map[t->type]);
+
+   switch (t->type) {
+      case BOOLEAN:
+         fprintf (stderr, "(%s)", t->boolean == 0 ? "f" : "t");
+         break;
+
+      case IDENTIFIER:
+         fprintf (stderr, "(%ls)", t->string);
+         break;
+
+      case INTEGER:
+         fprintf (stderr, "(%li)", t->integer);
+         break;
+
+      case STRING:
+         fprintf (stderr, "(%ls)", t->string);
+         break;
+   }
+}
+
 /* Check the type of the lookahead token.  If we match, read the next
  * token so we'll be ready to check again in the future.  If we don't
  * match, that's a parse error and we fail.  No clever error correction
@@ -87,9 +119,10 @@ static void match (const unsigned int type)
    }
    else
    {
-      fprintf (stderr, "Parse error on line %d: ", tok->lineno);
-      fprintf (stderr, "expected %s, but read %s instead\n",
-               token_map[type], token_map[tok->type]);
+      fprintf (stderr, "parse error on line %d:\n", tok->lineno);
+      fprintf (stderr, "expected token %s, but got ", token_map[type]);
+      describe_token(tok);
+      fprintf (stderr, " instead\n");
       exit (1);
    }
 }
@@ -505,6 +538,7 @@ static void parse_record_assn_lst()
 }
 
 /* single-ty ::= LBRACK id-lst RBRACK
+ *             | LBRACE id-lst RBRACE
  *             | id
  */
 static void parse_single_ty()
@@ -515,6 +549,12 @@ static void parse_single_ty()
          match(LBRACK);
          parse_id_lst();
          match(RBRACK);
+         break;
+
+      case LBRACE:
+         match(LBRACE);
+         parse_id_lst();
+         match(RBRACE);
          break;
 
       case IDENTIFIER:
