@@ -3,8 +3,6 @@
 - grammar:
    - allow empty lists
    - remove DECL from module-decl (preview-4)
-   - provide an escape mechanism for strings - way to insert literal
-     double quotes, tabs, escapes for colors, etc. (preview-4)
    - are visibility declarations really needed?
 - misc:
    - need to think up a format for built modules that will allow us to

@@ -3,6 +3,8 @@ current
 Compiler frontend:
 - Added column numbers to error reporting.
 - Added -last-phase to halt compilation early.
+Grammar:
+- Added escape sequences into string literals.
 Internals:
 - Use generic linked list code throughout the AST.  This removes the
   absyn_decl_lst_t, absyn_expr_lst_t, and absyn_module_lst_t structures.

@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.21 2005/01/10 04:53:33 chris Exp $
+ * $Id: tokenize.c,v 1.22 2005/01/14 03:07:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -61,6 +61,19 @@ static __inline__ unsigned int is_reserved (wchar_t ch)
    return wcschr (reserved, ch) != NULL;
 }
 
+/* Function to test if a character is a valid number character. */
+static unsigned int number_member (wint_t ch)
+{
+   return !iswspace (ch) && !is_reserved (ch) &&
+          (iswdigit(ch) || iswlower(ch) == L'x');
+}
+
+/* Function to test if a character is a valid word character. */
+static unsigned int word_member (wint_t ch)
+{
+   return !iswspace (ch) && !is_reserved (ch);
+}
+
 /* Read one wide char from the input file, checking for errors in the
  * conversion.  Returns the character read.
  */
@@ -72,8 +85,8 @@ static __inline__ wint_t read_char (FILE *f)
    {
       USAGE_ERROR (compiler_config.filename,
                    "fgetwc returned EILSEQ.  Please check that $LANG is set "
-                   "to a UTF-8 aware locale\n\tand that mitchell was compiled "
-                   "with gcc-3.4 or more recent.  Exiting.");
+                   "to a UTF-8 aware\n\tlocale and that mitchell was compiled "
+                   "with gcc-3.4 or more recent.\n\tExiting.");
       fclose (f);
       exit (1);
    }
@@ -96,8 +109,8 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
    {
       USAGE_ERROR (compiler_config.filename,
                    "ungetwc returned EILSEQ.  Please check that $LANG is set "
-                   "to a UTF-8 aware locale\n\tand that mitchell was compiled "
-                   "with gcc-3.4 or more recent.  Exiting.");
+                   "to a UTF-8 aware\n\tlocale and that mitchell was compiled "
+                   "with gcc-3.4 or more recent.\n\tExiting.");
       fclose (f);
       exit (1);
    }
@@ -165,23 +178,99 @@ static mstring_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
    return retval;
 }
 
-/* Function to test if a character is a valid number character. */
-static unsigned int number_member (wint_t ch)
+/* Strings just got more complicated and now need their own function what with
+ * all the escaping and action.
+ */
+static mstring_t *string_state (FILE *f)
 {
-   return !iswspace (ch) && !is_reserved (ch) &&
-          (iswdigit(ch) || iswlower(ch) == L'x');
-}
+   mstring_t  *retval = NULL;
+   wint_t      ch;
+   int         new_len = 2;
 
-/* Function to test if a character is a valid string character. */
-static unsigned int string_member (wint_t ch)
-{
-   return ch != L'"';
-}
+   MALLOC (retval, sizeof(mstring_t));
 
-/* Function to test if a character is a valid word character. */
-static unsigned int word_member (wint_t ch)
-{
-   return !iswspace (ch) && !is_reserved (ch);
+   while ((ch = read_char (f)) != WEOF)
+   {
+      if (ch == L'"')
+         break;
+
+      REALLOC (retval, sizeof(wchar_t)*new_len);
+
+      if (ch == L'\\')
+      {
+         if ((ch = read_char (f)) == WEOF)
+         {
+            PARSE_ERROR (compiler_config.filename, lineno, column);
+            fprintf (stderr, "\tpremature end of file while reading string\n");
+            fclose(f);
+            exit(1);
+         }
+
+         switch (ch) {
+            case L'n':
+               retval[new_len-2] = '\n';
+               break;
+
+            case L't':
+               retval[new_len-2] = '\t';
+               break;
+
+            case L'u':
+            {
+               mint_t n;
+               wchar_t str[4];
+
+               if ((str[0] = read_char(f)) == WEOF ||
+                   (str[1] = read_char(f)) == WEOF ||
+                   (str[2] = read_char(f)) == WEOF ||
+                   (str[3] = read_char(f)) == WEOF)
+               {
+                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  fprintf (stderr, "\tpremature end of file while reading "
+                                   "string\n");
+                  fclose(f);
+                  exit(1);
+               }
+
+               if (!iswxdigit (str[0]) || !iswxdigit(str[1]) ||
+                   !iswxdigit (str[2]) || !iswxdigit(str[3]))
+               {
+                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  fprintf (stderr, "\tinvalid unicode character escape\n");
+                  fclose(f);
+                  exit(1);
+               }
+
+               n = wcstol (str, NULL, 16);
+
+               if (errno == ERANGE || errno == EINVAL)
+               {
+                  PARSE_ERROR (compiler_config.filename, lineno, column);
+                  fprintf (stderr, "\tinvalid unicode character escape\n");
+                  fclose(f);
+                  exit(1);
+               }
+
+               retval[new_len-2] = n;
+               break;
+
+            case L'\\':
+            case L'"':
+            default:
+               retval[new_len-2] = ch;
+               break;
+            }
+         }
+      }
+      else
+         retval[new_len-2] = ch;
+
+      retval[new_len-1] = L'\0';
+
+      new_len++;
+   }
+
+   return retval;
 }
 
 /* Returns the next token in the previously opened file f or NULL if there
@@ -325,12 +414,7 @@ token_t *next_token (FILE *f)
             retval->lineno = lineno;
             retval->column = column;
             retval->type = STRING;
-            retval->string = word_state (f, string_member);
-
-            /* word_state put the double quote character back, so read it
-             * one more time and throw it away.
-             */
-            read_char (f);
+            retval->string = string_state(f);
             return retval;
 
          case L'0' ... L'9':
