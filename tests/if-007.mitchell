@@ -1,0 +1,9 @@
+# Description:  Declaration as part of an if-then-else
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      if decl ʋ x: boolean ← true in x end then 47 else X.Y.Z (0)
+end

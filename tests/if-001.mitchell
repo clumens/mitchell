@@ -1,0 +1,9 @@
+# Description:  Very basic if-then-else statement
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      if 47 then true else false
+end

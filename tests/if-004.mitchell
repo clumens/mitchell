@@ -1,0 +1,9 @@
+# Description:  Adding the results of if-then-else expressions
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      Base.+ (if "true" then 1 else 0, if "false" then 1 else 0)
+end

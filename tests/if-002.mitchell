@@ -1,0 +1,9 @@
+# Description:  else clause is required
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      if true then 47
+end

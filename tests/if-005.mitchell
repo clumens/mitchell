@@ -1,0 +1,15 @@
+# Description:  Case expression as part of if-then-else
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      if true then
+         case 40 in
+            true → 1,
+            40 → 40
+         end
+      else
+         25
+end

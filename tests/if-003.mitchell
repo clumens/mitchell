@@ -1,0 +1,12 @@
+# Description:  Nested if-then-else expressions
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo: int ()
+in
+   ƒ foo: int () ←
+      if Bool.= (1, 0) then
+         47
+      else
+         if true then false else true
+end
