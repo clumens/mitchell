@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.6 2004/10/17 23:27:40 chris Exp $
+ * $Id: parse.c,v 1.7 2004/10/19 03:25:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,13 +32,23 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#include "config.h"
 #include "tokens.h"
 
 static FILE *in;           /* the input file */
 static token_t *tok;       /* lookahead token - not yet examined */
 
-#define NRULES   27
-#define SET_SIZE 13
+/* Macros to control debug printing only if the appropriate level is set. */
+#define ENTERING(fn) do { if (compiler_config.debug.parser_debug > 0) \
+                             printf ("entering %s\n", fn); \
+                        } while (0)
+
+#define LEAVING(fn)  do { if (compiler_config.debug.parser_debug > 0) \
+                             printf ("leaving %s\n", fn); \
+                        } while (0)
+
+#define NRULES   27        /* number of parser rules in each set */
+#define SET_SIZE 13        /* max number of elements in each rule */
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* 0: branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
@@ -220,7 +230,8 @@ static void match (const unsigned int type)
 
    if (tok->type == type)
    {
-      printf ("  ate %s\n", token_map[type]);
+      if (compiler_config.debug.parser_debug > 0)
+         printf ("  ate %s\n", token_map[type]);
       
       if ((tok = next_token (in)) == NULL)
       {
@@ -262,7 +273,7 @@ void parse (const char *filename)
  */
 static void parse_branch_expr()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    switch (tok->type) {
       case BOOLEAN:
@@ -288,7 +299,7 @@ static void parse_branch_expr()
    if (!in_set (tok, FOLLOW_SET[0]))
       parse_error (tok, "MAPSTO");
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* branch-lst ::= branch-expr MAPSTO expr
@@ -296,7 +307,7 @@ static void parse_branch_expr()
  */
 static void parse_branch_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_branch_expr();
    match(MAPSTO);
@@ -308,13 +319,13 @@ static void parse_branch_lst()
       parse_branch_lst();
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* case-expr ::= CASE expr IN branch-lst END */
 static void parse_case_expr()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(CASE);
    parse_expr();
@@ -322,32 +333,32 @@ static void parse_case_expr()
    parse_branch_lst();
    match(END);
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* const-decl ::= const-decl-proto ASSIGN expr */
 static void parse_const_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_const_decl_proto();
    match(ASSIGN);
    parse_expr();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* const-decl-proto ::= CONST IDENTIFIER COLON ty */
 static void parse_const_decl_proto()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(CONST);
    match(IDENTIFIER);
    match(COLON);
    parse_ty();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* decl ::= ty-decl
@@ -357,7 +368,7 @@ static void parse_const_decl_proto()
  */
 static void parse_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    switch (tok->type) {
       case CONST:
@@ -383,13 +394,13 @@ static void parse_decl()
    if (!in_set (tok, FOLLOW_SET[5]))
       parse_error (tok, "CONST END FUNCTION IN TYPE VAR");
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* decl-expr ::= DECL decl-lst IN expr END */
 static void parse_decl_expr()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(DECL);
    parse_decl_lst();
@@ -397,7 +408,7 @@ static void parse_decl_expr()
    parse_expr();
    match(END);
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* decl-lst ::= decl decl-lst
@@ -405,7 +416,7 @@ static void parse_decl_expr()
  */
 static void parse_decl_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    if (!in_set (tok, FIRST_SET[7]))
       parse_error (tok, "CONST FUNCTION TYPE VAR");
@@ -415,7 +426,7 @@ static void parse_decl_lst()
    if (!in_set (tok, FOLLOW_SET[7]))
       parse_decl_lst();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* expr ::= LBRACK expr-lst RBRACK
@@ -430,7 +441,7 @@ static void parse_decl_lst()
  */
 static void parse_expr()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    switch (tok->type) {
       case BOOLEAN:
@@ -478,7 +489,7 @@ static void parse_expr()
                            "LBRACK STRING");
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* expr-lst ::= expr COMMA expr-lst
@@ -486,7 +497,7 @@ static void parse_expr()
  */
 static void parse_expr_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
    
    parse_expr();
 
@@ -496,7 +507,7 @@ static void parse_expr_lst()
       parse_expr_lst();
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* fun-call-or-id ::= id LPAREN expr-lst RPAREN
@@ -505,7 +516,7 @@ static void parse_expr_lst()
  */
 static void parse_fun_call_or_id()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_id();
 
@@ -522,19 +533,19 @@ static void parse_fun_call_or_id()
          match(RPAREN);
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* fun-decl ::= fun-decl-proto ASSIGN expr */
 static void parse_fun_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_fun_decl_proto();
    match(ASSIGN);
    parse_expr();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
@@ -542,7 +553,7 @@ static void parse_fun_decl()
  */
 static void parse_fun_decl_proto()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(FUNCTION);
    match(IDENTIFIER);
@@ -558,7 +569,7 @@ static void parse_fun_decl_proto()
       match(RPAREN);
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* id ::= IDENTIFIER
@@ -566,7 +577,7 @@ static void parse_fun_decl_proto()
  */
 static void parse_id()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(IDENTIFIER);
 
@@ -576,7 +587,7 @@ static void parse_id()
       parse_id();
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* id-lst ::= IDENTIFIER COLON ty
@@ -584,7 +595,7 @@ static void parse_id()
  */
 static void parse_id_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(IDENTIFIER);
    match(COLON);
@@ -596,14 +607,13 @@ static void parse_id_lst()
       parse_id_lst();
    }
 
-
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* if-expr ::= IF expr THEN expr ELSE expr */
 static void parse_if_expr()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(IF);
    parse_expr();
@@ -612,13 +622,13 @@ static void parse_if_expr()
    match(ELSE);
    parse_expr();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* module-decl ::= MODULE IDENTIFIER ASSIGN DECL proto-lst IN decl-lst END */
 static void parse_module_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING(__FUNCTION__);
 
    match (MODULE);
    match (IDENTIFIER);
@@ -632,7 +642,7 @@ static void parse_module_decl()
    if (!in_set (tok, FOLLOW_SET[16]))
       parse_error (tok, "ENDOFFILE MODULE");
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* module-decl-lst ::= module-decl
@@ -640,7 +650,7 @@ static void parse_module_decl()
  */
 static void parse_module_decl_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    if (in_set (tok, FIRST_SET[16]))
    {
@@ -653,7 +663,7 @@ static void parse_module_decl_lst()
          parse_error (tok, "MODULE");
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* proto ::= ty-decl-proto
@@ -663,7 +673,7 @@ static void parse_module_decl_lst()
  */
 static void parse_proto()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    switch (tok->type) {
       case CONST:
@@ -689,7 +699,7 @@ static void parse_proto()
    if (!in_set (tok, FOLLOW_SET[18]))
       parse_error (tok, "CONST FUNCTION IN TYPE VAR");
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* proto-lst ::= proto
@@ -697,7 +707,7 @@ static void parse_proto()
  */
 static void parse_proto_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    if (!in_set (tok, FIRST_SET[19]))
       parse_error (tok, "CONST FUNCTION TYPE VAR");
@@ -707,7 +717,7 @@ static void parse_proto_lst()
    if (!in_set (tok, FOLLOW_SET[19]))
       parse_proto_lst();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* record-assn-lst ::= IDENTIFIER ASSIGN expr
@@ -715,7 +725,7 @@ static void parse_proto_lst()
  */
 static void parse_record_assn_lst()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(IDENTIFIER);
    match(ASSIGN);
@@ -727,7 +737,7 @@ static void parse_record_assn_lst()
       parse_record_assn_lst();
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* single-ty ::= LBRACE id-lst RBRACE
@@ -735,7 +745,7 @@ static void parse_record_assn_lst()
  */
 static void parse_single_ty()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    switch (tok->type) {
       case IDENTIFIER:
@@ -752,7 +762,7 @@ static void parse_single_ty()
          parse_error (tok, "IDENTIFIER LBRACE");
    }
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* ty ::= single-ty
@@ -760,62 +770,62 @@ static void parse_single_ty()
  */
 static void parse_ty()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_single_ty();
    
    if (tok->type == LIST)
       match(LIST);
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* ty-decl ::= ty-decl-proto ASSIGN ty */
 static void parse_ty_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_ty_decl_proto();
    match(ASSIGN);
    parse_ty();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* ty-decl-proto ::= TYPE id */
 static void parse_ty_decl_proto()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(TYPE);
    parse_id();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* var-decl ::= var-decl-proto ASSIGN expr */
 static void parse_var_decl()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    parse_var_decl_proto();
    match(ASSIGN);
    parse_expr();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* var-decl-proto ::= VAR IDENTIFIER COLON ty */
 static void parse_var_decl_proto()
 {
-   printf ("entering %s\n", __FUNCTION__);
+   ENTERING (__FUNCTION__);
 
    match(VAR);
    match(IDENTIFIER);
    match(COLON);
    parse_ty();
 
-   printf ("leaving %s\n", __FUNCTION__);
+   LEAVING(__FUNCTION__);
 }
 
 /* vim: set tags=../tags: */
