@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.7 2004/10/15 14:36:50 chris Exp $
+ * $Id: tokens.h,v 1.8 2004/10/20 14:12:33 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -26,10 +26,16 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+typedef enum { BOOLEAN, IDENTIFIER, INTEGER, LIST, STRING,
+               ASSIGN, CASE, COLON, COMMA, CONST, DECL, DOT, ELSE, END,
+               FUNCTION, IF, IN, LBRACE, LBRACK, LPAREN, MAPSTO, MODULE,
+               RBRACE, RBRACK, RPAREN, THEN, TYPE, VAR,
+               COMMENT, DBLQUOTE, ENDOFFILE } token_val_t;
+
 /* How the lexer represents a token. */
 typedef struct {
    unsigned int lineno;
-   int type;               /* can be any value from the defines below */
+   token_val_t type;       /* can be any value from the defines below */
 
    union {
       long          integer;
@@ -38,44 +44,8 @@ typedef struct {
    };
 } token_t;
 
+/* Maps a token's enum value to a descriptive string. */
 extern const char *token_map[];
-
-/* More complicated values. */
-#define  BOOLEAN     0        /* t or f */
-#define  IDENTIFIER  1        /* a word identifier */
-#define  INTEGER     2        /* an integer */
-#define  LIST        3
-#define  STRING      4        /* a string */
-
-/* Reserved character and word values. */
-#define  ASSIGN      5        /* ← */
-#define  CASE        6        /* case */
-#define  COLON       7        /* : */
-#define  COMMA       8        /* , */
-#define  CONST       9        /* ɕ */
-#define  DECL        10       /* decl */
-#define  DOT         11       /* . */
-#define  ELSE        12       /* else */
-#define  END         13       /* end */
-#define  FUNCTION    14       /* ƒ */
-#define  IF          15       /* if */
-#define  IN          16       /* in */
-#define  LBRACE      17       /* { */
-#define  LBRACK      18       /* [ */
-#define  LPAREN      19       /* ( */
-#define  MAPSTO      20       /* → */
-#define  MODULE      21       /* ℳ */
-#define  RBRACE      22       /* } */
-#define  RBRACK      23       /* ] */
-#define  RPAREN      24       /* ) */
-#define  THEN        25       /* then */
-#define  TYPE        26       /* τ */
-#define  VAR         27       /* ʋ */
-
-#define  COMMENT     28       /* # */
-#define  DBLQUOTE    29       /* " */
-
-#define  ENDOFFILE   30
 
 /* Return the next token from the previously opened file f, or NULL if no
  * more tokens are available.
