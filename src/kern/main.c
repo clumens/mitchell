@@ -1,3 +1,25 @@
+/* The main file of the mitchell kernel, which controls the entire
+ * compilation process.
+ *
+ * $Id: main.c,v 1.2 2004/08/31 15:43:24 chris Exp $
+ */
+
+/* mitchell - the bootstrapping compiler
+ * Copyright (C) 2004 Chris Lumens
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 #include <locale.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -24,6 +46,7 @@ int main (int argc, char **argv)
       exit(1);
    }
 
+   /* Read in each token of the input file and print it out. */
    while ((t = next_token (in)) != NULL)
    {
       switch (t->type) {

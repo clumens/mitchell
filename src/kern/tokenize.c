@@ -1,3 +1,29 @@
+/* This file is the tokenizer for michell, which breaks up the input file
+ * into a stram of tokens for use by the parser.  I am generally a big fan
+ * of using automated tools to generate lexers, but I've decided to make
+ * this one by hand since I don't believe flex supports wide characters
+ * and also because it needs to be as simple as possible for future
+ * reimplementation in the language itself.
+ *
+ * $Id: tokenize.c,v 1.2 2004/08/31 15:43:24 chris Exp $
+ */
+
+/* mitchell - the bootstrapping compiler
+ * Copyright (C) 2004 Chris Lumens
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of version 2 of the GNU General Public License as
+ * published by the Free Software Foundation.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
+ */
 #include <errno.h>
 #include <locale.h>
 #include <stdio.h>
@@ -21,6 +47,7 @@
       exit (1); \
    }
 
+/* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
 {
    return ch == L'#' || ch == L'(' || ch == L')' || ch == L'[' ||
@@ -81,9 +108,9 @@ static void whitespace_state (FILE *f)
    }
 }
 
-/* We've seen a single non-reserved character, which puts us into the word
- * reading state.  Gather up all the characters until the next reserved one
- * and return those as a string.
+/* We've seen a character that puts us into one of the special word-reading
+ * states.  Gather up all the characters until we see one that is not a
+ * member of the current word state's set.
  */
 static wchar_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
 {
@@ -131,6 +158,9 @@ static unsigned int word_member (wint_t ch)
    return !iswspace (ch) && !is_reserved (ch);
 }
 
+/* Returns the next token in the previously opened file f or NULL if there
+ * are no more tokens available.
+ */
 token_t *next_token (FILE *f)
 {
    token_t *retval;
