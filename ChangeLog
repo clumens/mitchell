@@ -3,6 +3,16 @@ current
 Compiler frontend:
 - Don't dump the abstract syntax by default, and also add an option to dump to
   standard out.
+- Added an option to dump the symbol tables.
+Grammar:
+- Lists of lists (and even more complicated types) are now allowed by the
+  grammar and recognized by the parser.  It was a grammar error that they were
+  not recognized to begin with.
+- Lists are now specified as "list integer" instead of "integer list", because
+  this makes the grammar much easier.
+Internals:
+- The singly-ty production has been removed, and the absyn_ty_t struct has
+  been redesigned to be less crappy.
 
 mitchell preview 2
 ==================

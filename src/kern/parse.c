@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.26 2004/11/30 02:13:10 chris Exp $
+ * $Id: parse.c,v 1.27 2004/12/02 05:22:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -52,15 +52,14 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
-#define NRULES   22        /* number of parser rules in each set */
+#define NRULES   21        /* number of parser rules in each set */
 #define SET_SIZE 14        /* max number of elements in each rule */
 
 enum { SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
        SET_DECL_EXPR, SET_DECL_LST, SET_EXPR, SET_EXPR_LST,
        SET_FUN_CALL_OR_ID, SET_FUN_DECL, SET_ID, SET_ID_LST, SET_IF_EXPR,
-       SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_RECORD_ASSN_LST,
-       SET_SINGLE_TY, SET_TOP_DECL, SET_TOP_DECL_LST, SET_TY, SET_TY_DECL,
-       SET_VAL_DECL };
+       SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_RECORD_ASSN_LST, SET_TOP_DECL,
+       SET_TOP_DECL_LST, SET_TY, SET_TY_DECL, SET_VAL_DECL };
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
@@ -81,10 +80,9 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* module-decl */ { MODULE, -1 },
    /* module-decl-lst */ { MODULE, -1 },
    /* record-assn-lst */ { IDENTIFIER, -1 },
-   /* single-ty */ { IDENTIFIER, LBRACE, -1 },
    /* top-decl */ { FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { FUNCTION, MODULE, TYPE, VAL, -1 },
-   /* ty */ { IDENTIFIER, LBRACE, -1 },
+   /* ty */ { IDENTIFIER, LBRACE, LIST, -1 },
    /* ty-decl */ { TYPE, -1 },
    /* val-decl */ { VAL, -1 }
 };
@@ -112,8 +110,6 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
    /* module-decl */ { END, ENDOFFILE, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* module-decl-lst */ { ENDOFFILE, -1 },
    /* record-assn-lst */ { RBRACE, -1 },
-   /* single-ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN, RBRACE,
-                     RPAREN, TYPE, VAL, -1 },
    /* top-decl */ { END, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { END, -1 },
    /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE, RPAREN, TYPE,
@@ -141,7 +137,6 @@ static absyn_if_expr_t *parse_if_expr();
 static absyn_module_decl_t *parse_module_decl();
 static absyn_module_lst_t *parse_module_decl_lst();
 static absyn_record_lst_t *parse_record_assn_lst();
-static absyn_ty_t *parse_single_ty();
 static absyn_decl_t *parse_top_decl();
 static absyn_decl_lst_t *parse_top_decl_lst();
 static absyn_ty_t *parse_ty();
@@ -885,39 +880,6 @@ static absyn_record_lst_t *parse_record_assn_lst()
    return retval;
 }
 
-/* single-ty ::= LBRACE id-lst RBRACE
- *             | id
- */
-static absyn_ty_t *parse_single_ty()
-{
-   absyn_ty_t *retval;
-
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_ty_t))
-
-   switch (tok->type) {
-      case IDENTIFIER:
-         retval->is_record = 0;
-         retval->identifier = parse_id();
-         retval->lineno = retval->identifier->lineno;
-         break;
-
-      case LBRACE:
-         match(LBRACE);
-         retval->lineno = last_tok->lineno;
-         retval->is_record = 1;
-         retval->record = parse_id_lst();
-         match(RBRACE);
-         break;
-
-      default:
-         parse_error (tok, FIRST_SET[SET_SINGLE_TY]);
-   }
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
 /* top-decl ::= decl
  *            | module-decl
  */
@@ -978,24 +940,44 @@ static absyn_decl_lst_t *parse_top_decl_lst()
    return retval;
 }
 
-/* ty ::= single-ty
- *      | single-ty LIST
+/* ty ::= LIST ty
+ *      | LBRACE id-lst RBRACE
+ *      | id
  */
 static absyn_ty_t *parse_ty()
 {
    absyn_ty_t *retval;
 
    ENTERING (__FUNCTION__);
+   MALLOC(retval, sizeof(absyn_ty_t))
 
-   retval = parse_single_ty();
-   
-   if (tok->type == LIST)
-   {
-      match(LIST);
-      retval->is_list = 1;
+   switch (tok->type) {
+      case IDENTIFIER:
+         retval->kind = ABSYN_TY_ID;
+         retval->identifier = parse_id();
+         retval->lineno = retval->identifier->lineno;
+         break;
+
+      case LBRACE:
+         match(LBRACE);
+         retval->lineno = last_tok->lineno;
+         retval->kind = ABSYN_TY_RECORD;
+         retval->record = parse_id_lst();
+         match(RBRACE);
+         break;
+         
+      case LIST:
+         match(LIST);
+         retval->lineno = last_tok->lineno;
+         retval->kind = ABSYN_TY_LIST;
+         retval->list = parse_ty();
+         break;
+         
+      default:
+         parse_error(tok, FIRST_SET[SET_TY]);
    }
 
-   LEAVING(__FUNCTION__);
+   LEAVING (__FUNCTION__);
    return retval;
 }
 

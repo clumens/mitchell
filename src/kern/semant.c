@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.15 2004/12/01 05:15:45 chris Exp $
+ * $Id: semant.c,v 1.16 2004/12/02 05:22:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -161,11 +161,11 @@ char *ty_to_str (const ty_t *ty)
          char *retval;
          char *tmp = ty_to_str(ty->list_base_ty);
 
-         MALLOC(retval, strlen(tmp)+1)
-         retval = strcpy (retval, tmp);
+         MALLOC(retval, 6)
+         retval = strcpy (retval, "list ");
+         REALLOC(retval, strlen(retval)+strlen(tmp)+1)
+         retval = strcat (retval, tmp);
 
-         REALLOC(retval, strlen(retval)+6)
-         retval = strcat (retval, " list");
          return retval;
          break;
       }
@@ -713,92 +713,98 @@ static void check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
    }
 }
 
-/* TODO:  something about is_list */
 static ty_t *check_ty (absyn_ty_t *node, tabstack_t *stack)
 {
    ty_t *retval = NULL;
 
-   /* Records are a little bit complicated. */
-   if (node->is_record)
-   {
-      absyn_id_lst_t *cur = node->record;
-      absyn_id_lst_t *tmp;
-
-      /* Step 1.  Check all record identifiers to make sure they're not trying
-       * to be in some sort of namespace.
-       */
-      for (tmp = cur; tmp != NULL; tmp = tmp->next)
+   switch (node->kind) {
+      case ABSYN_TY_ID:
       {
-         if (tmp->symbol->sub != NULL)
-         {
-            BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
-                              tmp->symbol->symbol,
-                              "symbol may not contain a namespace");
-            exit(1);
-         }
-      }
+         /* First check the local symbol table stack (to take into account any
+          * modules we might be inside of).  If that fails, also check the
+          * global symbol table for those basic types.
+          */
+         symbol_t *s = symtab_lookup_entry (stack, node->identifier->symbol,
+                                            SYM_TYPE);
 
-      /* Step 2.  Check all record identifiers for proper typing and no
-       * duplicates.
-       */
-      while (cur != NULL)
-      {
-         /* First, check the type of the record member. */
-         check_ty (cur->ty, stack);
-
-         /* Now make sure there's no other record member with the same name. */
-         for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
+         if (s == NULL)
          {
-            if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
+            s = symtab_lookup_entry (global, node->identifier->symbol,
+                                     SYM_TYPE);
+
+            if (s == NULL)
             {
-               BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
-                                 tmp->symbol->symbol, "duplicate symbol "
-                                 "already exists in this scope");
+               BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                                 node->identifier->symbol,
+                                 "unknown symbol referenced");
                exit(1);
             }
          }
 
-         cur = cur->next;
-      }
-   }
-   else
-   {
-      /* First check the local symbol table stack (to take into account any
-       * modules we might be inside of).  If that fails, also check the global
-       * symbol table for those basic types.
-       */
-      symbol_t *s = symtab_lookup_entry (stack, node->identifier->symbol,
-                                         SYM_TYPE);
-
-      if (s == NULL)
-      {
-         s = symtab_lookup_entry (global, node->identifier->symbol, SYM_TYPE);
-
-         if (s == NULL)
+         if (s->ty == NULL)
          {
             BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                              node->identifier->symbol,
-                              "unknown symbol referenced");
+                              node->identifier->symbol, "symbol has no type");
             exit(1);
          }
+
+         return s->ty;
       }
 
-      if (s->ty == NULL)
-      {
-         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                           node->identifier->symbol, "symbol has no type");
-         exit(1);
-      }
-
-      if (node->is_list)
-      {
+      /* Lists aren't so hard - make a type for the list and set its base
+       * type to whatever's linked to by the AST node.
+       */
+      case ABSYN_TY_LIST:
          MALLOC(retval, sizeof(ty_t))
          retval->ty = TY_LIST;
-         retval->list_base_ty = s->ty;
+         retval->list_base_ty = check_ty (node->list, stack);
          return retval;
+
+      /* Records are a little bit complicated. */
+      case ABSYN_TY_RECORD:
+      {
+         absyn_id_lst_t *cur = node->record;
+         absyn_id_lst_t *tmp;
+
+         /* Step 1.  Check all record identifiers to make sure they're not
+          * trying to be in some sort of namespace.
+          */
+         for (tmp = cur; tmp != NULL; tmp = tmp->next)
+         {
+            if (tmp->symbol->sub != NULL)
+            {
+               BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
+                                 tmp->symbol->symbol,
+                                 "symbol may not contain a namespace");
+               exit(1);
+            }
+         }
+
+         /* Step 2.  Check all record identifiers for proper typing and no
+          * duplicates.
+          */
+         while (cur != NULL)
+         {
+            /* First, check the type of the record member. */
+            check_ty (cur->ty, stack);
+
+            /* Now make sure there's no other member with the same name. */
+            for (tmp = cur->next; tmp != NULL; tmp = tmp->next)
+            {
+               if (wcscmp (tmp->symbol->symbol, cur->symbol->symbol) == 0)
+               {
+                  BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
+                                    tmp->symbol->symbol, "duplicate symbol "
+                                    "already exists in this scope");
+                  exit(1);
+               }
+            }
+
+            cur = cur->next;
+         }
+
+         return NULL;
       }
-      else
-         return s->ty;
    }
 
    return NULL;

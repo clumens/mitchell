@@ -2,5 +2,5 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   τ people ← {name: string, age: integer, is_male: boolean} list
+   τ people ← list {name: string, age: integer, is_male: boolean}
 end
