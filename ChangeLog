@@ -1,0 +1,25 @@
+current
+=======
+Compiler frontend:
+- Don't dump the abstract syntax by default, and also add an option to dump to
+  standard out.
+
+mitchell preview 2
+==================
+Compiler frontend:
+- Added an option to dump the abstract syntax.
+- Check for a UTF-8 aware locale on startup and bail if one is not found.
+Grammar:
+- Allow nested modules, though modules may only be declared inside each other,
+  and not in places like functions or decls.
+- Removed prototype sections from module declarations in order to support
+  nested modules.  Visibility declarations still to follow.
+- Added an ELSE branch to the case expression.
+- Removed constants and renamed variables to values, since I realized that's
+  what they really are.
+Internals:
+- Build an abstract syntax tree from the grammar as we parse it.
+- Link against Boehm's GC library so I have less memory management crud to
+  deal with.
+Misc:
+- Added a syntax highlighting file for vim.
