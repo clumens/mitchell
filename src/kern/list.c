@@ -2,7 +2,7 @@
  * that can store any type of data.  The list nodes do not need to be
  * homogenous, as each node simply stores a pointer to the data.
  *
- * $Id: list.c,v 1.2 2004/12/19 21:51:13 chris Exp $
+ * $Id: list.c,v 1.3 2005/01/08 21:28:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -213,8 +213,11 @@ list_t *list_remove (list_t *lst, void *user_data, cmp_func_t cmp_func)
 list_t *list_remove_hd (list_t *lst)
 {
    list_t *tmp = lst;
-   
-   if (lst != NULL)
+
+   /* If this is the only element in the list, this is easy. */
+   if (lst != NULL && lst->next == NULL)
+      return NULL;
+   else if (lst != NULL)
    {
       lst = lst->next;
       if (lst != NULL) lst->prev = NULL;
@@ -230,6 +233,10 @@ list_t *list_remove_hd (list_t *lst)
 list_t *list_remove_tl (list_t *lst)
 {
    list_t *tl = __list_find_tl(lst);
+
+   /* If this is the only element in the list, this is easy. */
+   if (tl == lst)
+      return NULL;
 
    if (tl != NULL)
    {
