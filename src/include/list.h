@@ -2,7 +2,7 @@
  * list nodes do not need to be homogenous, as each node simply stores a
  * pointer to the data.
  *
- * $Id: list.h,v 1.2 2004/12/19 21:51:11 chris Exp $
+ * $Id: list.h,v 1.3 2005/02/02 13:38:48 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -23,6 +23,10 @@
  */
 #ifndef _LIST_H
 #define _LIST_H 1
+
+#ifdef __cplusplus
+    extern "C" {
+#endif
 
 /* A node of the linked list. */
 typedef struct list_t {
@@ -51,6 +55,11 @@ list_t *list_remove (list_t *lst, void *user_data, cmp_func_t cmp_func);
 list_t *list_remove_hd (list_t *lst);
 list_t *list_remove_tl (list_t *lst);
 list_t *list_tl (list_t *lst);
+list_t *list_reverse (list_t *lst);
+
+#ifdef __cplusplus
+    }
+#endif
 
 #endif
 

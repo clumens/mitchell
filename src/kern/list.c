@@ -2,7 +2,7 @@
  * that can store any type of data.  The list nodes do not need to be
  * homogenous, as each node simply stores a pointer to the data.
  *
- * $Id: list.c,v 1.3 2005/01/08 21:28:09 chris Exp $
+ * $Id: list.c,v 1.4 2005/02/02 13:38:57 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -253,6 +253,25 @@ list_t *list_remove_tl (list_t *lst)
 list_t *list_tl (list_t *lst)
 {
    return __list_find_tl (lst);
+}
+
+list_t *list_reverse (list_t *lst)
+{
+   list_t *cur = lst;
+   list_t *prev = cur;
+   list_t *tmp;
+   
+   while (cur != NULL)
+   {
+      tmp = cur->next;
+      cur->next = cur->prev;
+      cur->prev = tmp;
+
+      prev = cur;
+      cur = cur->prev;
+   }
+   
+   return prev;
 }
 
 /* vim: set tags=../tags: */
