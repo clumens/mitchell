@@ -11,6 +11,7 @@
      suck in a symbol table for them during semantic analysis (preview-5)
    - proposal for C interface module
    - outline contents for runtime library
+   - command line option to stop after a certain phase (preview-4)
 - output:
    - add column numbers to everything for better error reporting
      (preview-4)
@@ -23,6 +24,7 @@
 - symbol table / type checker:
    - detect infinite loops of types (preview-4)
    - base types may currently be overridden - good or bad?
+   - better hashing function
 - testing:
    - more test cases for parser
    - more test cases for scope
