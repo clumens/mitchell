@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.2 2004/08/31 15:43:24 chris Exp $
+ * $Id: tokens.h,v 1.3 2004/09/01 16:27:08 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -49,6 +49,7 @@ typedef struct {
 #define  RBRACK      204      /* ] */
 #define  COMMA       205      /* , */
 #define  DBLQUOTE    206      /* " */
+#define  FUNCTION    207      /* ƒ */
 
 /* Return the next token from the previously opened file f, or NULL if no
  * more tokens are available.

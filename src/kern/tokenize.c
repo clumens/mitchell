@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.2 2004/08/31 15:43:24 chris Exp $
+ * $Id: tokenize.c,v 1.3 2004/09/01 16:27:08 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,6 +33,8 @@
 
 #include "tokens.h"
 
+static wchar_t *reserved = L"#()[].\"ƒ";
+
 #define MALLOC(ptr, size) \
    if (((ptr) = malloc(size)) == NULL) \
    { \
@@ -50,8 +52,7 @@
 /* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
 {
-   return ch == L'#' || ch == L'(' || ch == L')' || ch == L'[' ||
-          ch == L']' || ch == L',' || ch == L'"';
+   return wcschr (reserved, ch) != NULL;
 }
 
 /* Read one wide char from the input file, checking for errors in the
@@ -216,7 +217,10 @@ token_t *next_token (FILE *f)
              * one more time and throw it away.
              */
             read_char (f);
+            return retval;
 
+         case L'ƒ':
+            retval->type = FUNCTION;
             return retval;
 
          case L'0' ... L'9':
