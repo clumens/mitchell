@@ -7,6 +7,3 @@
 - testing:
    - comprehensive test cases for parser
 - grammar:
-   - record variable declarations should use braces, just like access does
-   - empty expressions in decl..in..end should not be allowed (check for
-     this elsewhere too)
