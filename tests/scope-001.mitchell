@@ -1,0 +1,12 @@
+# Description:  Two values of the same name in different scopes.
+# Expected:  PASS
+
+ℳ Main ← decl
+   ʋ a: integer ← 47
+
+   ƒ foo: integer () ← decl
+      ʋ a: string ← "asdf"
+   in
+      47
+   end
+end

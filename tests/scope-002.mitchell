@@ -1,0 +1,7 @@
+# Description:  Two values of the same name in the same scope
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ʋ a: integer ← 47
+   ʋ a: string ← "asdf"
+end
