@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.18 2004/12/02 05:52:07 chris Exp $
+ * $Id: tokenize.c,v 1.19 2004/12/22 02:06:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -47,12 +47,12 @@ const char *token_map[] = {
 
    "ASSIGN", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
    "FUNCTION", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO", "MODULE",
-   "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAL",
+   "PIPE", "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE", "VAL",
    
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
-static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ}])τʋ#\"";
+static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ|}])τʋ#\"";
 
 /* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
@@ -254,6 +254,11 @@ token_t *next_token (FILE *f)
          case L'ℳ':
             retval->lineno = lineno;
             retval->type = MODULE;
+            return retval;
+
+         case L'|':
+            retval->lineno = lineno;
+            retval->type = PIPE;
             return retval;
 
          case L'}':

@@ -10,9 +10,17 @@ Grammar:
   not recognized to begin with.
 - Lists are now specified as "list integer" instead of "integer list", because
   this makes the grammar much easier.
+- Elements from a record are now accessed via the "pipe" character instead of
+  overloading the period from module access.
 Internals:
 - The singly-ty production has been removed, and the absyn_ty_t struct has
   been redesigned to be less crappy.
+- Renamed absyn_record_lst_t to absyn_record_assn_t to more closely match the
+  other names.
+- Added absyn_record_ref_t to the AST to represent element access.
+- Various minor renamings to make things more clear.
+- Beginning to work in my generic list code, but only in a few test places.
+
 
 mitchell preview 2
 ==================

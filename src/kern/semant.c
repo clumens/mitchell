@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.23 2004/12/19 17:15:03 chris Exp $
+ * $Id: semant.c,v 1.24 2004/12/22 02:06:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -85,10 +85,12 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack);
 static ty_t *check_expr_lst (absyn_expr_lst_t *node, tabstack_t *stack);
 static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack);
 static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack);
+static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack);
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack);
 static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack);
 static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack);
-static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack);
+static ty_t *check_record_assn (absyn_record_assn_t *node, tabstack_t *stack);
+static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack);
 static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack);
 static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack);
 
@@ -203,13 +205,16 @@ wchar_t *ty_to_str (const ty_t *ty)
             retval = wcscat (retval, tmp);
 
             /* Fifth, a comma. */
-            REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*2);
-            retval = wcscat (retval, L",");
+            if (lst->next != NULL)
+            {
+               REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*2);
+               retval = wcscat (retval, L",");
+            }
          }
 
          /* Finally, the closing brace. */
-         REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*6);
-         retval = wcscat (retval, L"NULL}");
+         REALLOC(retval, WCSLEN(retval)+sizeof(wchar_t)*2);
+         retval = wcscat (retval, L"}");
 
          return retval;
          break;
@@ -226,40 +231,59 @@ wchar_t *ty_to_str (const ty_t *ty)
  * +================================================================+
  */
 
-static int __element_cmp (void *lst_data, void *user_data)
+static int __ele_to_ele_cmp (void *lst_data, void *user_data)
 {
    return wcscmp (((element_t *) lst_data)->identifier,
                   ((element_t *) user_data)->identifier);
 }
 
+static int __ele_to_str_cmp (void *lst_data, void *user_data)
+{
+   return wcscmp (((element_t *) lst_data)->identifier, (wchar_t *) user_data);
+}
+
+/* Strip off any aliases present on a type. */
+static ty_t *unalias (ty_t *ty)
+{
+   ty_t *retval = ty;
+
+   while (retval->ty == TY_ALIAS)
+      retval = retval->alias->info.ty;
+
+   return retval;
+}
+
+/* Like equal_types, but check to see if ty is a specific type instead of
+ * straight equality testing.
+ */
 static unsigned int is_ty_kind (ty_t *ty, ty_kind kind)
 {
    if (ty == NULL)
       return 0;
 
-   switch (ty->ty) {
-      case TY_ALIAS:
-         return is_ty_kind (ty->alias->info.ty, kind);
-
-      default:
-         return ty->ty == kind;
-   }
+   if (ty->ty == TY_ALIAS)
+      return (unalias (ty))->ty == kind;
+   else
+      return ty->ty == kind;
 }
 
-static unsigned int equal_types (ty_t *left, ty_t *right)
+/* Compare two types for equality, after first stripping off any aliases
+ * they may have.  We can do this because our typing rules state that two
+ * aliased types are equal if they bottom out in the same types.
+ */
+static unsigned int equal_types (ty_t *aliased_left, ty_t *aliased_right)
 {
+   ty_t *left, *right;
+
    /* Basic sanity checking. */
-   if (left == NULL || right == NULL)
+   if (aliased_left == NULL || aliased_right == NULL)
       return 0;
 
-   switch (left->ty) {
-      /* Two aliased types are equal if they bottom out in the same types. */
-      case TY_ALIAS:
-         if (right->ty == TY_ALIAS)
-            return equal_types (left->alias->info.ty, right->alias->info.ty);
-         else
-            return equal_types (left->alias->info.ty, right);
+   /* Strip off the aliases. */
+   left = unalias (aliased_left);
+   right = unalias (aliased_right);
 
+   switch (left->ty) {
       /* Two list types are equal if their base types are equal. */
       case TY_LIST:
          if (right->ty == TY_LIST)
@@ -374,6 +398,20 @@ static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind,
    return NULL;
 }
 
+/* First look up the symbol in the provided stack.  If it's not found there,
+ * check the global symbol table.
+ */
+static symbol_t *lookup_id_global (absyn_id_expr_t *node, subtable_t kind,
+                                   tabstack_t *stack)
+{
+   symbol_t *s;
+
+   if ((s = lookup_id (node, kind, stack)) == NULL)
+      return lookup_id (node, kind, global);
+   else
+      return s;
+}
+
 /* Convert an AST representation of a type into a corresponding symbol table
  * type declaration, suitable for inserting into tables.
  */
@@ -390,15 +428,12 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
           */
          symbol_t *s;
 
-         if ((s = lookup_id (node->identifier, SYM_TYPE, stack)) == NULL)
+         if ((s = lookup_id_global (node->identifier, SYM_TYPE, stack)) == NULL)
          {
-            if ((s = lookup_id (node->identifier, SYM_TYPE, global)) == NULL)
-            {
-               BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                                 node->identifier->symbol,
-                                 "unknown symbol referenced");
-               exit(1);
-            }
+            BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                              node->identifier->symbol,
+                              "unknown symbol referenced");
+            exit(1);
          }
          else if (s->info.ty != NULL)
          {
@@ -452,7 +487,7 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
             /* Two elements with the same name are not allowed. */
             retval->record = list_insert_unique (retval->record, new_ele,
-                                                 __element_cmp);
+                                                 __ele_to_ele_cmp);
             if (retval->record == NULL)
             {
                BAD_SYMBOL_ERROR (compiler_config.filename, cur_id->lineno,
@@ -707,6 +742,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          break;
 
       case ABSYN_ID:
+         node->ty = check_id (node->identifier, stack);
          break;
 
       case ABSYN_IF:
@@ -718,16 +754,17 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
          node->ty->ty = TY_INTEGER;
          break;
 
-      case ABSYN_RECORD_LST:
-         node->ty = check_record_lst (node->record_assn_lst, stack);
+      case ABSYN_RECORD_ASSN:
+         node->ty = check_record_assn (node->record_assn_lst, stack);
+         break;
+
+      case ABSYN_RECORD_REF:
+         node->ty = check_record_ref (node->record_ref, stack);
          break;
 
       case ABSYN_STRING:
          MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_STRING;
-         break;
-
-      default:
          break;
    }
 
@@ -780,18 +817,11 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
    absyn_expr_lst_t *arg_lst;
    list_t *formal_lst;
 
-   /* Look up the function call first in the local symbol table, then check the
-    * global one too.
-    */
-   if ((s = lookup_id (node->identifier, SYM_FUNCTION, stack)) == NULL)
+   if ((s = lookup_id_global (node->identifier, SYM_FUNCTION, stack)) == NULL)
    {
-      if ((s = lookup_id (node->identifier, SYM_FUNCTION, global)) == NULL)
-      {
-         BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
-                           node->identifier->symbol, "unknown symbol "
-                           "referenced");
-         exit(1);
-      }
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->identifier->symbol, "unknown symbol referenced");
+      exit(1);
    }
 
    /* Values and functions exist in the same namespace, so check what we got. */
@@ -946,6 +976,32 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    stack = leave_scope (stack, node->symbol->symbol);
 }
 
+/* Look up only simple value identifiers - those which are not functions or
+ * record references.  Those are handled elsewhere, which significantly
+ * simplifies this function.
+ */
+static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
+{
+   symbol_t *sym;
+
+   if ((sym = lookup_id_global (node, SYM_VALUE, stack)) == NULL)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol, "unknown symbol referenced");
+      exit(1);
+   }
+
+   /* Values and functions exist in the same namespace, so check what we got. */
+   if (sym->kind != SYM_VALUE)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->symbol, "symbol is not a value");
+      exit(1);
+   }
+
+   return sym->info.ty;
+}
+
 static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
 {
    node->test_expr->ty = check_expr (node->test_expr, stack);
@@ -1023,10 +1079,10 @@ static void check_module_lst (absyn_module_lst_t *node, tabstack_t *stack)
  * into a record type.  This is useful for initializing record values and
  * returning from a function.
  */
-static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
+static ty_t *check_record_assn (absyn_record_assn_t *node, tabstack_t *stack)
 {
    ty_t *retval;
-   absyn_record_lst_t *tmp = node;
+   absyn_record_assn_t *tmp = node;
    element_t *new_ele;
 
    MALLOC (retval, sizeof (ty_t));
@@ -1041,7 +1097,7 @@ static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
       new_ele->ty = check_expr (tmp->expr, stack);
 
       retval->record = list_insert_unique (retval->record, new_ele,
-                                           __element_cmp);
+                                           __ele_to_ele_cmp);
       if (retval->record == NULL)
       {
          BAD_SYMBOL_ERROR (compiler_config.filename, tmp->lineno,
@@ -1051,6 +1107,53 @@ static ty_t *check_record_lst (absyn_record_lst_t *node, tabstack_t *stack)
       }
 
       tmp = tmp->next;
+   }
+
+   return retval;
+}
+
+static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
+{
+   ty_t *retval = NULL;
+   symbol_t *sym;
+   ty_t *sym_ty;
+   absyn_id_expr_t *tmp;
+
+   if ((sym = lookup_id_global (node->identifier, SYM_VALUE, stack)) == NULL)
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        node->identifier->symbol, "unknown symbol referenced");
+      exit(1);
+   }
+
+   sym_ty = unalias (sym->info.ty);
+
+   /* Values and functions exist in the same namespace, so check what we got. */
+   if (sym->kind != SYM_VALUE || ! is_ty_kind (sym_ty, TY_RECORD))
+   {
+      BAD_SYMBOL_ERROR (compiler_config.filename, node->lineno,
+                        sym->name, "symbol is not a record");
+      exit(1);
+   }
+
+   /* Loop over each element in the path given, since we could be accessing
+    * elements which themselves are records.
+    */
+   for (tmp = node->element; tmp != NULL; tmp = tmp->sub)
+   {
+      /* Find the current element in the record symbol's list. */
+      list_t *l = list_find (sym_ty->record, tmp->symbol, __ele_to_str_cmp);
+
+      if (l == NULL)
+      {
+         /* error: symbol is not a member of the record */
+         exit(1);
+      }
+
+      /* Set retval to the type of that element, in case we're at the end. */
+      retval = ((element_t *) l->data)->ty;
+
+      /* If it's a record type, dive into its element list. */
    }
 
    return retval;
