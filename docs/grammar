@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.7 2004/10/23 19:34:07 chris Exp $
+ * $Id: grammar,v 1.8 2004/10/29 04:04:12 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -72,7 +72,7 @@ decl-lst ::= decl decl-lst
 
 decl-expr ::= DECL decl-lst IN expr END
 
-proto ::= ty-decl-proto
+proto ::= ty-decl
         | val-decl-proto
         | fun-decl-proto
 
@@ -82,9 +82,7 @@ proto-lst ::= proto
 
 
 /* Types {{{ */
-ty-decl-proto ::= TYPE id
-
-ty-decl ::= ty-decl-proto ASSIGN ty
+ty-decl ::= TYPE IDENTIFIER ASSIGN ty
 
 single-ty ::= LBRACE id-lst RBRACE
             | id

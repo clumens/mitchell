@@ -4,11 +4,9 @@
 - output:
    - parser error messages can always be better
    - all error messages should have the same form
-   - make fwgetc errors more helpful and descriptive
+   - make fgetwc errors more helpful and descriptive
 - testing:
    - more test cases for parser
 - grammar:
    - modules should be able to contain other modules
-   - types should be fully described in the proto-lst of a module, just
-     like everything else is
 - misc:

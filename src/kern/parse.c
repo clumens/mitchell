@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.16 2004/10/26 13:54:14 chris Exp $
+ * $Id: parse.c,v 1.17 2004/10/29 04:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,7 +51,7 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
-#define NRULES   25        /* number of parser rules in each set */
+#define NRULES   24        /* number of parser rules in each set */
 #define SET_SIZE 13        /* max number of elements in each rule */
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
@@ -79,9 +79,8 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* 19: single-ty */ { IDENTIFIER, LBRACE, -1 },
    /* 20: ty */ { IDENTIFIER, LBRACE, -1 },
    /* 21: ty-decl */ { TYPE, -1 },
-   /* 22: ty-decl-proto */ { TYPE, -1 },
-   /* 23: val-decl */ { VAL, -1 },
-   /* 24: val-decl-proto */ { VAL, -1 }
+   /* 22: val-decl */ { VAL, -1 },
+   /* 23: val-decl-proto */ { VAL, -1 }
 };
 
 static const int FOLLOW_SET[NRULES][SET_SIZE] = {
@@ -115,9 +114,8 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
    /* 20: ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE,
                   RPAREN, TYPE, VAL, -1 },
    /* 21: ty-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 22: ty-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 23: val-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 24: val-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAL, -1 },
+   /* 22: val-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
+   /* 23: val-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAL, -1 },
 };
 
 /* These functions are seriously mutually recursive, so put forward
@@ -145,7 +143,6 @@ static absyn_record_lst_t *parse_record_assn_lst();
 static absyn_ty_t *parse_single_ty();
 static absyn_ty_t *parse_ty();
 static absyn_ty_decl_t *parse_ty_decl();
-static absyn_id_expr_t *parse_ty_decl_proto();
 static absyn_val_decl_t *parse_val_decl();
 static absyn_val_proto_t *parse_val_decl_proto();
 
@@ -781,7 +778,7 @@ static absyn_module_lst_t *parse_module_decl_lst()
    return retval;
 }
 
-/* proto ::= ty-decl-proto
+/* proto ::= ty-decl
  *         | val-decl-proto
  *         | fun-decl-proto
  */
@@ -800,7 +797,7 @@ static absyn_proto_t *parse_proto()
 
       case TYPE:
          retval->type = ABSYN_TY_DECL;
-         retval->ty_proto = parse_ty_decl_proto();
+         retval->ty_proto = (struct absyn_ty_decl_t *) parse_ty_decl();
          break;
 
       case VAL:
@@ -926,31 +923,24 @@ static absyn_ty_t *parse_ty()
    return retval;
 }
 
-/* ty-decl ::= ty-decl-proto ASSIGN ty */
+/* ty-decl ::= TYPE IDENTIFIER ASSIGN ty */
 static absyn_ty_decl_t *parse_ty_decl()
 {
    absyn_ty_decl_t *retval;
+   absyn_id_expr_t *sym;
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_ty_decl_t))
-
-   retval->proto = parse_ty_decl_proto();
-   match(ASSIGN);
-   retval->ty = parse_ty();
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* ty-decl-proto ::= TYPE id */
-static absyn_id_expr_t *parse_ty_decl_proto()
-{
-   absyn_id_expr_t *retval;
-
-   ENTERING (__FUNCTION__);
+   MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(TYPE);
-   retval = parse_id();
+   match(IDENTIFIER);
+   sym->symbol = last_tok->string;
+   sym->ns = NULL;
+   retval->symbol = sym;
+
+   match(ASSIGN);
+   retval->ty = parse_ty();
 
    LEAVING(__FUNCTION__);
    return retval;

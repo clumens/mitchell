@@ -1,0 +1,14 @@
+# Description:  Types lacking definitions in the decl-lst, like in olden times
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ uid
+   τ name
+   τ is_root
+   τ things
+in
+   τ uid ← integer
+   τ name ← string
+   τ is_root ← boolean
+   τ things ← string list
+end

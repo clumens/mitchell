@@ -2,7 +2,7 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   τ person
+   τ person ← {name: string, age: integer, is_male: boolean}
 in
    τ person ← {name: string, age: integer, is_male: boolean}
 end

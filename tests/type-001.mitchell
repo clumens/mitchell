@@ -2,10 +2,10 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   τ uid
-   τ name
-   τ is_root
-   τ things
+   τ uid ← integer
+   τ name ← string
+   τ is_root ← boolean
+   τ things ← string list
 in
    τ uid ← integer
    τ name ← string
