@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.2 2004/10/25 19:13:51 chris Exp $
+ * $Id: absyn_printer.c,v 1.3 2004/10/26 04:36:18 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -21,306 +21,317 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 #include <stdio.h>
+#include <stdlib.h>
 
 #include "absyn.h"
+#include "config.h"
 #include "basic_types.h"
 
 /* More mutually recursive functions means more forward declarations. */
-static void print_absyn_branch_lst_t (absyn_branch_lst_t *node,
-                                      unsigned int indent);
-static void print_absyn_case_expr_t (absyn_case_expr_t *node,
-                                     unsigned int indent);
-static void print_absyn_decl_t (absyn_decl_t *node, unsigned int indent);
-static void print_absyn_decl_expr_t (absyn_decl_expr_t *node,
-                                     unsigned int indent);
-static void print_absyn_decl_lst_t (absyn_decl_lst_t *node,
-                                    unsigned int indent);
-static void print_absyn_expr_t (absyn_expr_t *node, unsigned int indent);
-static void print_absyn_expr_lst_t (absyn_expr_lst_t *node,
-                                    unsigned int indent);
-static void print_absyn_fun_decl_t (absyn_fun_decl_t *node,
-                                    unsigned int indent);
-static void print_absyn_fun_proto_t (absyn_fun_proto_t *node,
-                                     unsigned int indent);
-static void print_absyn_id_expr_t (absyn_id_expr_t *node, unsigned int indent);
-static void print_absyn_id_lst_t (absyn_id_lst_t *node, unsigned int indent);
-static void print_absyn_if_expr_t (absyn_if_expr_t *node, unsigned int indent);
-static void print_absyn_module_decl_t (absyn_module_decl_t *node,
-                                       unsigned int indent);
-static void print_absyn_module_lst_t (absyn_module_lst_t *node,
-                                      unsigned int indent);
-static void print_absyn_proto_t (absyn_proto_t *node, unsigned int indent);
-static void print_absyn_proto_lst_t (absyn_proto_lst_t *node,
-                                     unsigned int indent);
-static void print_absyn_record_lst_t (absyn_record_lst_t *node,
-                                      unsigned int indent);
-static void print_absyn_ty_t (absyn_ty_t *node, unsigned int indent);
-static void print_absyn_ty_decl_t (absyn_ty_decl_t *node,
-                                   unsigned int indent);
-static void print_absyn_val_decl_t (absyn_val_decl_t *node,
-                                    unsigned int indent);
-static void print_absyn_val_proto_t (absyn_val_proto_t *node,
-                                     unsigned int indent);
+static void print_branch_lst_t (absyn_branch_lst_t *node, unsigned int indent);
+static void print_case_expr_t (absyn_case_expr_t *node, unsigned int indent);
+static void print_decl_t (absyn_decl_t *node, unsigned int indent);
+static void print_decl_expr_t (absyn_decl_expr_t *node, unsigned int indent);
+static void print_decl_lst_t (absyn_decl_lst_t *node, unsigned int indent);
+static void print_expr_t (absyn_expr_t *node, unsigned int indent);
+static void print_expr_lst_t (absyn_expr_lst_t *node, unsigned int indent);
+static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int indent);
+static void print_fun_proto_t (absyn_fun_proto_t *node, unsigned int indent);
+static void print_id_expr_t (absyn_id_expr_t *node, unsigned int indent);
+static void print_id_lst_t (absyn_id_lst_t *node, unsigned int indent);
+static void print_if_expr_t (absyn_if_expr_t *node, unsigned int indent);
+static void print_module_decl_t (absyn_module_decl_t *node,
+                                 unsigned int indent);
+static void print_module_lst_t (absyn_module_lst_t *node, unsigned int indent);
+static void print_proto_t (absyn_proto_t *node, unsigned int indent);
+static void print_proto_lst_t (absyn_proto_lst_t *node, unsigned int indent);
+static void print_record_lst_t (absyn_record_lst_t *node, unsigned int indent);
+static void print_ty_t (absyn_ty_t *node, unsigned int indent);
+static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int indent);
+static void print_val_decl_t (absyn_val_decl_t *node, unsigned int indent);
+static void print_val_proto_t (absyn_val_proto_t *node, unsigned int indent);
 
-void print_absyn (ast_t *ast)
-{
-   print_absyn_module_lst_t (ast, 0);
-   printf ("\n");
-}
+static FILE *out = NULL;
 
-static void print_absyn_branch_lst_t (absyn_branch_lst_t *node,
-                                      unsigned int indent)
+/* Abstract syntax tree printer entry point. */
+void print_absyn (ast_t *ast, compiler_config_t *config)
 {
-   if (node != NULL)
+   /* This needs to get changed when printing the abstract syntax is not
+    * the default operation.
+    */
+   if (config->debug.absyn_outfile == NULL)
+      out = stdout;
+   else
    {
-      printf ("\n%*sbranch_lst_t", indent, "");
-      print_absyn_expr_t ((absyn_expr_t*) node->branch, indent+1);
-      print_absyn_expr_t ((absyn_expr_t*) node->expr, indent+1);
-      print_absyn_branch_lst_t ((absyn_branch_lst_t *) node->next, indent+1);
+      if ((out = fopen (config->debug.absyn_outfile, "w")) == NULL)
+      {
+         fprintf (stderr, "error: unable to open dump file '%s' for writing\n",
+                  config->debug.absyn_outfile);
+         exit(1);
+      }
+   }
+
+   print_module_lst_t (ast, 0);
+   fprintf (out, "\n");
+
+   if (config->debug.absyn_outfile != NULL)
+   {
+      if (fclose (out) != 0)
+      {
+         fprintf (stderr, "error:  could not close dump file '%s'\n",
+                  config->debug.absyn_outfile);
+         exit(1);
+      }
    }
 }
 
-static void print_absyn_case_expr_t (absyn_case_expr_t *node,
-                                     unsigned int indent)
+static void print_branch_lst_t (absyn_branch_lst_t *node, unsigned int indent)
 {
-   printf ("\n%*scase_expr_t", indent, "");
-   print_absyn_expr_t ((absyn_expr_t*) node->test, indent+1);
-   print_absyn_branch_lst_t (node->branch_lst, indent+1);
+   if (node != NULL)
+   {
+      fprintf (out, "\n%*sbranch_lst_t", indent, "");
+      print_expr_t ((absyn_expr_t *) node->branch, indent+1);
+      print_expr_t ((absyn_expr_t *) node->expr, indent+1);
+      print_branch_lst_t ((absyn_branch_lst_t *) node->next, indent+1);
+   }
 }
 
-static void print_absyn_decl_t (absyn_decl_t *node, unsigned int indent)
+static void print_case_expr_t (absyn_case_expr_t *node, unsigned int indent)
 {
-   printf ("\n%*sdecl_t", indent, "");
+   fprintf (out, "\n%*scase_expr_t", indent, "");
+   print_expr_t ((absyn_expr_t *) node->test, indent+1);
+   print_branch_lst_t (node->branch_lst, indent+1);
+}
+
+static void print_decl_t (absyn_decl_t *node, unsigned int indent)
+{
+   fprintf (out, "\n%*sdecl_t", indent, "");
 
    switch (node->type) {
       case ABSYN_FUN_DECL:
-         print_absyn_fun_decl_t (node->fun_decl, indent+1);
+         print_fun_decl_t (node->fun_decl, indent+1);
          break;
 
       case ABSYN_TY_DECL:
-         print_absyn_ty_decl_t (node->ty_decl, indent+1);
+         print_ty_decl_t (node->ty_decl, indent+1);
          break;
 
       case ABSYN_VAL_DECL:
-         print_absyn_val_decl_t (node->val_decl, indent+1);
+         print_val_decl_t (node->val_decl, indent+1);
          break;
    }
 }
 
-static void print_absyn_decl_expr_t (absyn_decl_expr_t *node,
-                                     unsigned int indent)
+static void print_decl_expr_t (absyn_decl_expr_t *node, unsigned int indent)
 {
-   printf ("\n%*sdecl_expr_t", indent, "");
-   print_absyn_decl_lst_t ((absyn_decl_lst_t *) node->decl_lst, indent+1);
-   print_absyn_expr_t ((absyn_expr_t *) node->expr, indent+1);
+   fprintf (out, "\n%*sdecl_expr_t", indent, "");
+   print_decl_lst_t ((absyn_decl_lst_t *) node->decl_lst, indent+1);
+   print_expr_t ((absyn_expr_t *) node->expr, indent+1);
 }
 
-static void print_absyn_decl_lst_t (absyn_decl_lst_t *node, unsigned int indent)
+static void print_decl_lst_t (absyn_decl_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*sdecl_lst_t", indent, "");
-      print_absyn_decl_t (node->decl, indent+1);
-      print_absyn_decl_lst_t ((absyn_decl_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*sdecl_lst_t", indent, "");
+      print_decl_t (node->decl, indent+1);
+      print_decl_lst_t ((absyn_decl_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_expr_t (absyn_expr_t *node, unsigned int indent)
+static void print_expr_t (absyn_expr_t *node, unsigned int indent)
 {
-   printf ("\n%*sexpr_t", indent, "");
+   fprintf (out, "\n%*sexpr_t", indent, "");
 
    switch (node->type)
    {
       case ABSYN_BOOLEAN:
-         printf ("\n%*sBOOLEAN(%s)", indent+1, "",
-                 node->boolean_expr == 0 ? "f" : "t");
+         fprintf (out, "\n%*sBOOLEAN(%s)", indent+1, "",
+                  node->boolean_expr == 0 ? "f" : "t");
          break;
 
       case ABSYN_CASE:
-         print_absyn_case_expr_t (node->case_expr, indent+1);
+         print_case_expr_t (node->case_expr, indent+1);
          break;
 
       case ABSYN_DECL:
-         print_absyn_decl_expr_t (node->decl_expr, indent+1);
+         print_decl_expr_t (node->decl_expr, indent+1);
          break;
 
       case ABSYN_EXPR_LST:
-         print_absyn_expr_lst_t ((absyn_expr_lst_t *) node->expr_lst, indent+1);
+         print_expr_lst_t ((absyn_expr_lst_t *) node->expr_lst, indent+1);
          break;
 
       case ABSYN_FUN_CALL:
-         printf ("\n%*sfun_call_expr", indent+1, "");
-         print_absyn_id_expr_t (node->fun_call_expr.identifier, indent+2);
-         print_absyn_expr_lst_t
-            ((absyn_expr_lst_t *) node->fun_call_expr.arg_lst, indent+2);
+         fprintf (out, "\n%*sfun_call_expr", indent+1, "");
+         print_id_expr_t (node->fun_call_expr.identifier, indent+2);
+         print_expr_lst_t ((absyn_expr_lst_t *) node->fun_call_expr.arg_lst,
+                           indent+2);
          break;
 
       case ABSYN_ID:
-         print_absyn_id_expr_t (node->identifier, indent+1);
+         print_id_expr_t (node->identifier, indent+1);
          break;
 
       case ABSYN_IF:
-         print_absyn_if_expr_t (node->if_expr, indent+1);
+         print_if_expr_t (node->if_expr, indent+1);
          break;
 
       case ABSYN_INTEGER:
-         printf ("\n%*sINTEGER(%li)", indent+1, "", node->integer_expr);
+         fprintf (out, "\n%*sINTEGER(%li)", indent+1, "", node->integer_expr);
          break;
 
       case ABSYN_RECORD_LST:
-         print_absyn_record_lst_t (node->record_assn_lst, indent+1);
+         print_record_lst_t (node->record_assn_lst, indent+1);
          break;
 
       case ABSYN_STRING:
-         printf ("\n%*sSTRING(%ls)", indent+1, "", node->string_expr);
+         fprintf (out, "\n%*sSTRING(%ls)", indent+1, "", node->string_expr);
          break;
    }
 }
 
-static void print_absyn_expr_lst_t (absyn_expr_lst_t *node,
-                                    unsigned int indent)
+static void print_expr_lst_t (absyn_expr_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*sexpr_lst_t", indent, "");
-      print_absyn_expr_t (node->expr, indent+1);
-      print_absyn_expr_lst_t ((absyn_expr_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*sexpr_lst_t", indent, "");
+      print_expr_t (node->expr, indent+1);
+      print_expr_lst_t ((absyn_expr_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_fun_decl_t (absyn_fun_decl_t *node,
-                                    unsigned int indent)
+static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int indent)
 {
-   printf ("\n%*sfun_decl_t", indent, "");
-   print_absyn_fun_proto_t (node->proto, indent+1);
-   print_absyn_expr_t (node->body, indent+1);
+   fprintf (out, "\n%*sfun_decl_t", indent, "");
+   print_fun_proto_t (node->proto, indent+1);
+   print_expr_t (node->body, indent+1);
 }
 
-static void print_absyn_fun_proto_t (absyn_fun_proto_t *node,
-                                     unsigned int indent)
+static void print_fun_proto_t (absyn_fun_proto_t *node, unsigned int indent)
 {
-   printf ("\n%*sfun_proto_t(%ls)", indent, "", node->symbol);
-   print_absyn_ty_t (node->ty, indent+1);
-   print_absyn_id_lst_t (node->id_lst, indent+1);
+   fprintf (out, "\n%*sfun_proto_t", indent, "");
+   print_id_expr_t (node->symbol, indent+1);
+   print_ty_t (node->ty, indent+1);
+   print_id_lst_t (node->id_lst, indent+1);
 }
 
-static void print_absyn_id_expr_t (absyn_id_expr_t *node, unsigned int indent)
+static void print_id_expr_t (absyn_id_expr_t *node, unsigned int indent)
 {
-   printf ("\n%*sid_expr_t(%ls)", indent, "", node->symbol);
+   fprintf (out, "\n%*sid_expr_t(%ls)", indent, "", node->symbol);
    if (node->ns != NULL)
-      print_absyn_id_expr_t ((absyn_id_expr_t *) node->ns, indent+1);
+      print_id_expr_t ((absyn_id_expr_t *) node->ns, indent+1);
 }
 
-static void print_absyn_id_lst_t (absyn_id_lst_t *node, unsigned int indent)
+static void print_id_lst_t (absyn_id_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*sid_lst_t(%ls)", indent, "", node->symbol);
-      print_absyn_ty_t ((absyn_ty_t *) node->ty, indent+1);
-      print_absyn_id_lst_t ((absyn_id_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*sid_lst_t", indent, "");
+      print_id_expr_t (node->symbol, indent+1);
+      print_ty_t ((absyn_ty_t *) node->ty, indent+1);
+      print_id_lst_t ((absyn_id_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_if_expr_t (absyn_if_expr_t *node, unsigned int indent)
+static void print_if_expr_t (absyn_if_expr_t *node, unsigned int indent)
 {
-   printf ("\n%*sif_expr_t", indent, "");
-   print_absyn_expr_t ((absyn_expr_t *) node->test_expr, indent+1);
-   print_absyn_expr_t ((absyn_expr_t *) node->then_expr, indent+1);
-   print_absyn_expr_t ((absyn_expr_t *) node->else_expr, indent+1);
+   fprintf (out, "\n%*sif_expr_t", indent, "");
+   print_expr_t ((absyn_expr_t *) node->test_expr, indent+1);
+   print_expr_t ((absyn_expr_t *) node->then_expr, indent+1);
+   print_expr_t ((absyn_expr_t *) node->else_expr, indent+1);
 }
 
-static void print_absyn_module_decl_t (absyn_module_decl_t *node,
-                                       unsigned int indent)
+static void print_module_decl_t (absyn_module_decl_t *node, unsigned int indent)
 {
-   printf ("\n%*smodule_decl_t(%ls)", indent, "", node->symbol);
-   print_absyn_proto_lst_t ((absyn_proto_lst_t *) node->proto_lst, indent+1);
-   print_absyn_decl_lst_t ((absyn_decl_lst_t *) node->decl_lst, indent+1);
+   fprintf (out, "\n%*smodule_decl_t", indent, "");
+   print_id_expr_t (node->symbol, indent+1);
+   print_proto_lst_t ((absyn_proto_lst_t *) node->proto_lst, indent+1);
+   print_decl_lst_t ((absyn_decl_lst_t *) node->decl_lst, indent+1);
 }
 
-static void print_absyn_module_lst_t (absyn_module_lst_t *node,
-                                      unsigned int indent)
+static void print_module_lst_t (absyn_module_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*smodule_lst_t", indent, "");
-      print_absyn_module_decl_t (node->module, indent+1);
-      print_absyn_module_lst_t ((absyn_module_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*smodule_lst_t", indent, "");
+      print_module_decl_t (node->module, indent+1);
+      print_module_lst_t ((absyn_module_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_proto_t (absyn_proto_t *node, unsigned int indent)
+static void print_proto_t (absyn_proto_t *node, unsigned int indent)
 {
-   printf ("\n%*sproto_t", indent, "");
+   fprintf (out, "\n%*sproto_t", indent, "");
    
    switch (node->type) {
       case ABSYN_FUN_DECL:
-         print_absyn_fun_proto_t (node->fun_proto, indent+1);
+         print_fun_proto_t (node->fun_proto, indent+1);
          break;
 
       case ABSYN_TY_DECL:
-         print_absyn_id_expr_t (node->ty_proto, indent+1);
+         print_id_expr_t (node->ty_proto, indent+1);
          break;
 
       case ABSYN_VAL_DECL:
-         print_absyn_val_proto_t (node->val_proto, indent+1);
+         print_val_proto_t (node->val_proto, indent+1);
          break;
    }
 }
 
-static void print_absyn_proto_lst_t (absyn_proto_lst_t *node,
-                                     unsigned int indent)
+static void print_proto_lst_t (absyn_proto_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*sproto_lst_t", indent, "");
-      print_absyn_proto_t (node->proto, indent+1);
-      print_absyn_proto_lst_t ((absyn_proto_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*sproto_lst_t", indent, "");
+      print_proto_t (node->proto, indent+1);
+      print_proto_lst_t ((absyn_proto_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_record_lst_t (absyn_record_lst_t *node,
-                                      unsigned int indent)
+static void print_record_lst_t (absyn_record_lst_t *node, unsigned int indent)
 {
    if (node != NULL)
    {
-      printf ("\n%*srecord_lst(%ls)", indent, "", node->symbol);
-      print_absyn_expr_t ((absyn_expr_t *) node->expr, indent+1);
-      print_absyn_record_lst_t ((absyn_record_lst_t *) node->next, indent+1);
+      fprintf (out, "\n%*srecord_lst", indent, "");
+      print_id_expr_t (node->symbol, indent+1);
+      print_expr_t ((absyn_expr_t *) node->expr, indent+1);
+      print_record_lst_t ((absyn_record_lst_t *) node->next, indent+1);
    }
 }
 
-static void print_absyn_ty_t (absyn_ty_t *node, unsigned int indent)
+static void print_ty_t (absyn_ty_t *node, unsigned int indent)
 {
-   printf ("\n%*sty_t", indent, "");
+   fprintf (out, "\n%*sty_t", indent, "");
 
    if (node->is_record == 1)
-      print_absyn_id_lst_t (node->record, indent+1);
+      print_id_lst_t (node->record, indent+1);
    else
-      print_absyn_id_expr_t (node->identifier, indent+1);
+      print_id_expr_t (node->identifier, indent+1);
 
    if (node->is_list == 1)
-      printf (" LIST");
+      fprintf (out, " LIST");
 }
 
-static void print_absyn_ty_decl_t (absyn_ty_decl_t *node, unsigned int indent)
+static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int indent)
 {
-   printf ("\n%*sty_decl_t", indent, "");
-   print_absyn_id_expr_t (node->proto, indent+1);
-   print_absyn_ty_t (node->ty, indent+1);
+   fprintf (out, "\n%*sty_decl_t", indent, "");
+   print_id_expr_t (node->proto, indent+1);
+   print_ty_t (node->ty, indent+1);
 }
 
-static void print_absyn_val_decl_t (absyn_val_decl_t *node, unsigned int indent)
+static void print_val_decl_t (absyn_val_decl_t *node, unsigned int indent)
 {
-   printf ("\n%*sval_decl_t", indent, "");
-   print_absyn_val_proto_t (node->proto, indent+1);
-   print_absyn_expr_t (node->init, indent+1);
+   fprintf (out, "\n%*sval_decl_t", indent, "");
+   print_val_proto_t (node->proto, indent+1);
+   print_expr_t (node->init, indent+1);
 }
 
-static void print_absyn_val_proto_t (absyn_val_proto_t *node,
-                                     unsigned int indent)
+static void print_val_proto_t (absyn_val_proto_t *node, unsigned int indent)
 {
-   printf ("\n%*sval_proto_t(%ls)", indent, "", node->symbol);
-   print_absyn_ty_t (node->ty, indent+1);
+   fprintf (out, "\n%*sval_proto_t", indent, "");
+   print_id_expr_t (node->symbol, indent+1);
+   print_ty_t (node->ty, indent+1);
 }
 
 /* vim: set tags=../tags: */

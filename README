@@ -28,7 +28,9 @@ distribution.  There is just no guarantee that those definitions will
 remain constant.
 
 The current status of Mitchell is very limited.  It can only check the
-syntax of an input source code file.
+syntax of an input source code file and construct an abstract syntax tree
+based on the input.  This doesn't matter to most people - it's just one of
+the many intermediate stages a compiler goes through.
 
 
 2. Features
@@ -78,6 +80,11 @@ Building the Mitchell compiler is easy:
 If you would like to run the automated test suite, all you need to do is:
 
    # make test
+
+All tests should be reported as passing.  Even tests that are supposed to
+fail should report "PASS" as long as they behaved as expected.  Any
+failures are either due to an incorrect $LANG setting (see the man page)
+or are an actual bug in the compiler.
 
 The built compiler may then be found in src/kern.  There is currently no
 installation target since all the compiler can do is check the syntax of a

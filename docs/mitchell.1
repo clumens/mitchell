@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.3 2004/10/21 21:07:20 chris Exp $
-.TH mitchell 1 "October 21, 2004" "mitchell preview 1"
+.\" $Id: mitchell.1,v 1.4 2004/10/26 04:36:14 chris Exp $
+.TH mitchell 1 "October 25, 2004" "mitchell preview 1"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -19,9 +19,9 @@ definition of the mitchell language is included with the compiler source
 and should have come as part of your installation.
 .PP
 In its current state, mitchell can only check the syntactic validity of
-\fR\fIinfile\fR.  If the syntax is invalid, a descriptive error message is
-printed to the screen and the compiler exits.  If the syntax is correct,
-the compiler exits silently.
+\fR\fIinfile\fR and begin to do some front-end transformations on the code.  If
+the syntax is invalid, a descriptive error message is printed to the screen and
+the compiler exits.  If the syntax is correct, the compiler exits silently.
 .SH OPTIONS
 Compilers tend to have many many options for controlling the compilation
 process.  mitchell isn't there quite yet, but the number of options is
@@ -59,6 +59,14 @@ Normal use; no debugging output.
 Emit debugging output upon consuming a token, entering a parser rule, and
 leaving a parser rule.
 .RE
+.TP
+.B \-Idump-absyn[=\fR\fIastfile\fR]
+Writes a representation of the abstract syntax tree to \fR\fIastfile\fR, or
+\fR\fIinfile\fR.ast if no filename is provided.  For the current version, 
+printing the abstract syntax tree to standard output is the default, and
+this option only does anything if the optional filename is provided.  The
+default action for the abstract syntax tree printing will change with the
+next preview release.
 .SH ENVIRONMENT
 This section describes how various environment variables affect the
 operation of the compiler.

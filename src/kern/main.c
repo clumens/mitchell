@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.13 2004/10/24 16:04:59 chris Exp $
+ * $Id: main.c,v 1.14 2004/10/26 04:36:18 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -29,11 +29,12 @@
 
 #include "absyn.h"
 #include "config.h"
+#include "memory.h"
 #include "parse.h"
 
 /* What we want getopt_long to return. */
-typedef enum { OPT_HELP = 100, OPT_VERBOSE_HELP, OPT_VERSION,
-               OPT_IDEBUG_PARSER } config_vals_t;
+typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
+               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN } config_vals_t;
 
 /* The command line arguments we accept. */
 static char *shortopts = "hv";
@@ -46,6 +47,7 @@ static struct option longopts[] = {
 
    /* Internal compiler options */
    { "Idebug-parser", 1, NULL, OPT_IDEBUG_PARSER },
+   { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
 
    { 0, 0, 0, 0 }
 };
@@ -56,19 +58,22 @@ compiler_config_t compiler_config = { .debug.parser_debug = 0 };
 static void help_internal_debug ()
 {
    printf ("Internal Debugging Options:\n");
-   printf ("-Idebug-parser=N\t\tSet debugging output level for the tokenizer and parser\n");
+   printf ("-Idebug-parser=N\tSet debugging output level for the tokenizer"
+           " and parser\n");
+   printf ("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file',"
+           " or <infile>.ast\n\t\t\tby default\n");
 }
 
 static void verbose_help (const char *progname)
 {
-   printf ("usage:  %s <filename>\n", progname);
+   printf ("usage:  %s <infile>\n", progname);
    help_internal_debug();
    exit (0);
 }
 
 static void help (const char *progname)
 {
-   printf ("usage:  %s <filename>\n", progname);
+   printf ("usage:  %s <infile>\n", progname);
    printf ("\t-verbose-help for a list of all command line arguments\n");
    exit (0);
 }
@@ -117,11 +122,21 @@ static void handle_arguments (int argc, char **argv)
 
             break;
 
+         case OPT_IDUMP_ABSYN:
+            /* If no file was provided, we have to delay coming up with the
+             * absyn outfile until after we know the name of the input file.
+             */
+            compiler_config.debug.dump_absyn = 1;
+            if (optarg)
+               compiler_config.debug.absyn_outfile = strdup(optarg);
+            else
+               compiler_config.debug.absyn_outfile = NULL;
+            break;
+
          /* getopt already told us what was wrong so only print the help. */
          default:
             help(argv[0]);
             break;
-
       }
    }
 
@@ -129,6 +144,23 @@ static void handle_arguments (int argc, char **argv)
       compiler_config.filename = strdup (argv[optind]);
    else
       help (argv[0]);
+
+/* Currently commented out until we're past the absyn stage. */
+# if 0
+   /* Now that we know the name of the input file, we can do some additional
+    * argument processing for things that depend on it.
+    */
+   if (compiler_config.debug.dump_absyn &&
+       compiler_config.debug.absyn_file == NULL)
+   {
+      MALLOC (compiler_config.debug.absyn_outfile,
+              strlen(compiler_config.filename)+5)
+      compiler_config.debug.absyn_outfile =
+         strcpy(compiler_config.debug.absyn_outfile, compiler_config.filename);
+      compiler_config.debug.absyn_outfile =
+         strcat(compiler_config.debug.absyn_outfile, ".ast");
+   }
+#endif
 }
 
 int main (int argc, char **argv)
@@ -141,7 +173,7 @@ int main (int argc, char **argv)
    handle_arguments (argc, argv);
    ast = parse (compiler_config.filename);
 
-   print_absyn (ast);
+   print_absyn (ast, &compiler_config);
 
    return 0;
 }
