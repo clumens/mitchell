@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.8 2004/10/15 14:36:50 chris Exp $
+ * $Id: tokenize.c,v 1.9 2004/10/16 05:16:44 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -47,7 +47,7 @@ const char *token_map[] = {
    "COMMENT", "DBLQUOTE", "ENDOFFILE"};
 
 static unsigned int lineno = 1;
-static wchar_t *reserved = L"←:,.ɕƒ[(→ℳ])τʋ#\"";
+static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ}])τʋ#\"";
 
 #define MALLOC(ptr, size) \
    if (((ptr) = malloc(size)) == NULL) \
@@ -83,6 +83,9 @@ static __inline__ wint_t read_char (FILE *f)
       exit (1);
    }
 
+   if (ch == L'\n')
+      lineno++;
+
    return ch;
 }
 
@@ -95,6 +98,9 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
       fclose (f);
       exit (1);
    }
+
+   if (ch == L'\n')
+      lineno--;
 }
 
 /* A comment extends from the comment marker to the end of the line. */
@@ -198,10 +204,6 @@ token_t *next_token (FILE *f)
       }
       else if (iswspace (ch))
       {
-         /* Update line number for proper error reporting. */
-         if (ch == L'\n')
-            lineno++;
-
          whitespace_state (f);
          continue;
       }
