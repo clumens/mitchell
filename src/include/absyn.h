@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.8 2004/11/01 18:04:49 chris Exp $
+ * $Id: absyn.h,v 1.9 2004/11/11 02:46:50 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -134,30 +134,6 @@ typedef struct {
    absyn_id_expr_t *symbol;
    absyn_ty_t *ty;
    absyn_id_lst_t *id_lst;
-} absyn_fun_proto_t;
-
-typedef struct {
-   absyn_id_expr_t *symbol;
-   absyn_ty_t *ty;
-} absyn_val_proto_t;
-
-typedef struct {
-   decl_type type;
-
-   union {
-      absyn_fun_proto_t *fun_proto;
-      struct absyn_ty_decl_t *ty_proto;
-      absyn_val_proto_t *val_proto;
-   };
-} absyn_proto_t;
-
-typedef struct absyn_proto_lst_t {
-   absyn_proto_t *proto;
-   struct absyn_proto_lst_t *next;
-} absyn_proto_lst_t;
-
-typedef struct {
-   absyn_fun_proto_t *proto;
    absyn_expr_t *body;
 } absyn_fun_decl_t;
 
@@ -167,13 +143,13 @@ typedef struct {
 } absyn_ty_decl_t;
 
 typedef struct {
-   absyn_val_proto_t *proto;
+   absyn_id_expr_t *symbol;
+   absyn_ty_t *ty;
    absyn_expr_t *init;
 } absyn_val_decl_t;
 
 typedef struct {
    absyn_id_expr_t *symbol;
-   struct absyn_proto_lst_t *proto_lst;
    struct absyn_decl_lst_t *decl_lst;
 } absyn_module_decl_t;
 

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.19 2004/11/01 18:04:50 chris Exp $
+ * $Id: parse.c,v 1.20 2004/11/11 02:46:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,71 +51,70 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
                              printf ("leaving %s\n", fn); \
                         } while (0)
 
-#define NRULES   24        /* number of parser rules in each set */
-#define SET_SIZE 13        /* max number of elements in each rule */
+#define NRULES   20        /* number of parser rules in each set */
+#define SET_SIZE 14        /* max number of elements in each rule */
+
+static enum { SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
+              SET_DECL_EXPR, SET_DECL_LST, SET_EXPR, SET_EXPR_LST,
+              SET_FUN_CALL_OR_ID, SET_FUN_DECL, SET_ID, SET_ID_LST,
+              SET_IF_EXPR, SET_MODULE_DECL, SET_MODULE_DECL_LST,
+              SET_RECORD_ASSN_LST, SET_SINGLE_TY, SET_TY, SET_TY_DECL,
+              SET_VAL_DECL };
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
-   /* 0: branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
-   /* 1: branch-lst */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
-   /* 2: case-expr */ { CASE, -1 },
-   /* 3: decl */ { FUNCTION, TYPE, VAL, -1 },
-   /* 4: decl-expr */ { DECL, -1 },
-   /* 5: decl-lst */ { FUNCTION, TYPE, VAL, -1 },
-   /* 6: expr */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK,
-                   STRING, -1, },
-   /* 7: expr-lst */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
-                       LBRACK, STRING, -1 },
-   /* 8: fun-call-or-id */ { IDENTIFIER, -1 },
-   /* 9: fun-decl */ { FUNCTION, -1 },
-   /* 10: fun-decl-proto */ { FUNCTION, -1 },
-   /* 11: id */ { IDENTIFIER, -1 },
-   /* 12: id-lst */ { IDENTIFIER, -1 },
-   /* 13: if-expr */ { IF, -1 },
-   /* 14: module-decl */ { MODULE, -1 },
-   /* 15: module-decl-lst */ { MODULE, -1 },
-   /* 16: proto */ { FUNCTION, TYPE, VAL, -1 },
-   /* 17: proto-lst */ { FUNCTION, TYPE, VAL, -1 },
-   /* 18: record-assn-lst */ { IDENTIFIER, -1 },
-   /* 19: single-ty */ { IDENTIFIER, LBRACE, -1 },
-   /* 20: ty */ { IDENTIFIER, LBRACE, -1 },
-   /* 21: ty-decl */ { TYPE, -1 },
-   /* 22: val-decl */ { VAL, -1 },
-   /* 23: val-decl-proto */ { VAL, -1 }
+   /* branch-expr */ { BOOLEAN, IDENTIFIER, INTEGER, STRING, -1 },
+   /* branch-lst */ { BOOLEAN, ELSE, IDENTIFIER, INTEGER, STRING, -1 },
+   /* case-expr */ { CASE, -1 },
+   /* decl */ { FUNCTION, TYPE, VAL, -1 },
+   /* decl-expr */ { DECL, -1 },
+   /* decl-lst */ { FUNCTION, TYPE, VAL, -1 },
+   /* expr */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK,
+                STRING, -1 },
+   /* expr-lst */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
+                    LBRACK, STRING, -1 },
+   /* fun-call-or-id */ { IDENTIFIER, -1 },
+   /* fun-decl */ { FUNCTION, -1 },
+   /* id */ { IDENTIFIER, -1 },
+   /* id-lst */ { IDENTIFIER, -1 },
+   /* if-expr */ { IF, -1 },
+   /* module-decl */ { MODULE, -1 },
+   /* module-decl-lst */ { MODULE, -1 },
+   /* record-assn-lst */ { IDENTIFIER, -1 },
+   /* single-ty */ { IDENTIFIER, LBRACE, -1 },
+   /* ty */ { IDENTIFIER, LBRACE, -1 },
+   /* ty-decl */ { TYPE, -1 },
+   /* val-decl */ { VAL, -1 }
 };
 
 static const int FOLLOW_SET[NRULES][SET_SIZE] = {
-   /* 0: branch-expr */ { MAPSTO, -1 },
-   /* 1: branch-lst */ { END, -1 },
-   /* 2: case-expr */ { COMMA, ELSE, END, FUNCTION, IN, THEN, RBRACE,
-                        RBRACK, RPAREN, TYPE, VAL, -1 },
-   /* 3: decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 4: decl-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
-                        RPAREN, THEN, TYPE, VAL, -1 },
-   /* 5: decl-lst */ { END, IN, -1 },
-   /* 6: expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
-                   RPAREN, THEN, TYPE, VAL, -1 },
-   /* 7: expr-lst */ { RBRACK, RPAREN, -1 },
-   /* 8: fun-call-or-id */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK,
-                              RBRACE, RPAREN, THEN, TYPE, VAL, -1 },
-   /* 9: fun-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 10: fun-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 11: id */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN,
-                  RBRACE, RPAREN, TYPE, VAL, -1 },
-   /* 12: id-lst */ { RBRACE, RPAREN, -1 },
-   /* 13: if-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACK, RBRACE,
-                       RPAREN, THEN, TYPE, VAL, -1 },
-   /* 14: module-decl */ { ENDOFFILE, MODULE, -1 },
-   /* 15: module-decl-lst */ { ENDOFFILE, -1 },
-   /* 16: proto */ { FUNCTION, IN, TYPE, VAL, -1 },
-   /* 17: proto-lst */ { IN, -1 },
-   /* 18: record-assn-lst */ { RBRACE, -1 },
-   /* 19: single-ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN,
-                         RBRACE, RPAREN, TYPE, VAL, -1 },
-   /* 20: ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE,
-                  RPAREN, TYPE, VAL, -1 },
-   /* 21: ty-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 22: val-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
-   /* 23: val-decl-proto */ { ASSIGN, FUNCTION, IN, TYPE, VAL, -1 },
+   /* branch-expr */ { MAPSTO, -1 },
+   /* branch-lst */ { END, -1 },
+   /* case-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN,
+                     THEN, TYPE, VAL, -1 },
+   /* decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
+   /* decl-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN,
+                     THEN, TYPE, VAL, -1 },
+   /* decl-lst */ { END, IN, -1 },
+   /* expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN, THEN,
+                TYPE, VAL, -1 },
+   /* expr-lst */ { RBRACK, RPAREN, -1 },
+   /* fun-call-or-id */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK,
+                          RPAREN, THEN, TYPE, VAL, -1 },
+   /* fun-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
+   /* id */ { COMMA, ELSE, END, FUNCTION, IN, LPAREN, MAPSTO, RBRACE, RBRACK,
+              RPAREN, THEN, TYPE, VAL, -1 },
+   /* id-lst */ { RBRACE, RPAREN, -1 },
+   /* if-expr */ { COMMA, ELSE, END, FUNCTION, IN, RBRACE, RBRACK, RPAREN, THEN,
+                   TYPE, VAL, -1 },
+   /* module-decl */ { ENDOFFILE, MODULE, -1 },
+   /* module-decl-lst */ { ENDOFFILE, -1 },
+   /* record-assn-lst */ { RBRACE, -1 },
+   /* single-ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LIST, LPAREN, RBRACE,
+                     RPAREN, TYPE, VAL, -1 },
+   /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, RBRACE, RPAREN, TYPE,
+              VAL, -1 },
+   /* ty-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 },
+   /* val-decl */ { END, FUNCTION, IN, TYPE, VAL, -1 }
 };
 
 /* These functions are seriously mutually recursive, so put forward
@@ -131,20 +130,16 @@ static absyn_expr_t *parse_expr();
 static absyn_expr_lst_t *parse_expr_lst();
 static absyn_expr_t *parse_fun_call_or_id();
 static absyn_fun_decl_t *parse_fun_decl();
-static absyn_fun_proto_t *parse_fun_decl_proto();
 static absyn_id_expr_t *parse_id();
 static absyn_id_lst_t *parse_id_lst();
 static absyn_if_expr_t *parse_if_expr();
 static absyn_module_decl_t *parse_module_decl();
 static absyn_module_lst_t *parse_module_decl_lst();
-static absyn_proto_t *parse_proto();
-static absyn_proto_lst_t *parse_proto_lst();
 static absyn_record_lst_t *parse_record_assn_lst();
 static absyn_ty_t *parse_single_ty();
 static absyn_ty_t *parse_ty();
 static absyn_ty_decl_t *parse_ty_decl();
 static absyn_val_decl_t *parse_val_decl();
-static absyn_val_proto_t *parse_val_decl_proto();
 
 /* Is the token t in the set?  This is used to determine membership in both
  * first and follow sets of rules by passing the appropriate rule's set from
@@ -278,10 +273,10 @@ ast_t *parse (const char *filename)
 
    tok = next_token (in);
 
-   if (in_set (tok, FIRST_SET[15]))
+   if (in_set (tok, FIRST_SET[SET_MODULE_DECL_LST]))
       retval = parse_module_decl_lst();
    else
-      parse_error (tok, FIRST_SET[15]);
+      parse_error (tok, FIRST_SET[SET_MODULE_DECL_LST]);
 
    match (ENDOFFILE);
 
@@ -331,11 +326,11 @@ static absyn_expr_t *parse_branch_expr()
          break;
 
       default:
-         parse_error (tok, FIRST_SET[0]);
+         parse_error (tok, FIRST_SET[SET_BRANCH_EXPR]);
    }
 
-   if (!in_set (tok, FOLLOW_SET[0]))
-      parse_error (tok, FOLLOW_SET[0]);
+   if (!in_set (tok, FOLLOW_SET[SET_BRANCH_EXPR]))
+      parse_error (tok, FOLLOW_SET[SET_BRANCH_EXPR]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -453,11 +448,11 @@ static absyn_decl_t *parse_decl()
          break;
 
       default:
-         parse_error (tok, FIRST_SET[3]);
+         parse_error (tok, FIRST_SET[SET_DECL]);
    }
 
-   if (!in_set (tok, FOLLOW_SET[3]))
-      parse_error (tok, FOLLOW_SET[3]);
+   if (!in_set (tok, FOLLOW_SET[SET_DECL]))
+      parse_error (tok, FOLLOW_SET[SET_DECL]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -491,12 +486,12 @@ static absyn_decl_lst_t *parse_decl_lst()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_decl_lst_t))
 
-   if (!in_set (tok, FIRST_SET[5]))
-      parse_error (tok, FIRST_SET[5]);
+   if (!in_set (tok, FIRST_SET[SET_DECL_LST]))
+      parse_error (tok, FIRST_SET[SET_DECL_LST]);
 
    retval->decl = parse_decl();
 
-   if (!in_set (tok, FOLLOW_SET[5]))
+   if (!in_set (tok, FOLLOW_SET[SET_DECL_LST]))
       retval->next = (struct decl_lst_t *) parse_decl_lst();
    else
       retval->next = NULL;
@@ -575,7 +570,7 @@ static absyn_expr_t *parse_expr()
          break;
 
       default:
-         parse_error (tok, FIRST_SET[6]);
+         parse_error (tok, FIRST_SET[SET_EXPR]);
    }
 
    LEAVING(__FUNCTION__);
@@ -649,32 +644,16 @@ static absyn_expr_t *parse_fun_call_or_id()
    return retval;
 }
 
-/* fun-decl ::= fun-decl-proto ASSIGN expr */
+/* fun-decl ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN ASSIGN expr
+ *            | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN ASSIGN expr
+ */
 static absyn_fun_decl_t *parse_fun_decl()
 {
    absyn_fun_decl_t *retval;
-
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_fun_decl_t))
-
-   retval->proto = parse_fun_decl_proto();
-   match(ASSIGN);
-   retval->body = parse_expr();
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* fun-decl-proto ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN
- *                  | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN
- */
-static absyn_fun_proto_t *parse_fun_decl_proto()
-{
-   absyn_fun_proto_t *retval;
    absyn_id_expr_t *sym;
 
    ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_fun_proto_t))
+   MALLOC (retval, sizeof(absyn_fun_decl_t))
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(FUNCTION);
@@ -698,6 +677,9 @@ static absyn_fun_proto_t *parse_fun_decl_proto()
       retval->id_lst = parse_id_lst();
       match(RPAREN);
    }
+
+   match(ASSIGN);
+   retval->body = parse_expr();
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -777,7 +759,7 @@ static absyn_if_expr_t *parse_if_expr()
    return retval;
 }
 
-/* module-decl ::= MODULE IDENTIFIER ASSIGN DECL proto-lst IN decl-lst END */
+/* module-decl ::= MODULE IDENTIFIER ASSIGN DECL decl-lst END */
 static absyn_module_decl_t *parse_module_decl()
 {
    absyn_module_decl_t *retval;
@@ -795,14 +777,11 @@ static absyn_module_decl_t *parse_module_decl()
 
    match (ASSIGN);
    match (DECL);
-   retval->proto_lst = (struct absyn_proto_lst_t *) parse_proto_lst();
-
-   match (IN);
    retval->decl_lst = (struct absyn_decl_lst_t *) parse_decl_lst();
    match (END);
 
-   if (!in_set (tok, FOLLOW_SET[14]))
-      parse_error (tok, FOLLOW_SET[14]);
+   if (!in_set (tok, FOLLOW_SET[SET_MODULE_DECL]))
+      parse_error (tok, FOLLOW_SET[SET_MODULE_DECL]);
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -818,79 +797,17 @@ static absyn_module_lst_t *parse_module_decl_lst()
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_module_lst_t))
 
-   if (in_set (tok, FIRST_SET[14]))
+   if (in_set (tok, FIRST_SET[SET_MODULE_DECL]))
    {
       retval->module = parse_module_decl();
       retval->next = (struct absyn_module_lst_t *) parse_module_decl_lst();
    }
    else
    {
-      if (!in_set (tok, FOLLOW_SET[15]))
-         parse_error (tok, FOLLOW_SET[15]);
+      if (!in_set (tok, FOLLOW_SET[SET_MODULE_DECL_LST]))
+         parse_error (tok, FOLLOW_SET[SET_MODULE_DECL_LST]);
       else retval = NULL;
    }
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* proto ::= ty-decl
- *         | val-decl-proto
- *         | fun-decl-proto
- */
-static absyn_proto_t *parse_proto()
-{
-   absyn_proto_t *retval;
-
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_proto_t))
-
-   switch (tok->type) {
-      case FUNCTION:
-         retval->type = ABSYN_FUN_DECL;
-         retval->fun_proto = parse_fun_decl_proto();
-         break;
-
-      case TYPE:
-         retval->type = ABSYN_TY_DECL;
-         retval->ty_proto = (struct absyn_ty_decl_t *) parse_ty_decl();
-         break;
-
-      case VAL:
-         retval->type = ABSYN_VAL_DECL;
-         retval->val_proto = parse_val_decl_proto();
-         break;
-
-      default:
-         parse_error (tok, FIRST_SET[16]);
-   }
-
-   if (!in_set (tok, FOLLOW_SET[16]))
-      parse_error (tok, FOLLOW_SET[16]);
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* proto-lst ::= proto
- *             | proto proto-lst
- */
-static absyn_proto_lst_t *parse_proto_lst()
-{
-   absyn_proto_lst_t *retval;
-
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_proto_lst_t))
-
-   if (!in_set (tok, FIRST_SET[17]))
-      parse_error (tok, FIRST_SET[17]);
-
-   retval->proto = parse_proto();
-
-   if (!in_set (tok, FOLLOW_SET[17]))
-      retval->next = (struct absyn_proto_lst_t *) parse_proto_lst();
-   else
-      retval->next = NULL;
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -915,7 +832,7 @@ static absyn_record_lst_t *parse_record_assn_lst()
    match(ASSIGN);
    retval->expr = (struct absyn_expr_t *) parse_expr();
 
-   if (!in_set (tok, FOLLOW_SET[18]))
+   if (!in_set (tok, FOLLOW_SET[SET_RECORD_ASSN_LST]))
    {
       match(COMMA);
       retval->next = (struct absyn_record_lst_t *) parse_record_assn_lst();
@@ -951,7 +868,7 @@ static absyn_ty_t *parse_single_ty()
          break;
 
       default:
-         parse_error (tok, FIRST_SET[19]);
+         parse_error (tok, FIRST_SET[SET_SINGLE_TY]);
    }
 
    LEAVING(__FUNCTION__);
@@ -1002,30 +919,14 @@ static absyn_ty_decl_t *parse_ty_decl()
    return retval;
 }
 
-/* val-decl ::= val-decl-proto ASSIGN expr */
+/* val-decl ::= VAL IDENTIFIER COLON ty ASSIGN expr */
 static absyn_val_decl_t *parse_val_decl()
 {
    absyn_val_decl_t *retval;
+   absyn_id_expr_t *sym;
 
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_val_decl_t))
-
-   retval->proto = parse_val_decl_proto();
-   match(ASSIGN);
-   retval->init = parse_expr();
-
-   LEAVING(__FUNCTION__);
-   return retval;
-}
-
-/* val-decl-proto ::= VAL IDENTIFIER COLON ty */
-static absyn_val_proto_t *parse_val_decl_proto()
-{
-   absyn_val_proto_t *retval;
-   absyn_id_expr_t *sym;
-   
-   ENTERING (__FUNCTION__);
-   MALLOC (retval, sizeof(absyn_val_proto_t))
    MALLOC (sym, sizeof(absyn_id_expr_t))
 
    match(VAL);
@@ -1036,6 +937,9 @@ static absyn_val_proto_t *parse_val_decl_proto()
 
    match(COLON);
    retval->ty = parse_ty();
+
+   match(ASSIGN);
+   retval->init = parse_expr();
 
    LEAVING(__FUNCTION__);
    return retval;

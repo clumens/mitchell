@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.6 2004/11/01 18:04:50 chris Exp $
+ * $Id: absyn_printer.c,v 1.7 2004/11/11 02:46:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,20 +36,16 @@ static void print_decl_lst_t (absyn_decl_lst_t *node, unsigned int indent);
 static void print_expr_t (absyn_expr_t *node, unsigned int indent);
 static void print_expr_lst_t (absyn_expr_lst_t *node, unsigned int indent);
 static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int indent);
-static void print_fun_proto_t (absyn_fun_proto_t *node, unsigned int indent);
 static void print_id_expr_t (absyn_id_expr_t *node, unsigned int indent);
 static void print_id_lst_t (absyn_id_lst_t *node, unsigned int indent);
 static void print_if_expr_t (absyn_if_expr_t *node, unsigned int indent);
 static void print_module_decl_t (absyn_module_decl_t *node,
                                  unsigned int indent);
 static void print_module_lst_t (absyn_module_lst_t *node, unsigned int indent);
-static void print_proto_t (absyn_proto_t *node, unsigned int indent);
-static void print_proto_lst_t (absyn_proto_lst_t *node, unsigned int indent);
 static void print_record_lst_t (absyn_record_lst_t *node, unsigned int indent);
 static void print_ty_t (absyn_ty_t *node, unsigned int indent);
 static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int indent);
 static void print_val_decl_t (absyn_val_decl_t *node, unsigned int indent);
-static void print_val_proto_t (absyn_val_proto_t *node, unsigned int indent);
 
 static FILE *out = NULL;
 
@@ -216,16 +212,10 @@ static void print_expr_lst_t (absyn_expr_lst_t *node, unsigned int indent)
 static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int indent)
 {
    fprintf (out, "\n%*sfun_decl_t", indent, "");
-   print_fun_proto_t (node->proto, indent+1);
-   print_expr_t (node->body, indent+1);
-}
-
-static void print_fun_proto_t (absyn_fun_proto_t *node, unsigned int indent)
-{
-   fprintf (out, "\n%*sfun_proto_t", indent, "");
    print_id_expr_t (node->symbol, indent+1);
    print_ty_t (node->ty, indent+1);
    print_id_lst_t (node->id_lst, indent+1);
+   print_expr_t (node->body, indent+1);
 }
 
 static void print_id_expr_t (absyn_id_expr_t *node, unsigned int indent)
@@ -258,7 +248,6 @@ static void print_module_decl_t (absyn_module_decl_t *node, unsigned int indent)
 {
    fprintf (out, "\n%*smodule_decl_t", indent, "");
    print_id_expr_t (node->symbol, indent+1);
-   print_proto_lst_t ((absyn_proto_lst_t *) node->proto_lst, indent+1);
    print_decl_lst_t ((absyn_decl_lst_t *) node->decl_lst, indent+1);
 }
 
@@ -269,35 +258,6 @@ static void print_module_lst_t (absyn_module_lst_t *node, unsigned int indent)
       fprintf (out, "\n%*smodule_lst_t", indent, "");
       print_module_decl_t (node->module, indent+1);
       print_module_lst_t ((absyn_module_lst_t *) node->next, indent+1);
-   }
-}
-
-static void print_proto_t (absyn_proto_t *node, unsigned int indent)
-{
-   fprintf (out, "\n%*sproto_t", indent, "");
-   
-   switch (node->type) {
-      case ABSYN_FUN_DECL:
-         print_fun_proto_t (node->fun_proto, indent+1);
-         break;
-
-      case ABSYN_TY_DECL:
-         print_ty_decl_t ((absyn_ty_decl_t *) node->ty_proto, indent+1);
-         break;
-
-      case ABSYN_VAL_DECL:
-         print_val_proto_t (node->val_proto, indent+1);
-         break;
-   }
-}
-
-static void print_proto_lst_t (absyn_proto_lst_t *node, unsigned int indent)
-{
-   if (node != NULL)
-   {
-      fprintf (out, "\n%*sproto_lst_t", indent, "");
-      print_proto_t (node->proto, indent+1);
-      print_proto_lst_t ((absyn_proto_lst_t *) node->next, indent+1);
    }
 }
 
@@ -335,15 +295,9 @@ static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int indent)
 static void print_val_decl_t (absyn_val_decl_t *node, unsigned int indent)
 {
    fprintf (out, "\n%*sval_decl_t", indent, "");
-   print_val_proto_t (node->proto, indent+1);
-   print_expr_t (node->init, indent+1);
-}
-
-static void print_val_proto_t (absyn_val_proto_t *node, unsigned int indent)
-{
-   fprintf (out, "\n%*sval_proto_t", indent, "");
    print_id_expr_t (node->symbol, indent+1);
    print_ty_t (node->ty, indent+1);
+   print_expr_t (node->init, indent+1);
 }
 
 /* vim: set tags=../tags: */
