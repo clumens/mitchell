@@ -15,8 +15,7 @@
    ƒ lst2b: list list string () ←
       lst2a ([[0, 1, 2], [3, 4, 5]])
 
-   # Unsupported in preview 3.
-   #ƒ lst3: list bool () ← []
+   ƒ lst3: list bool () ← []
 
    ƒ main: string () ← ""
 end
