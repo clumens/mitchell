@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.26 2005/01/06 23:48:21 chris Exp $
+ * $Id: semant.c,v 1.27 2005/01/07 02:39:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -518,8 +518,9 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 {
    absyn_branch_lst_t *tmp = node->branch_lst;
 
-   /* Check the type of the test expression.  All branch tests will have to
-    * have this same type.  Also, it must be one of the basic types (for now).
+   /* Check the type of the test expression, which must currently be one of
+    * the basic types.  All branch tests will also have to have the same type
+    * as the test expression.
     */
    node->test->ty = check_expr (node->test, stack);
 
@@ -528,7 +529,7 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
        !is_ty_kind (node->test->ty, TY_STRING))
    {
       TYPE_ERROR (compiler_config.filename, node->test->lineno,
-                  "text expression is not a basic type", "test-expr",
+                  "test expression is not a basic type", "test-expr",
                   ty_to_str (node->test->ty), "expected",
                   L"boolean, integer, or string");
       exit(1);
@@ -754,6 +755,11 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
       case ABSYN_BOOLEAN:
          MALLOC (node->ty, sizeof (ty_t));
          node->ty->ty = TY_BOOLEAN;
+         break;
+
+      case ABSYN_BOTTOM:
+         MALLOC (node->ty, sizeof (ty_t));
+         node->ty->ty = TY_BOTTOM;
          break;
 
       case ABSYN_CASE:

@@ -5,7 +5,7 @@
  * any discrepancy between the rules and the explanation, the rules are
  * always correct.
  *
- * $Id: typing,v 1.5 2005/01/05 03:14:13 chris Exp $
+ * $Id: typing,v 1.6 2005/01/07 02:39:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,6 +31,7 @@ Typing Rules
 ⊢ f : boolean     [false-expr]
 ⊢ integer-constant : integer     [integer]
 ⊢ string-constant : string     [string]
+⊢ ⊥ : bottom     [bottom]
 
 A[I : T] ⊢ I : T     [id]  
 
@@ -44,12 +45,14 @@ A ⊢ { I1 ← E1: T1, ..., In ← En: Tn } : { I1 : T1, ..., In : Tn }
 
                      A ⊢ Et : Tt 
                  ∀i . (A ⊢ Ebi : Tt) 
+        A ⊢ Tt : { boolean, integer, string }
                   ∀i . (A ⊢ Ei : T)
 -----------------------------------------------------     [case-expr-1]
    A ⊢ case Et in Eb1 → E1, ..., Ebn → En end : T
 
                          A ⊢ Et : Tt
                      ∀i . (A ⊢ Ebi : Tt) 
+            A ⊢ Tt : { boolean, integer, string }
                       ∀i . (A ⊢ Ei : T) 
                          A ⊢ Ee : T
 ------------------------------------------------------------     [case-expr-2]

@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.14 2005/01/06 23:48:18 chris Exp $
+ * $Id: grammar,v 1.15 2005/01/07 02:39:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -44,6 +44,7 @@ expr ::= LBRACK expr-lst RBRACK
        | INTEGER
        | STRING
        | BOOLEAN
+       | BOTTOM
 
 branch-expr ::= id
               | INTEGER

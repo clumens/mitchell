@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.32 2005/01/06 23:48:21 chris Exp $
+ * $Id: parse.c,v 1.33 2005/01/07 02:39:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -69,10 +69,10 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* decl */ { FUNCTION, TYPE, VAL, -1 },
    /* decl-expr */ { DECL, -1 },
    /* decl-lst */ { FUNCTION, TYPE, VAL, -1 },
-   /* expr */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK,
-                STRING, -1 },
-   /* expr-lst */ { BOOLEAN, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
-                    LBRACK, STRING, -1 },
+   /* expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
+                LBRACK, STRING, -1 },
+   /* expr-lst */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER,
+                    LBRACE, LBRACK, STRING, -1 },
    /* fun-call-or-id */ { IDENTIFIER, -1 },
    /* fun-decl */ { FUNCTION, -1 },
    /* id */ { IDENTIFIER, -1 },
@@ -527,6 +527,7 @@ static absyn_decl_lst_t *parse_decl_lst()
  *        | INTEGER
  *        | STRING
  *        | BOOLEAN
+ *        | BOTTOM
  */
 static absyn_expr_t *parse_expr()
 {
@@ -542,6 +543,11 @@ static absyn_expr_t *parse_expr()
          match(BOOLEAN);
          retval->kind = ABSYN_BOOLEAN;
          retval->boolean_expr = last_tok->boolean;
+         break;
+
+      case BOTTOM:
+         match(BOTTOM);
+         retval->kind = ABSYN_BOTTOM;
          break;
 
       case CASE:
