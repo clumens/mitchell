@@ -1,4 +1,4 @@
-MITCHELL_TEST_OPTS = -Werror
+GLOBAL_OPTS = -Werror
 
 all: compiler
 
@@ -15,7 +15,8 @@ test-compiler: compiler
 	failed=0 ; \
 	for t in tests/*.mitchell; do \
 		echo -n "$$(basename $$t)... " ; \
-		src/kern/mitchell $(MITCHELL_TEST_OPTS) $$t 1>&- 2>&- ; \
+		LOCAL_OPTS="$$(grep Options $$t | cut -d':' -f2-)" ; \
+		src/kern/mitchell $(GLOBAL_OPTS) $$LOCAL_OPTS $$t 1>&- 2>&- ; \
 		retval=$$? ; \
 		if [ $$retval -gt 128 ]; then \
 			failed=$$(expr $$failed + 1) ; \

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.21 2005/02/12 16:26:18 chris Exp $
+# $Id: Makefile,v 1.22 2005/03/09 00:05:23 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -6,9 +6,9 @@ LDFLAGS = -lgc -ldl
 
 ifdef DEBUG
 	override BASE_CFLAGS += -g
-	CFLAGS = $(subst -O2,,$(BASE_CFLAGS))
+	override CFLAGS += $(subst -O2,,$(BASE_CFLAGS))
 else
-	CFLAGS = $(BASE_CFLAGS)
+	override CFLAGS += $(BASE_CFLAGS)
 endif
 
 OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o list.o \
@@ -22,13 +22,16 @@ mitchell: $(OBJS)
 clean:
 	-rm -f *.o mitchell
 
-# Dependancies
+#####################################################################
+# Dependancies                                                      #
+#####################################################################
 absyn_printer.o: absyn_printer.c \
 	../include/absyn.h ../include/config.h ../include/basic_types.h \
 	../include/error.h ../include/list.h
 
 desugar.o: desugar.c \
-	../include/absyn.h ../include/desugar.h
+	../include/absyn.h ../include/config.h ../include/desugar.h \
+	../include/error.h ../include/memory.h ../include/str.h
 
 desugar_case.o: desugar_case.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
