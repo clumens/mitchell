@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.7 2004/11/11 02:46:52 chris Exp $
+ * $Id: absyn_printer.c,v 1.8 2004/11/11 03:19:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -118,6 +118,10 @@ static void print_decl_t (absyn_decl_t *node, unsigned int indent)
    switch (node->type) {
       case ABSYN_FUN_DECL:
          print_fun_decl_t (node->fun_decl, indent+1);
+         break;
+
+      case ABSYN_MODULE_DECL:
+         print_module_decl_t (node->module_decl, indent+1);
          break;
 
       case ABSYN_TY_DECL:

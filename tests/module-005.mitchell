@@ -1,0 +1,10 @@
+# Description:  Modules cannot be declared outside the top level.
+# Expected:  FAIL
+
+ℳ Outer ← decl
+   ƒ func: boolean () ← decl
+      ℳ Inner ← decl ʋ true: boolean ← t end
+   in
+      t
+   end
+end

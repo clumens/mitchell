@@ -1,0 +1,12 @@
+# Description:  Simple nested modules.
+# Expected:  PASS
+
+ℳ Outer ← decl
+   ʋ true: boolean ← t
+
+   ℳ Inner ← decl
+      ʋ seven: integer ← 7
+   end
+
+   ʋ asdf: string ← "asdf"
+end
