@@ -1,7 +1,9 @@
+Typing Rules
+============
 ⊢ t : boolean     [true-expr]
 ⊢ f : boolean     [false-expr]
 ⊢ integer-constant : integer     [integer]
-⊢ string-constant: string     [string]
+⊢ string-constant : string     [string]
 
 A[I : T] ⊢ I : T     [id]  
 
@@ -48,3 +50,77 @@ A ⊢ Ip : (T1, ..., Tn) → Tb
             A[I1 : T1, ..., In : Tn] ⊢ Eb : Tb
 ------------------------------------------------------------     [fun-decl]
 A ⊢ ƒ If: Tb (I1: T1, ..., In: Tn) ← Eb : (T1, ..., Tn) → Tb
+
+
+Type Equivalence Rules
+======================
+T = T    [reflexive-=]
+
+T1 = T2
+-------    [symmetric-=]
+T2 = T1
+
+T1 = T2 ; T2 = T3
+-----------------     [transitive-=]
+     T1 = T3
+
+     T1 = T2
+-----------------     [list-=]
+T1 list = T2 list
+
+τ I ← T list = τ Inew ← [Inew/I]T list     [list-α]
+
+           { Nl1, ..., Nln } = { Nr1, ..., Nrn }
+              ∀i, j . (Nlj = Nri ⇒ Tlj = Tri)
+-----------------------------------------------------------     [record-=]
+{Nl1 : Tl1, ..., Nln : Tln } = {Nr1 : Tr1, ..., Nrn : Trn }
+
+τ I ← { N1, ..., Nn } = τ Inew ← [Inew/I]{ N1, ..., Nn }     [record-α]
+
+
+Notes
+=====
+[list-=] states that two list types are equivalent if the underlying types
+are equivalent.  That is, the following list types are equivalent:
+
+   * integer list = integer list
+   * string list list = string list list
+
+However, the following list types are not:
+
+   * boolean list ≠ integer list
+   * integer list ≠ integer list list
+
+
+[list-α] states that two list type definitions produce equivalent types
+even if they have different type names, as long as the underlying types
+are equivalent subject to [list-=].  That is, the following list
+definitions are equivalent:
+
+   * τ lst ← string list = τ str_lst ← string list
+
+
+[record-=] states that two record types are equivalent if the have the
+same named elements with equivalent types.  However, the elements can be
+listed in any order and still preserve equivalence.  That is, the
+following record types are equivalent:
+
+   * { name: string } = { name: string }
+   * { make: string, model: string, year: integer } =
+        { make: string, model: string, year: integer }
+   * { name: string, age: integer } = { age: integer, name: string }
+
+However, the following record types are not:
+
+   * { name: string } ≠ { age: integer }
+   * { make: string } ≠ { model: string }
+   * { year: string } ≠ { year: integer }
+
+
+[record-α] states that two record type definitions produce equivalent
+types even if they have different type names, as long as the underlying
+types are equivalent subject to [record-=].  That is, the following record
+definitions are equivalent:
+
+   * τ car ← { make: string, model: string } =
+        τ vehicle ← { make: string, model: string }
