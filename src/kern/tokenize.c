@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.11 2004/10/22 18:55:05 chris Exp $
+ * $Id: tokenize.c,v 1.12 2004/10/22 19:07:07 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,7 @@
 #include <wchar.h>
 #include <wctype.h>
 
+#include "basic_types.h"
 #include "memory.h"
 #include "tokens.h"
 
@@ -121,13 +122,13 @@ static void whitespace_state (FILE *f)
  * states.  Gather up all the characters until we see one that is not a
  * member of the current word state's set.
  */
-static wchar_t *word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
+static mstring_t word_state (FILE *f, unsigned int (*is_member)(wint_t ch))
 {
-   wchar_t *retval = NULL;
-   wint_t   ch;
-   int      new_len = 2;
+   mstring_t   retval = NULL;
+   wint_t      ch;
+   int         new_len = 2;
 
-   MALLOC (retval, sizeof(wchar_t))
+   MALLOC (retval, sizeof(mstring_t))
 
    while ((ch = read_char (f)) != WEOF)
    {
@@ -294,7 +295,7 @@ token_t *next_token (FILE *f)
 
          case L'0' ... L'9':
          {
-            long n;
+            mint_t n;
 
             unget_char (ch, f);
             n = wcstol (word_state (f, number_member), NULL, 0);
@@ -321,7 +322,7 @@ token_t *next_token (FILE *f)
 
             unget_char (ch, f);
 
-            str = word_state (f, word_member);
+            str = (wchar_t *) word_state (f, word_member);
 
             if (wcscmp (str, L"f") == 0)
             {

@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.8 2004/10/20 14:12:33 chris Exp $
+ * $Id: tokens.h,v 1.9 2004/10/22 19:07:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -26,6 +26,8 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#include "basic_types.h"
+
 typedef enum { BOOLEAN, IDENTIFIER, INTEGER, LIST, STRING,
                ASSIGN, CASE, COLON, COMMA, CONST, DECL, DOT, ELSE, END,
                FUNCTION, IF, IN, LBRACE, LBRACK, LPAREN, MAPSTO, MODULE,
@@ -38,9 +40,9 @@ typedef struct {
    token_val_t type;       /* can be any value from the defines below */
 
    union {
-      long          integer;
-      wchar_t      *string;
-      unsigned int  boolean;
+      mint_t      integer;
+      mstring_t   string;
+      mbool_t     boolean;
    };
 } token_t;
 
