@@ -3,6 +3,7 @@
 
 ℳ Main ← decl
    ʋ something: integer ← 0
+   ʋ otherthing: boolean ← f
 
    ƒ asdf: boolean () ← t
 
@@ -13,6 +14,7 @@
                 0 → 0,
                 else → 47
              end,
-         f → 1
+         otherthing → 1,
+         else → 100
       end
 end
