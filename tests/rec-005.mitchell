@@ -1,0 +1,12 @@
+# Description:  Combining module and record access.
+# Expected:  PASS
+
+ℳ Main ← decl
+   ℳ Inner ← decl
+      τ rec_ty ← { a: string, b: integer }
+
+      ʋ rec: rec_ty ← { a ← "a", b ← 12 }
+   end
+
+   ʋ str: string ← Main.Inner.rec|a
+end
