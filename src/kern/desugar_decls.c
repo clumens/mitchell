@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.1 2005/02/11 01:38:30 chris Exp $
+ * $Id: desugar_decls.c,v 1.2 2005/02/11 04:32:18 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -257,6 +257,10 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
 
          new_fun->parent = make_bl (LINK_DECL, decl);
 
+         /* We only have two possibilities here, because we eliminated the
+          * third in the parser by ensuring all functions have a decl-expr
+          * as their body.  We'll strip out empty decl-exprs later.
+          */
          switch (parent->kind) {
             case LINK_DECL_EXPR:
             {
@@ -267,16 +271,6 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
                return make_fun_call_expr (new_fun->symbol,
                                           make_bl (LINK_DECL, decl));
             }
-
-            case LINK_FUN_DECL:
-               /* TODO:  We can take care of this case after an initial
-                * commit.  The idea is that the parser will give a decl-expr
-                * to each function that does not currently have one, so that
-                * here we'll have somewhere to lift the fun-decl up to.  We
-                * can then get rid of empty decl-exprs later.
-                */
-               printf ("parent is a fun-decl\n");
-               break;
 
             case LINK_MODULE_DECL:
             {
