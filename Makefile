@@ -4,7 +4,7 @@ compiler:
 	$(MAKE) -C src/kern
 
 tags:
-	( cd src/kern && ctags -R )
+	( cd src && ctags -R )
 
 test: test-compiler
 
@@ -27,5 +27,7 @@ test-compiler: compiler
 	echo -e "----------\n$$passed tests passed\n$$failed tests failed"
 
 clean:
-	-rm src/kern/tags
 	$(MAKE) -C src/kern clean
+
+distclean: clean
+	-rm src/tags
