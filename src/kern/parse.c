@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.9 2004/10/22 01:04:14 chris Exp $
+ * $Id: parse.c,v 1.10 2004/10/22 15:18:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,6 +33,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 
+#include "absyn.h"
 #include "config.h"
 #include "tokens.h"
 
@@ -124,27 +125,27 @@ static const int FOLLOW_SET[NRULES][SET_SIZE] = {
 /* These functions are seriously mutually recursive, so put forward
  * declarations of them here.
  */
-static void parse_branch_expr();
-static void parse_branch_lst();
-static void parse_case_expr();
+static absyn_expr_t *parse_branch_expr();
+static absyn_branch_lst_t *parse_branch_lst();
+static absyn_case_expr_t *parse_case_expr();
 static void parse_const_decl();
 static void parse_const_decl_proto();
-static void parse_decl();
-static void parse_decl_expr();
-static void parse_decl_lst();
-static void parse_expr();
-static void parse_expr_lst();
-static void parse_fun_call_or_id();
+static absyn_decl_t *parse_decl();
+static absyn_decl_expr_t *parse_decl_expr();
+static absyn_decl_lst_t *parse_decl_lst();
+static absyn_expr_t *parse_expr();
+static absyn_expr_lst_t *parse_expr_lst();
+static absyn_expr_t * parse_fun_call_or_id();
 static void parse_fun_decl();
 static void parse_fun_decl_proto();
 static void parse_id();
 static void parse_id_lst();
-static void parse_if_expr();
+static absyn_if_expr_t *parse_if_expr();
 static void parse_module_decl();
 static void parse_module_decl_lst();
 static void parse_proto();
 static void parse_proto_lst();
-static void parse_record_assn_lst();
+static absyn_record_lst_t *parse_record_assn_lst();
 static void parse_single_ty();
 static void parse_ty();
 static void parse_ty_decl();
@@ -275,7 +276,7 @@ void parse (const char *filename)
  *               | STRING
  *               | BOOLEAN
  */
-static void parse_branch_expr()
+static absyn_expr_t *parse_branch_expr()
 {
    ENTERING (__FUNCTION__);
 
@@ -304,12 +305,13 @@ static void parse_branch_expr()
       parse_error (tok, "MAPSTO");
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* branch-lst ::= branch-expr MAPSTO expr
  *              | branch-expr MAPSTO expr COMMA branch-lst
  */
-static void parse_branch_lst()
+static absyn_branch_lst_t *parse_branch_lst()
 {
    ENTERING (__FUNCTION__);
 
@@ -324,10 +326,11 @@ static void parse_branch_lst()
    }
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* case-expr ::= CASE expr IN branch-lst END */
-static void parse_case_expr()
+static absyn_case_expr_t *parse_case_expr()
 {
    ENTERING (__FUNCTION__);
 
@@ -338,6 +341,7 @@ static void parse_case_expr()
    match(END);
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* const-decl ::= const-decl-proto ASSIGN expr */
@@ -370,7 +374,7 @@ static void parse_const_decl_proto()
  *        | const-decl
  *        | fun-decl
  */
-static void parse_decl()
+static absyn_decl_t *parse_decl()
 {
    ENTERING (__FUNCTION__);
 
@@ -399,10 +403,11 @@ static void parse_decl()
       parse_error (tok, "CONST END FUNCTION IN TYPE VAR");
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* decl-expr ::= DECL decl-lst IN expr END */
-static void parse_decl_expr()
+static absyn_decl_expr_t *parse_decl_expr()
 {
    ENTERING (__FUNCTION__);
 
@@ -413,12 +418,13 @@ static void parse_decl_expr()
    match(END);
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* decl-lst ::= decl decl-lst
  *            | decl
  */
-static void parse_decl_lst()
+static absyn_decl_lst_t *parse_decl_lst()
 {
    ENTERING (__FUNCTION__);
 
@@ -431,6 +437,7 @@ static void parse_decl_lst()
       parse_decl_lst();
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* expr ::= LBRACK expr-lst RBRACK
@@ -443,7 +450,7 @@ static void parse_decl_lst()
  *        | STRING
  *        | BOOLEAN
  */
-static void parse_expr()
+static absyn_expr_t *parse_expr()
 {
    ENTERING (__FUNCTION__);
 
@@ -494,12 +501,13 @@ static void parse_expr()
    }
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* expr-lst ::= expr COMMA expr-lst
  *            | expr
  */
-static void parse_expr_lst()
+static absyn_expr_lst_t *parse_expr_lst()
 {
    ENTERING (__FUNCTION__);
    
@@ -512,13 +520,14 @@ static void parse_expr_lst()
    }
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* fun-call-or-id ::= id LPAREN expr-lst RPAREN
  *                  | id LPAREN RPAREN
  *                  | id
  */
-static void parse_fun_call_or_id()
+static absyn_expr_t *parse_fun_call_or_id()
 {
    ENTERING (__FUNCTION__);
 
@@ -538,6 +547,7 @@ static void parse_fun_call_or_id()
    }
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* fun-decl ::= fun-decl-proto ASSIGN expr */
@@ -615,7 +625,7 @@ static void parse_id_lst()
 }
 
 /* if-expr ::= IF expr THEN expr ELSE expr */
-static void parse_if_expr()
+static absyn_if_expr_t *parse_if_expr()
 {
    ENTERING (__FUNCTION__);
 
@@ -627,6 +637,7 @@ static void parse_if_expr()
    parse_expr();
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* module-decl ::= MODULE IDENTIFIER ASSIGN DECL proto-lst IN decl-lst END */
@@ -727,7 +738,7 @@ static void parse_proto_lst()
 /* record-assn-lst ::= IDENTIFIER ASSIGN expr
  *                   | IDENTIFIER ASSIGN expr COMMA record-assn-lst
  */
-static void parse_record_assn_lst()
+static absyn_record_lst_t *parse_record_assn_lst()
 {
    ENTERING (__FUNCTION__);
 
@@ -742,6 +753,7 @@ static void parse_record_assn_lst()
    }
 
    LEAVING(__FUNCTION__);
+   return NULL;
 }
 
 /* single-ty ::= LBRACE id-lst RBRACE
