@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.10 2004/10/22 01:04:14 chris Exp $
+ * $Id: tokenize.c,v 1.11 2004/10/22 18:55:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,7 @@
 #include <wchar.h>
 #include <wctype.h>
 
+#include "memory.h"
 #include "tokens.h"
 
 /* Maps a token value to an identifying string, for error reporting
@@ -49,20 +50,6 @@ const char *token_map[] = {
 
 static unsigned int lineno = 1;
 static wchar_t *reserved = L"←:,.ɕƒ{[(→ℳ}])τʋ#\"";
-
-#define MALLOC(ptr, size) \
-   if (((ptr) = GC_MALLOC(size)) == NULL) \
-   { \
-      fprintf (stderr, "could not malloc at %s: %d\n", __FILE__, __LINE__); \
-      exit (1); \
-   }
-
-#define REALLOC(ptr, size) \
-   if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
-   { \
-      fprintf (stderr, "could not realloc at %s: %d\n", __FILE__, __LINE__); \
-      exit (1); \
-   }
 
 /* Is this one of our reserved characters? */
 static __inline__ unsigned int is_reserved (wchar_t ch)
