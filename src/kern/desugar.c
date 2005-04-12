@@ -13,7 +13,7 @@
  *    - convert decl-exprs with no decls into exprs
  *    - promote decl-exprs that are not the RHS of a function into
  *      functions
- * - rename all values and functions to be globally unique
+ * - rename symbols to be unique and usable as assembler symbol names
  * - lambda lifting to remove all nested functions:
  *    - eliminate free values:
  *       - add symbol tables to AST nodes representing a new level of
@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.5 2005/03/30 02:02:15 chris Exp $
+ * $Id: desugar.c,v 1.6 2005/04/11 23:42:49 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -181,9 +181,9 @@ backlink_t *make_bl (link_type kind, void *node)
 static unsigned long int unique_id = 0;
 
 /* Construct a new function symbol that is guaranteed to not overlap with
- * anything the source file contains.  These symbols all start with a #, which
- * is the comment character and therefore will be stripped out by the
- * tokenizer.
+ * anything the source file contains.  These symbols all start with "_.".
+ * Since there's a period in the symbol name, we're guaranteed it won't
+ * conflict with anything in the input file.
  */
 absyn_id_expr_t *make_unique_sym (mstring_t *base, unsigned int lineno,
                                   unsigned int column)
@@ -197,7 +197,7 @@ absyn_id_expr_t *make_unique_sym (mstring_t *base, unsigned int lineno,
    MALLOC (retval, sizeof(absyn_id_expr_t));
    retval->lineno = lineno;
    retval->column = column;
-   retval->symbol = build_wcsstr (4, L"#", base, L"_", buf);
+   retval->symbol = build_wcsstr (4, L"_.", base, L"_", buf);
    retval->sub = NULL;
 
    unique_id++;
