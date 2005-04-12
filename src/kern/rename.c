@@ -1,14 +1,21 @@
 /* Rename all function and value identifiers to satisfy certain uniqueness
- * constraints in preparation for lambda lifting.  Functions must be uniquely
- * named globally, since lambda lifting is going to raise all functions up to
- * the same scope.  Values must be modified such that within a function, each
- * value's name is only assigned to once.  Any further declarations of values
- * with the same name will be converted into new names.
+ * constraints in preparation for lambda lifting.  This pass also converts
+ * symbols into a form that an assembler can use.  The following manipulations
+ * need to be performed:
+ *
+ * - Uniquely name all functions within a module.  This is because we are
+ *   raising all functions to the top-level module scope, so they will all
+ *   be living in the same scope.  Values do not need this treatment.  Watch
+ *   out that a lifted function does not have the same name as a value.
+ * - Convert all symbol names into the character set allowed by the assembler.
+ *   This conversion must be one-to-one, as we may need to convert back.
+ *
+ * The original symbol names must be preserved in the symbol table.
  *
  * This pass must come after any passes that create new functions or values,
  * but before lambda lifting.
  *
- * $Id: rename.c,v 1.1 2005/03/30 02:02:15 chris Exp $
+ * $Id: rename.c,v 1.2 2005/04/12 01:13:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,8 +37,11 @@
 #define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
+#include <wchar.h>
 
 #include "absyn.h"
+#include "basic_types.h"
 #include "desugar.h"
 #include "error.h"
 #include "list.h"
@@ -270,6 +280,7 @@ static absyn_record_ref_t *handle_record_ref (absyn_record_ref_t *node)
 
 static absyn_val_decl_t *handle_val_decl (absyn_val_decl_t *node)
 {
+   node->symbol = handle_identifier (node->symbol);
    node->init = handle_expr (node->init);
    return node;
 }

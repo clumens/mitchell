@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.43 2005/04/06 02:22:15 chris Exp $
+ * $Id: parse.c,v 1.44 2005/04/12 01:13:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -39,6 +39,7 @@
 #include "error.h"
 #include "memory.h"
 #include "tokens.h"
+#include "str.h"
 
 static FILE *in;                    /* the input file */
 static token_t *tok;                /* lookahead token - not yet examined */
@@ -765,6 +766,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
+   sym->label = unicode_to_ascii (sym->symbol);
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
@@ -842,6 +844,7 @@ static absyn_id_expr_t *parse_id (backlink_t *parent)
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->symbol = last_tok->string;
+   retval->label = unicode_to_ascii (retval->symbol);
    retval->parent = parent;
 
    if (tok->type == DOT)
@@ -879,6 +882,7 @@ static list_t *parse_id_lst (backlink_t *parent)
       bl = make_bl (LINK_ID_LST, new_ele);
 
       sym->symbol = last_tok->string;
+      sym->label = unicode_to_ascii (sym->symbol);
       sym->sub = NULL;
       sym->lineno = last_tok->lineno;
       sym->column = last_tok->column;
@@ -945,6 +949,7 @@ static absyn_module_decl_t *parse_module_decl (backlink_t *parent)
 
    match (IDENTIFIER);
    sym->symbol = last_tok->string;
+   sym->label = unicode_to_ascii (sym->symbol);
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
@@ -1111,6 +1116,7 @@ static list_t *parse_record_assn_lst (backlink_t *parent)
       bl = make_bl (LINK_RECORD_ASSN, new_ele);
 
       sym->symbol = last_tok->string;
+      sym->label = unicode_to_ascii (sym->symbol);
       sym->sub = NULL;
       sym->lineno = last_tok->lineno;
       sym->column = last_tok->column;
@@ -1149,6 +1155,7 @@ static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
    retval->column = last_tok->column;
    retval->parent = parent;
    retval->symbol = last_tok->string;
+   retval->label = unicode_to_ascii (retval->symbol);
 
    if (tok->type == PIPE)
       retval->sub = parse_record_ref (make_bl(LINK_ID_EXPR, retval));
@@ -1435,6 +1442,7 @@ static absyn_ty_decl_t *parse_ty_decl (backlink_t *parent)
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
+   sym->label = unicode_to_ascii (sym->symbol);
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
@@ -1471,6 +1479,7 @@ static absyn_val_decl_t *parse_val_decl (backlink_t *parent)
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
+   sym->label = unicode_to_ascii (sym->symbol);
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;

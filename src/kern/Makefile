@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.24 2005/03/30 02:02:15 chris Exp $
+# $Id: Makefile,v 1.25 2005/04/12 01:13:01 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -52,15 +52,15 @@ main.o: main.c \
 
 parse.o: parse.c \
 	../include/absyn.h ../include/config.h ../include/error.h \
-	../include/memory.h ../include/tokens.h
+	../include/memory.h ../include/str.h ../include/tokens.h
 
 rename.o: rename.c \
 	../include/absyn.h ../include/desugar.h ../include/error.h \
-	../include/list.h
+	../include/list.h ../include/str.h
 
 semant.o: semant.c \
 	../include/absyn.h ../include/basic_types.h ../include/error.h \
-	../include/list.h ../include/memory.h ../include/symtab.h
+	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h
 
 str.o: str.c \
 	../include/basic_types.h ../include/memory.h ../include/str.h

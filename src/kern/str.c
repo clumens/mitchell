@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.c,v 1.3 2005/03/29 05:52:56 chris Exp $
+ * $Id: str.c,v 1.4 2005/04/12 01:13:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -25,6 +25,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <wchar.h>
+#include <wctype.h>
 
 #include "basic_types.h"
 #include "memory.h"
@@ -57,5 +58,54 @@ wchar_t *build_wcsstr (int nargs, ...)
    }
 
    va_end (ap);
+   return retval;
+}
+
+/* Convert a unicode string representing a mitchell identifier into an ascii
+ * string representing an assembler identifier.  We do this by converting all
+ * characters not recognized by an assembler into the sequence .Uxxxx, where
+ * xxxx is the hex representation of the unicode character.
+ */
+char *unicode_to_ascii (mstring_t *sym)
+{
+   char *retval = NULL;
+   wint_t tmp;
+
+   for (tmp = *sym; tmp != L'\0'; tmp = *++sym)
+   {
+      if (wcschr (L"abcdefghijklmnopqrstuvwxyz0123456789_",
+                  towlower(tmp)) != NULL)
+      {
+         char buf[2] = { tmp, '\0' };
+
+         if (retval == NULL)
+         {
+            MALLOC (retval, sizeof(char)*2);
+            retval = strcpy (retval, buf);
+         }
+         else
+         {
+            REALLOC (retval, strlen(retval)+sizeof(char)*2);
+            retval = strcat (retval, buf);
+         }
+      }
+      else
+      {
+         char buf[7];
+
+         sprintf (buf, ".U%.4X", tmp);
+         if (retval == NULL)
+         {
+            MALLOC (retval, sizeof(char)*7);
+            retval = strcpy (retval, buf);
+         }
+         else
+         {
+            REALLOC (retval, strlen(retval)+sizeof(char)*7);
+            retval = strcat (retval, buf);
+         }
+      }
+   }
+
    return retval;
 }

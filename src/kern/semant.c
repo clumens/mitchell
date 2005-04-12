@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.40 2005/04/06 02:22:15 chris Exp $
+ * $Id: semant.c,v 1.41 2005/04/12 01:13:01 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,7 @@
 #include "error.h"
 #include "list.h"
 #include "memory.h"
+#include "str.h"
 #include "symtab.h"
 
 /* This is the base environment, containing all the predefined values,
@@ -116,6 +117,7 @@ void check_program (ast_t *ast)
    MALLOC (integer_symtab, sizeof (symbol_t));
    integer_symtab->kind = SYM_MODULE;
    integer_symtab->name = wcsdup (L"Integer");
+   integer_symtab->label = strdup("Integer");
    integer_symtab->info.stack = enter_scope (integer_symtab->info.stack);
 
    symtab_add_entry (global, integer_symtab);
@@ -126,6 +128,7 @@ void check_program (ast_t *ast)
    MALLOC (boolean_symtab, sizeof (symbol_t));
    boolean_symtab->kind = SYM_MODULE;
    boolean_symtab->name = wcsdup (L"Boolean");
+   boolean_symtab->label = strdup("Boolean");
    boolean_symtab->info.stack = enter_scope (boolean_symtab->info.stack);
 
    symtab_add_entry (global, boolean_symtab);
@@ -767,6 +770,7 @@ static void process_fun_block (list_t *start, list_t *end, tabstack_t *stack)
 
       new_sym->kind = SYM_FUNCTION;
       new_sym->name = fun_name->symbol;
+      new_sym->label = fun_name->label;
       new_sym->info.function->retval = ast_to_ty (fun_decl->retval, stack);
       new_sym->info.function->formals = NULL;
 
@@ -841,6 +845,7 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
       MALLOC (new_sym, sizeof(symbol_t));
       new_sym->kind = SYM_TYPE;
       new_sym->name = ty_sym->symbol;
+      new_sym->label = ty_sym->label;
       new_sym->info.ty = NULL;
 
       /* Here's where we check for a duplicate symbol - don't have to
@@ -1343,6 +1348,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
       MALLOC (tmp_sym, sizeof(symbol_t));
       tmp_sym->kind = SYM_VALUE;
       tmp_sym->name = ((element_t *) formals->data)->identifier;
+      tmp_sym->label = unicode_to_ascii (tmp_sym->name);
       tmp_sym->info.ty = ((element_t *) formals->data)->ty;
 
       if (symtab_add_entry (stack, tmp_sym) == -1)
@@ -1447,6 +1453,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    /* Build symtab entry in lexical parent's table for this module. */
    new_sym->kind = SYM_MODULE;
    new_sym->name = node->symbol->symbol;
+   new_sym->label = node->symbol->label;
    new_sym->info.stack = enter_scope (new_sym->info.stack);
    
    /* Add the module's symbol table entry, with its pointer to initialized
@@ -1633,6 +1640,7 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
    MALLOC(new, sizeof(symbol_t));
    new->kind = sub;
    new->name = lhs->symbol;
+   new->label = lhs->label;
    node->ty = new->info.ty = rhs;
 
    /* Now obliterate the skeleton entry for this symbol with the real thing.
@@ -1680,6 +1688,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
 
    new_sym->kind = SYM_VALUE;
    new_sym->name = node->symbol->symbol;
+   new_sym->label = node->symbol->label;
    node->ty = new_sym->info.ty = val_ty;
    
    if (symtab_add_entry (stack, new_sym) == -1)
