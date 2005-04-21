@@ -15,7 +15,7 @@
  * This pass must come after any passes that create new functions or values,
  * but before lambda lifting.
  *
- * $Id: rename.c,v 1.2 2005/04/12 01:13:01 chris Exp $
+ * $Id: rename.c,v 1.3 2005/04/20 22:51:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -55,7 +55,8 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node);
 static list_t *handle_expr_lst (list_t *lst);
 static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node);
 static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node);
-static absyn_id_expr_t *handle_identifier (absyn_id_expr_t *node);
+static absyn_id_expr_t *handle_identifier_def (absyn_id_expr_t *node);
+static absyn_id_expr_t *handle_identifier_use (absyn_id_expr_t *node);
 static absyn_if_expr_t *handle_if_expr (absyn_if_expr_t *node);
 static absyn_module_decl_t *handle_module_decl (absyn_module_decl_t *node);
 static list_t *handle_record_assn (list_t *lst);
@@ -137,7 +138,7 @@ static list_t *handle_exn_lst (list_t *lst)
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
       absyn_exn_lst_t *node = tmp->data;
-      node->exn_id = handle_identifier (node->exn_id);
+      node->exn_id = handle_identifier_use (node->exn_id);
       node->expr = handle_expr(node->expr);
    }
 
@@ -146,7 +147,7 @@ static list_t *handle_exn_lst (list_t *lst)
 
 static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)
 {
-   node->identifier = handle_identifier (node->identifier);
+   node->identifier = handle_identifier_use (node->identifier);
    node->values = handle_record_assn (node->values);
    return node;
 }
@@ -177,7 +178,7 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
          break;
 
       case ABSYN_ID:
-         node->identifier = handle_identifier (node->identifier);
+         node->identifier = handle_identifier_use (node->identifier);
          break;
 
       case ABSYN_IF:
@@ -225,7 +226,7 @@ static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node)
 {
    list_t *tmp;
 
-   node->identifier = handle_identifier (node->identifier);
+   node->identifier = handle_identifier_use (node->identifier);
 
    for (tmp = node->arg_lst; tmp != NULL; tmp = tmp->next)
       tmp->data = handle_expr (tmp->data);
@@ -235,13 +236,23 @@ static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node)
 
 static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node)
 {
-   node->symbol = handle_identifier (node->symbol);
+   node->symbol = handle_identifier_def (node->symbol);
    node->body = handle_expr (node->body);
    return node;
 }
 
-static absyn_id_expr_t *handle_identifier (absyn_id_expr_t *node)
+static absyn_id_expr_t *handle_identifier_def (absyn_id_expr_t *node)
 {
+   return node;
+}
+
+static absyn_id_expr_t *handle_identifier_use (absyn_id_expr_t *node)
+{
+   absyn_id_expr_t *tmp;
+
+   for (tmp = node; tmp != NULL; tmp = tmp->sub)
+      tmp->symbol = (mstring_t *) tmp->label;
+
    return node;
 }
 
@@ -280,7 +291,7 @@ static absyn_record_ref_t *handle_record_ref (absyn_record_ref_t *node)
 
 static absyn_val_decl_t *handle_val_decl (absyn_val_decl_t *node)
 {
-   node->symbol = handle_identifier (node->symbol);
+   node->symbol = handle_identifier_def (node->symbol);
    node->init = handle_expr (node->init);
    return node;
 }

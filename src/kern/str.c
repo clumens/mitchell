@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.c,v 1.4 2005/04/12 01:13:01 chris Exp $
+ * $Id: str.c,v 1.5 2005/04/20 22:51:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -64,11 +64,12 @@ wchar_t *build_wcsstr (int nargs, ...)
 /* Convert a unicode string representing a mitchell identifier into an ascii
  * string representing an assembler identifier.  We do this by converting all
  * characters not recognized by an assembler into the sequence .Uxxxx, where
- * xxxx is the hex representation of the unicode character.
+ * xxxx is the hex representation of the unicode character.  We still represent
+ * the resulting string as an mstring_t, just for simplicity.
  */
-char *unicode_to_ascii (mstring_t *sym)
+mstring_t *unicode_to_ascii (mstring_t *sym)
 {
-   char *retval = NULL;
+   mstring_t *retval = NULL;
    wint_t tmp;
 
    for (tmp = *sym; tmp != L'\0'; tmp = *++sym)
@@ -76,33 +77,33 @@ char *unicode_to_ascii (mstring_t *sym)
       if (wcschr (L"abcdefghijklmnopqrstuvwxyz0123456789_",
                   towlower(tmp)) != NULL)
       {
-         char buf[2] = { tmp, '\0' };
+         wchar_t buf[2] = { tmp, L'\0' };
 
          if (retval == NULL)
          {
-            MALLOC (retval, sizeof(char)*2);
-            retval = strcpy (retval, buf);
+            MALLOC (retval, sizeof(wchar_t)*2);
+            retval = wcscpy (retval, buf);
          }
          else
          {
-            REALLOC (retval, strlen(retval)+sizeof(char)*2);
-            retval = strcat (retval, buf);
+            REALLOC (retval, WCSLEN(retval)+sizeof(wchar_t)*2);
+            retval = wcscat (retval, buf);
          }
       }
       else
       {
-         char buf[7];
+         wchar_t buf[7];
 
-         sprintf (buf, ".U%.4X", tmp);
+         swprintf (buf, 7, L".U%.4lX", tmp);
          if (retval == NULL)
          {
-            MALLOC (retval, sizeof(char)*7);
-            retval = strcpy (retval, buf);
+            MALLOC (retval, sizeof(wchar_t)*7);
+            retval = wcscpy (retval, buf);
          }
          else
          {
-            REALLOC (retval, strlen(retval)+sizeof(char)*7);
-            retval = strcat (retval, buf);
+            REALLOC (retval, WCSLEN(retval)+sizeof(wchar_t)*7);
+            retval = wcscat (retval, buf);
          }
       }
    }

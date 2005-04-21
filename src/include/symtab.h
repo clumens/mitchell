@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.13 2005/04/12 01:12:59 chris Exp $
+ * $Id: symtab.h,v 1.14 2005/04/20 22:51:57 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -56,8 +56,7 @@ typedef struct {
 
 typedef struct symbol_t {
    subtable_t   kind;
-   mstring_t   *name;                     /* mitchell name for symbol */
-   char        *label;                    /* ascii name for symbol */
+   mstring_t   *name, *label;
 
    union {
       function_symbol_t *function;        /* SYM_FUNCTION */

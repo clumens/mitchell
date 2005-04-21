@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.41 2005/04/12 01:13:01 chris Exp $
+ * $Id: semant.c,v 1.42 2005/04/20 22:51:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -117,7 +117,7 @@ void check_program (ast_t *ast)
    MALLOC (integer_symtab, sizeof (symbol_t));
    integer_symtab->kind = SYM_MODULE;
    integer_symtab->name = wcsdup (L"Integer");
-   integer_symtab->label = strdup("Integer");
+   integer_symtab->label = wcsdup(L"Integer");
    integer_symtab->info.stack = enter_scope (integer_symtab->info.stack);
 
    symtab_add_entry (global, integer_symtab);
@@ -128,7 +128,7 @@ void check_program (ast_t *ast)
    MALLOC (boolean_symtab, sizeof (symbol_t));
    boolean_symtab->kind = SYM_MODULE;
    boolean_symtab->name = wcsdup (L"Boolean");
-   boolean_symtab->label = strdup("Boolean");
+   boolean_symtab->label = wcsdup(L"Boolean");
    boolean_symtab->info.stack = enter_scope (boolean_symtab->info.stack);
 
    symtab_add_entry (global, boolean_symtab);
