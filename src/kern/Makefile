@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.25 2005/04/12 01:13:01 chris Exp $
+# $Id: Makefile,v 1.26 2005/04/20 23:02:47 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -21,7 +21,7 @@ mitchell: $(OBJS)
 	gcc $(CFLAGS) -o $@ $^ $(LDFLAGS)
 
 clean:
-	-rm -f *.o mitchell
+	-rm -f *.o mitchell core
 
 #####################################################################
 # Dependancies                                                      #
@@ -32,7 +32,7 @@ absyn_printer.o: absyn_printer.c \
 
 desugar.o: desugar.c \
 	../include/absyn.h ../include/config.h ../include/desugar.h \
-	../include/error.h ../include/memory.h ../include/str.h
+	../include/error.h ../include/memory.h
 
 desugar_case.o: desugar_case.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
