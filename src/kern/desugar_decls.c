@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.5 2005/03/29 05:52:55 chris Exp $
+ * $Id: desugar_decls.c,v 1.6 2005/04/21 02:49:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -99,7 +99,8 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    retval->lineno = in->lineno;
    retval->column = in->column;
    retval->parent = in->parent;
-   retval->symbol = make_unique_sym (L"__decl_expr", in->lineno, in->column);
+   retval->symbol = str_to_id_expr (make_unique_str (L"__decl_expr"),
+                                    in->lineno, in->column);
    retval->formals = NULL;             /* will be fixed by lambda lifting */
 
    /* Now create the inner expr, which will hold a decl-expr. */

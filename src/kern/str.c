@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.c,v 1.5 2005/04/20 22:51:59 chris Exp $
+ * $Id: str.c,v 1.6 2005/04/21 02:49:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -58,6 +58,28 @@ wchar_t *build_wcsstr (int nargs, ...)
    }
 
    va_end (ap);
+   return retval;
+}
+
+static unsigned long int unique_id = 0;
+
+/* Construct a new string that is guaranteed to not overlap with anything the
+ * source file contains.  These strings all start with "_.".  Since there's a
+ * period in the symbol name, we're guaranteed it won't conflict.
+ */
+mstring_t *make_unique_str (mstring_t *base)
+{
+   mstring_t *retval;
+   char *buf;
+
+   MALLOC (buf, sizeof(char)*10);
+   snprintf (buf, 9, "%ld", unique_id);
+
+   MALLOC (retval, sizeof(mstring_t));
+   retval = build_wcsstr (4, L"_.", base, L"_", buf);
+
+   unique_id++;
+
    return retval;
 }
 

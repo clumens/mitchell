@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.6 2005/04/11 23:42:49 chris Exp $
+ * $Id: desugar.c,v 1.7 2005/04/21 02:49:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -53,7 +53,6 @@
 #include "desugar.h"
 #include "error.h"
 #include "memory.h"
-#include "str.h"
 
 /* Entry point into the desugaring passes. */
 ast_t *desugar_ast (ast_t *ast)
@@ -178,29 +177,18 @@ backlink_t *make_bl (link_type kind, void *node)
    return retval;
 }
 
-static unsigned long int unique_id = 0;
-
-/* Construct a new function symbol that is guaranteed to not overlap with
- * anything the source file contains.  These symbols all start with "_.".
- * Since there's a period in the symbol name, we're guaranteed it won't
- * conflict with anything in the input file.
- */
-absyn_id_expr_t *make_unique_sym (mstring_t *base, unsigned int lineno,
-                                  unsigned int column)
+/* Convert a string into an absyn_id_expr_t */
+absyn_id_expr_t *str_to_id_expr (mstring_t *str, unsigned int lineno,
+                                 unsigned int column)
 {
    absyn_id_expr_t *retval;
-   char *buf;
-
-   MALLOC (buf, sizeof(char)*10);
-   snprintf (buf, 9, "%ld", unique_id);
 
    MALLOC (retval, sizeof(absyn_id_expr_t));
    retval->lineno = lineno;
    retval->column = column;
-   retval->symbol = build_wcsstr (4, L"_.", base, L"_", buf);
+   retval->symbol = str;
+   retval->label = str;
    retval->sub = NULL;
-
-   unique_id++;
 
    return retval;
 }
