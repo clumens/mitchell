@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.h,v 1.4 2005/04/20 22:51:57 chris Exp $
+ * $Id: str.h,v 1.5 2005/04/20 23:07:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,7 @@
 #include "basic_types.h"
 
 wchar_t *build_wcsstr (int nargs, ...);
+mstring_t *make_unique_str (mstring_t *base);
 mstring_t *unicode_to_ascii (mstring_t *str);
 
 #endif
