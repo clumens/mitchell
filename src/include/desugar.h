@@ -3,7 +3,7 @@
  * is only a single entry point into the desugaring process as it deals with
  * the order of the passes internally.
  *
- * $Id: desugar.h,v 1.5 2005/04/20 23:07:09 chris Exp $
+ * $Id: desugar.h,v 1.6 2005/04/23 20:37:27 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -42,3 +42,5 @@ absyn_id_expr_t *str_to_id_expr (mstring_t *str, unsigned int lineno,
                                  unsigned int column);
 
 #endif
+
+/* vim: set tags=../tags: */

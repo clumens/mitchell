@@ -1,6 +1,6 @@
 /* Generic string handling functions.
  *
- * $Id: str.c,v 1.6 2005/04/21 02:49:52 chris Exp $
+ * $Id: str.c,v 1.7 2005/04/23 20:37:28 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -132,3 +132,5 @@ mstring_t *unicode_to_ascii (mstring_t *sym)
 
    return retval;
 }
+
+/* vim: set tags=../tags: */
