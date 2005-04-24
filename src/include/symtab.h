@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.14 2005/04/20 22:51:57 chris Exp $
+ * $Id: symtab.h,v 1.15 2005/04/23 20:36:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,7 +51,7 @@ typedef enum { SYM_EXN, SYM_FUNCTION, SYM_MODULE, SYM_TYPE,
 
 typedef struct {
    struct ty_t *retval;
-   list_t      *formals;
+   list_t      *formals;                  /* list of element_t */
 } function_symbol_t;
 
 typedef struct symbol_t {
