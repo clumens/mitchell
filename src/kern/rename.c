@@ -1,21 +1,18 @@
-/* Rename all function and value identifiers to satisfy certain uniqueness
- * constraints in preparation for lambda lifting.  This pass also converts
- * symbols into a form that an assembler can use.  The following manipulations
- * need to be performed:
+/* THIS COMMENT IS WRONG YET AGAIN:
  *
- * - Uniquely name all functions within a module.  This is because we are
- *   raising all functions to the top-level module scope, so they will all
- *   be living in the same scope.  Values do not need this treatment.  Watch
- *   out that a lifted function does not have the same name as a value.
- * - Convert all symbol names into the character set allowed by the assembler.
- *   This conversion must be one-to-one, as we may need to convert back.
+ * Fix up references to renamed symbols.  In the parser, all symbols were
+ * converted to a format that the assembler can make use of, and the AST was
+ * annotated with these symbols.  Additionally, functions symbols were
+ * converted into globally unique names in preparation for lambda lifting later
+ * on.  In order to reference these mangled names, a reference to the final
+ * symbol table for each scope was added into the AST.  All that remains to
+ * be done is fix up the references by converting them to reference these
+ * mangled symbol names.
  *
- * The original symbol names must be preserved in the symbol table.
+ * This pass must come after any passes that create new symbols, but before
+ * lambda lifting.
  *
- * This pass must come after any passes that create new functions or values,
- * but before lambda lifting.
- *
- * $Id: rename.c,v 1.3 2005/04/20 22:51:59 chris Exp $
+ * $Id: rename.c,v 1.4 2005/04/27 02:00:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -251,7 +248,7 @@ static absyn_id_expr_t *handle_identifier_use (absyn_id_expr_t *node)
    absyn_id_expr_t *tmp;
 
    for (tmp = node; tmp != NULL; tmp = tmp->sub)
-      tmp->symbol = (mstring_t *) tmp->label;
+      tmp->symbol = tmp->label;
 
    return node;
 }

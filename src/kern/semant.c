@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.42 2005/04/20 22:51:59 chris Exp $
+ * $Id: semant.c,v 1.43 2005/04/27 02:00:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -44,13 +44,13 @@ static ty_t integer_ty = { TY_INTEGER, TY_FINITE };
 static ty_t string_ty = { TY_STRING, TY_FINITE };
 
 static symbol_t base_env[] = {
-   { SYM_VALUE, L"f", .info.ty=&boolean_ty },
-   { SYM_VALUE, L"t", .info.ty=&boolean_ty },
-   { SYM_TYPE, L"⊥", .info.ty=&bottom_ty },
-   { SYM_TYPE, L"boolean", .info.ty=&boolean_ty },
-   { SYM_TYPE, L"integer", .info.ty=&integer_ty },
-   { SYM_TYPE, L"string", .info.ty=&string_ty },
-   { SYM_TYPE, NULL, .info.ty=NULL }
+   { SYM_VALUE, L"f", L"f", .info.ty=&boolean_ty },
+   { SYM_VALUE, L"t", L"t", .info.ty=&boolean_ty },
+   { SYM_TYPE, L"⊥", L"⊥", .info.ty=&bottom_ty },
+   { SYM_TYPE, L"boolean", L"boolean", .info.ty=&boolean_ty },
+   { SYM_TYPE, L"integer", L"integer", .info.ty=&integer_ty },
+   { SYM_TYPE, L"string", L"string", .info.ty=&string_ty },
+   { SYM_TYPE, NULL, NULL, .info.ty=NULL }
 };
 
 /* XXX: These are temporary environments to allow me to keep working on stuff
@@ -58,18 +58,18 @@ static symbol_t base_env[] = {
  * Of course, I'll need to figure that out before too long.
  */
 static symbol_t integer_env[] = {
-   { SYM_FUNCTION, L"+", .info.ty=NULL },
-   { SYM_FUNCTION, L"-", .info.ty=NULL },
-   { SYM_FUNCTION, L"*", .info.ty=NULL },
-   { SYM_FUNCTION, L"<", .info.ty=NULL },
-   { SYM_FUNCTION, L"=", .info.ty=NULL },
-   { SYM_FUNCTION, L"mod", .info.ty=NULL },
-   { SYM_TYPE, NULL, .info.ty=NULL }
+   { SYM_FUNCTION, L"+", L"+", .info.ty=NULL },
+   { SYM_FUNCTION, L"-", L"-", .info.ty=NULL },
+   { SYM_FUNCTION, L"*", L"*", .info.ty=NULL },
+   { SYM_FUNCTION, L"<", L"<", .info.ty=NULL },
+   { SYM_FUNCTION, L"=", L"=", .info.ty=NULL },
+   { SYM_FUNCTION, L"mod", L"mod", .info.ty=NULL },
+   { SYM_TYPE, NULL, NULL, .info.ty=NULL }
 };
 
 static symbol_t boolean_env[] = {
-   { SYM_FUNCTION, L"or", .info.ty=NULL },
-   { SYM_TYPE, NULL, .info.ty=NULL }
+   { SYM_FUNCTION, L"or", L"or", .info.ty=NULL },
+   { SYM_TYPE, NULL, NULL, .info.ty=NULL }
 };
 /* XXX: End temporary stuff. */
 
@@ -1298,6 +1298,11 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
       formal_lst = formal_lst->next;
    }
 
+   /* Also, update the AST node to contain the label while we still have
+    * access to the symbol tables (saves some difficult later pass action).
+    */
+   node->identifier->label = s->label;
+
    /* If it passes, set node->ty to the return type of the function. */
    node->ty = s->info.function->retval;
    return s->info.function->retval;
@@ -1345,11 +1350,13 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
 
    while (formals != NULL)
    {
+      element_t *param = ((element_t *) formals->data);
+
       MALLOC (tmp_sym, sizeof(symbol_t));
       tmp_sym->kind = SYM_VALUE;
-      tmp_sym->name = ((element_t *) formals->data)->identifier;
+      tmp_sym->name = param->identifier;
       tmp_sym->label = unicode_to_ascii (tmp_sym->name);
-      tmp_sym->info.ty = ((element_t *) formals->data)->ty;
+      tmp_sym->info.ty = param->ty;
 
       if (symtab_add_entry (stack, tmp_sym) == -1)
       {
@@ -1405,6 +1412,11 @@ static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
                         node->symbol, "symbol is not a value");
       exit(1);
    }
+
+   /* Also, update the AST node to contain the label while we still have
+    * access to the symbol tables (saves some difficult later pass action).
+    */
+   node->label = sym->label;
 
    return sym->info.ty;
 }
@@ -1690,6 +1702,11 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    new_sym->name = node->symbol->symbol;
    new_sym->label = node->symbol->label;
    node->ty = new_sym->info.ty = val_ty;
+
+   /* Also, update the AST node to contain the label while we still have
+    * access to the symbol tables (saves some difficult later pass action).
+    */
+   node->symbol->label = new_sym->label;
    
    if (symtab_add_entry (stack, new_sym) == -1)
    {

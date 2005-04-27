@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.7 2005/04/21 02:49:52 chris Exp $
+ * $Id: desugar.c,v 1.8 2005/04/27 02:00:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -71,12 +71,14 @@ ast_t *desugar_ast (ast_t *ast)
    if (cconfig.last_phase == LAST_DESUGAR_DECL)
       exit(0);
 
+   /*
    ast = rename_identifiers (ast);
    if (cconfig.debug.dump_absyn)
       print_absyn (ast, &cconfig, "renamed identifier abstract syntax tree");
 
    if (cconfig.last_phase == LAST_DESUGAR_RENAME)
       exit(0);
+      */
 
    return ast;
 }
@@ -192,3 +194,5 @@ absyn_id_expr_t *str_to_id_expr (mstring_t *str, unsigned int lineno,
 
    return retval;
 }
+
+/* vim: set tags=../tags: */

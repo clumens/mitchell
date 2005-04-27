@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.9 2005/03/29 05:52:56 chris Exp $
+ * $Id: symtab_printer.c,v 1.10 2005/04/27 02:00:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,6 +28,8 @@
 #include "semant.h"
 #include "symtab.h"
 
+#define STR(s)  (s) == NULL ? L"" : (s)
+
 /* Print a single symbol. */
 void symbol_dump (FILE *f, symbol_t *sym)
 {
@@ -36,27 +38,27 @@ void symbol_dump (FILE *f, symbol_t *sym)
 
    switch (sym->kind) {
       case SYM_EXN:
-         fprintf (f, "EXN(%ls):%ls", sym->name, 
-                  sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         fprintf (f, "EXN{%ls,%ls}:%ls", STR(sym->name), STR(sym->label),
+                     sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
          break;
 
       case SYM_FUNCTION:
-         fprintf (f, "FUNCTION(%ls):%ls", sym->name,
-                  ty_to_str(sym->info.function->retval));
+         fprintf (f, "FUNCTION{%ls,%ls}:%ls", STR(sym->name), STR(sym->label),
+                     ty_to_str(sym->info.function->retval));
          break;
 
       case SYM_MODULE:
-         fprintf (f, "MODULE(%ls)", sym->name);
+         fprintf (f, "MODULE{%ls,%ls}", STR(sym->name), STR(sym->label));
          break;
       
       case SYM_TYPE:
-         fprintf (f, "TYPE(%ls):%ls", sym->name,
-                  sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         fprintf (f, "TYPE{%ls,%ls}:%ls", STR(sym->name), STR(sym->label),
+                     sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
          break;
          
       case SYM_VALUE:
-         fprintf (f, "VALUE(%ls):%ls", sym->name,
-                  sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         fprintf (f, "VALUE{%ls,%ls}:%ls", STR(sym->name), STR(sym->label),
+                     sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
          break;
    }
 }
@@ -108,3 +110,5 @@ void symtab_dump (FILE *f, tabstack_t *tabstack, mstring_t *scope_name)
       tmp = tmp->upper;
    }
 }
+
+/* vim: set tags=../tags: */

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.44 2005/04/12 01:13:01 chris Exp $
+ * $Id: parse.c,v 1.45 2005/04/27 02:00:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -766,7 +766,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
 
    match(IDENTIFIER);
    sym->symbol = last_tok->string;
-   sym->label = unicode_to_ascii (sym->symbol);
+   sym->label = make_unique_str (unicode_to_ascii (sym->symbol));
    sym->sub = NULL;
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
@@ -844,7 +844,7 @@ static absyn_id_expr_t *parse_id (backlink_t *parent)
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->symbol = last_tok->string;
-   retval->label = unicode_to_ascii (retval->symbol);
+   retval->label = NULL;
    retval->parent = parent;
 
    if (tok->type == DOT)
@@ -1116,7 +1116,7 @@ static list_t *parse_record_assn_lst (backlink_t *parent)
       bl = make_bl (LINK_RECORD_ASSN, new_ele);
 
       sym->symbol = last_tok->string;
-      sym->label = unicode_to_ascii (sym->symbol);
+      sym->label = NULL;
       sym->sub = NULL;
       sym->lineno = last_tok->lineno;
       sym->column = last_tok->column;
@@ -1155,7 +1155,7 @@ static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
    retval->column = last_tok->column;
    retval->parent = parent;
    retval->symbol = last_tok->string;
-   retval->label = unicode_to_ascii (retval->symbol);
+   retval->label = NULL;
 
    if (tok->type == PIPE)
       retval->sub = parse_record_ref (make_bl(LINK_ID_EXPR, retval));

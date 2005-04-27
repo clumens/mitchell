@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.4 2005/04/21 02:49:52 chris Exp $
+ * $Id: desugar_case.c,v 1.5 2005/04/27 02:00:03 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -156,6 +156,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    val_expr->identifier->column = left->column;
    val_expr->identifier->parent = make_bl (LINK_EXPR, val_expr);
    val_expr->identifier->symbol = left->symbol->symbol;
+   val_expr->identifier->label = left->symbol->label;
    val_expr->identifier->sub = NULL;
    
    /* First append the val-expr for the test result, then append the expr for
@@ -172,14 +173,17 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    switch ((unalias(left->ty))->ty) {
       case TY_BOOLEAN:
          id->symbol = wcsdup (L"Boolean");
+         id->label = wcsdup (L"Boolean");
          break;
 
       case TY_INTEGER:
          id->symbol = wcsdup (L"Integer");
+         id->label = wcsdup (L"Integer");
          break;
 
       case TY_STRING:
          id->symbol = wcsdup (L"String");
+         id->label = wcsdup (L"String");
          break;
 
       case TY_ALIAS:
@@ -201,6 +205,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    id->sub->column = id->column;
    id->sub->parent = make_bl (LINK_ID_EXPR, id);
    id->sub->symbol = wcsdup (L"=");
+   id->sub->label = wcsdup (L"=");
    id->sub->sub = NULL;
 
    return retval;
