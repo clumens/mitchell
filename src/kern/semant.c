@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.43 2005/04/27 02:00:04 chris Exp $
+ * $Id: semant.c,v 1.44 2005/05/04 01:01:39 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1069,6 +1069,7 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
 
    new_sym->kind = SYM_EXN;
    new_sym->name = node->id;
+   new_sym->label = unicode_to_ascii (new_sym->name);
    new_sym->info.ty = sym == NULL ? NULL : sym->info.ty;
 
    stack = enter_scope (stack);
