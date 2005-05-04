@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.5 2005/04/27 02:00:03 chris Exp $
+ * $Id: desugar_case.c,v 1.6 2005/05/04 02:17:24 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -376,7 +376,7 @@ static list_t *handle_exn_lst (list_t *lst)
       node->expr = handle_expr(node->expr);
    }
 
-   return tmp;
+   return lst;
 }
 
 static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)

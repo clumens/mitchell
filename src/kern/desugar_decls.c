@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.6 2005/04/21 02:49:52 chris Exp $
+ * $Id: desugar_decls.c,v 1.7 2005/05/04 02:17:24 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -238,7 +238,7 @@ static list_t *handle_exn_lst (list_t *lst)
       node->expr = handle_expr(node->expr);
    }
 
-   return tmp;
+   return lst;
 }
 
 static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)
