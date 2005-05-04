@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.44 2005/05/04 01:01:39 chris Exp $
+ * $Id: semant.c,v 1.45 2005/05/04 02:38:24 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -952,6 +952,9 @@ static ty_t *check_exn_expr (absyn_exn_expr_t *node, tabstack_t *stack)
       exit(1);
    }
 
+   /* Also, update the AST node to contain the label. */
+   node->identifier->label = sym->label;
+
    /* Type check node->values as an absyn_record_assn_t.  We have to change the
     * return value, since it's going to be a TY_RECORD and we really want a
     * TY_EXN for equal_types to work.
@@ -987,9 +990,7 @@ static ty_t *check_exn_handler (absyn_exn_handler_t *node, tabstack_t *stack)
       absyn_exn_lst_t *e = tmp->data;
 
       if (node->ty == NULL)
-      {
          node->ty = check_exn_lst (e, stack);
-      }
       else
       {
          ty_t *tmp = check_exn_lst (e, stack);
@@ -1058,6 +1059,9 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
                            node->exn_id->symbol, "symbol is not an exception");
          exit(1);
       }
+
+      /* Also, update the AST node to contain the label. */
+      node->exn_id->label = sym->label;
    }
    else
       sym = NULL;
@@ -1299,9 +1303,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
       formal_lst = formal_lst->next;
    }
 
-   /* Also, update the AST node to contain the label while we still have
-    * access to the symbol tables (saves some difficult later pass action).
-    */
+   /* Also, update the AST node to contain the label. */
    node->identifier->label = s->label;
 
    /* If it passes, set node->ty to the return type of the function. */
@@ -1414,9 +1416,7 @@ static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
       exit(1);
    }
 
-   /* Also, update the AST node to contain the label while we still have
-    * access to the symbol tables (saves some difficult later pass action).
-    */
+   /* Also, update the AST node to contain the label. */
    node->label = sym->label;
 
    return sym->info.ty;
@@ -1584,6 +1584,9 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
             exit(1);
          }
 
+         /* Also, update the AST node to contain the label. */
+         id->label = sym->label;
+
          break;
       }
 
@@ -1704,9 +1707,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    new_sym->label = node->symbol->label;
    node->ty = new_sym->info.ty = val_ty;
 
-   /* Also, update the AST node to contain the label while we still have
-    * access to the symbol tables (saves some difficult later pass action).
-    */
+   /* Also, update the AST node to contain the label. */
    node->symbol->label = new_sym->label;
    
    if (symtab_add_entry (stack, new_sym) == -1)
