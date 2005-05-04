@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.20 2005/04/27 02:00:04 chris Exp $
+ * $Id: symtab.c,v 1.21 2005/05/04 02:21:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -115,7 +115,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       if (sym->label != NULL)
          (*symtab)[row]->symbol->label = wcsdup (sym->label);
       else
-         (*symtab)[row]->symbol->name = NULL;
+         (*symtab)[row]->symbol->label = NULL;
 
       (*symtab)[row]->next = NULL;
 
@@ -153,7 +153,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
       if (sym->label != NULL)
          (*symtab)[row]->symbol->label = wcsdup (sym->label);
       else
-         (*symtab)[row]->symbol->name = NULL;
+         (*symtab)[row]->symbol->label = NULL;
 
       tmp->next->next = NULL;
 
