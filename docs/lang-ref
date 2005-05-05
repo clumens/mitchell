@@ -5,16 +5,7 @@
                              by Chris Lumens
 
 
-Contents
-========
-1. Introduction
-2. Types
-   2.1. boolean
-   2.2. integer
-   2.3. string
-   2.4. ⊥
-   2.5. list
-   2.6. record
+<CONTENTS GO HERE>
 
 
 1. Introduction
@@ -37,9 +28,9 @@ introduction to the mitchell programming language.
 ========
 Mitchell has very few types.  The most basic types are boolean, integer,
 string, and ⊥.  These types may be thought of as atomic - they don't break
-down into anything more simple.  Mitchell also defines two more
-complicated types:  lists and records.  In addition, modules may define
-their own types.
+down into anything more simple.  Mitchell also defines three more
+complicated types:  lists, records, and exceptions.  In addition, modules
+may define their own types.
 
 2.1. boolean
 ------------
@@ -93,7 +84,7 @@ Operations on string values will be handled by the String module.
 
 2.4. ⊥
 ------
-The ⊥ type (or "bottom") conveys no type information.  It should only be
+The ⊥ (or "bottom") type conveys no type information.  It should only be
 used as the return type of functions that do not return anything
 important.  For instance, a string printing function might not return any
 interesting return value so would have a return type of bottom.
@@ -114,3 +105,51 @@ Operations on lists will be handled by the List module.
 
 2.6. record
 -----------
+
+2.7. exception
+--------------
+
+
+3. Expressions
+==============
+
+3.1. case Expressions
+---------------------
+
+3.2. decl Expressions
+---------------------
+
+3.3. if-then-else Expressions
+-----------------------------
+
+3.4. Symbol References
+----------------------
+
+3.5. raise Expressions
+----------------------
+
+3.6. Literal Expressions
+------------------------
+
+3.7. Exception Handlers
+-----------------------
+
+
+4. Declarations
+===============
+
+4.1. Type Declarations
+----------------------
+
+4.2. Value Declarations
+-----------------------
+
+4.3. Function Declarations
+--------------------------
+
+4.4. Module Declarations
+------------------------
+
+
+5. Modules
+==========
