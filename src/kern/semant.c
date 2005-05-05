@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.46 2005/05/04 23:29:09 chris Exp $
+ * $Id: semant.c,v 1.47 2005/05/05 02:40:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -610,6 +610,20 @@ static ty_finite ty_is_finite (ty_t *ty)
    return ty->is_finite;
 }
 
+/* Drill down to the AST node representing a symbol in a possible module path
+ * and apply the given label to that node.  This is needed so value/function
+ * references to things inside a module get labeled correctly.
+ */
+void label_identifier (absyn_id_expr_t *id, mstring_t *label)
+{
+   absyn_id_expr_t *tmp;
+
+   for (tmp = id; tmp->sub != NULL; tmp = tmp->sub)
+      ;
+
+   tmp->label = label;
+}
+
 /* +================================================================+
  * | TYPE CHECKING FUNCTIONS - ONE PER AST NODE TYPE                |
  * +================================================================+
@@ -953,7 +967,7 @@ static ty_t *check_exn_expr (absyn_exn_expr_t *node, tabstack_t *stack)
    }
 
    /* Also, update the AST node to contain the label. */
-   node->identifier->label = sym->label;
+   label_identifier (node->identifier, sym->label);
 
    /* Type check node->values as an absyn_record_assn_t.  We have to change the
     * return value, since it's going to be a TY_RECORD and we really want a
@@ -1061,7 +1075,7 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
       }
 
       /* Also, update the AST node to contain the label. */
-      node->exn_id->label = sym->label;
+      label_identifier (node->exn_id, sym->label);
    }
    else
       sym = NULL;
@@ -1304,7 +1318,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
    }
 
    /* Also, update the AST node to contain the label. */
-   node->identifier->label = s->label;
+   label_identifier (node->identifier, s->label);
 
    /* If it passes, set node->ty to the return type of the function. */
    node->ty = s->info.function->retval;
@@ -1586,7 +1600,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
          }
 
          /* Also, update the AST node to contain the label. */
-         id->label = sym->label;
+         label_identifier (id, sym->label);
 
          break;
       }
