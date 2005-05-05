@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.7 2005/05/04 02:17:24 chris Exp $
+ * $Id: desugar_decls.c,v 1.8 2005/05/04 23:29:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,6 +37,7 @@
 #include "list.h"
 #include "memory.h"
 #include "str.h"
+#include "symtab.h"
 
 /* Processing a decl-expr can return two different types - a decl-expr in the
  * case where the original was the RHS of a function, and a fun-decl in all
@@ -103,6 +104,12 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
                                     in->lineno, in->column);
    retval->formals = NULL;             /* will be fixed by lambda lifting */
 
+   /* Create a new symbol table for the new function.  We won't be doing
+    * any type checking with this table, but it'll be handy in free variable
+    * analysis later.
+    */
+   retval->symtab = symtab_new();
+
    /* Now create the inner expr, which will hold a decl-expr. */
    retval->body->lineno = in->lineno;
    retval->body->column = in->column;
@@ -147,9 +154,9 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
  */
 
 /* Promote certain decl-exprs into functions.  This is done by creating a new
- * function inside the scope containing the decl-expr immediately before the
- * decl-expr, moving the contents of the decl-expr into that function, and then
- * replacing the decl-expr with a call to the new function.
+ * function inside the scope containing the decl-expr and immediately before
+ * the decl-expr, moving the contents of the decl-expr into that function, and
+ * then replacing the decl-expr with a call to the new function.
  *
  * We do not promote decl-exprs which are the body of a function since those
  * are already a function and that would be dumb.

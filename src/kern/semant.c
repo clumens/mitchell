@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.45 2005/05/04 02:38:24 chris Exp $
+ * $Id: semant.c,v 1.46 2005/05/04 23:29:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1390,6 +1390,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
       exit(1);
    }
 
+   node->symtab = stack->symtab;
    stack = leave_scope (stack, node->symbol->symbol);
 }
 

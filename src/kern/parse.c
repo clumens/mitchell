@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.45 2005/04/27 02:00:03 chris Exp $
+ * $Id: parse.c,v 1.46 2005/05/04 23:29:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -761,6 +761,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->parent = parent;
+   retval->symtab = NULL;
 
    bl = make_bl (LINK_FUN_DECL, retval);
 

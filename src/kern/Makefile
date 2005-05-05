@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.27 2005/04/27 02:05:20 chris Exp $
+# $Id: Makefile,v 1.28 2005/05/04 23:29:09 chris Exp $
 
 CC = gcc
 BASE_CFLAGS = -O2 -Wall -I../include
@@ -39,7 +39,7 @@ desugar_case.o: desugar_case.c \
 
 desugar_decls.o: desugar_decls.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
-	../include/list.h ../include/memory.h ../include/str.h
+	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h
 
 list.o: list.c \
 	../include/list.h ../include/memory.h
