@@ -1,14 +1,11 @@
-# $Id: Makefile,v 1.28 2005/05/04 23:29:09 chris Exp $
+# $Id: Makefile,v 1.29 2005/06/24 02:03:00 chris Exp $
 
 CC = gcc
-BASE_CFLAGS = -O2 -Wall -I../include
-LDFLAGS = -lgc -ldl
+override CFLAGS += -O2 -Wall -I../include
+override LDFLAGS += -lgc -ldl
 
 ifdef DEBUG
-	override BASE_CFLAGS += -g
-	override CFLAGS += $(subst -O2,,$(BASE_CFLAGS))
-else
-	override CFLAGS += $(BASE_CFLAGS)
+	CFLAGS += -g
 endif
 
 OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o list.o \
