@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.33 2005/04/27 02:05:20 chris Exp $
+ * $Id: main.c,v 1.34 2005/06/24 02:06:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -117,8 +117,8 @@ static void help (const char *progname)
 
 static void version (const char *progname)
 {
-   printf ("%s version %s\n(C) 2004 Chris Lumens\n", MITCHELL_VERSION,
-           progname);
+   printf ("%s version %s\n(C) 2004 Chris Lumens\n", progname,
+           MITCHELL_VERSION);
    exit (0);
 }
 
