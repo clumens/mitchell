@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.34 2005/06/24 02:06:09 chris Exp $
+ * $Id: main.c,v 1.35 2005/06/30 00:56:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -163,6 +163,8 @@ static void handle_arguments (int argc, char **argv)
                cconfig.last_phase = LAST_DESUGAR_CASE;
             else if (strcmp (optarg, "desugar-decl") == 0)
                cconfig.last_phase = LAST_DESUGAR_DECL;
+            else if (strcmp (optarg, "lambda-lift") == 0)
+               cconfig.last_phase = LAST_DESUGAR_LIFT;
             else
             {
                ERROR ("Invalid option supplied to -last-phase.  See the man "

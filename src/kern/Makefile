@@ -1,14 +1,14 @@
-# $Id: Makefile,v 1.29 2005/06/24 02:03:00 chris Exp $
+# $Id: Makefile,v 1.30 2005/06/30 00:56:04 chris Exp $
 
 CC = gcc
 override CFLAGS += -O2 -Wall -I../include
 override LDFLAGS += -lgc -ldl
 
 ifdef DEBUG
-	CFLAGS += -g
+	override CFLAGS += -g
 endif
 
-OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o list.o \
+OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o lift.o list.o \
 		 main.o parse.o semant.o str.o symtab.o symtab_printer.o tokenize.o
 
 all: mitchell
@@ -37,6 +37,9 @@ desugar_case.o: desugar_case.c \
 desugar_decls.o: desugar_decls.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
 	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h
+
+lift.o: lift.c \
+	../include/absyn.h ../include/desugar.h ../include/error.h ../include/list.h
 
 list.o: list.c \
 	../include/list.h ../include/memory.h

@@ -1,6 +1,6 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.14 2005/04/27 02:05:11 chris Exp $
-.TH mitchell 1 "February 12, 2005" "mitchell preview 4"
+.\" $Id: mitchell.1,v 1.15 2005/06/30 00:55:59 chris Exp $
+.TH mitchell 1 "June 29, 2005" "mitchell preview 4"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -62,6 +62,9 @@ simplification.
 .IP desugar-decl
 Stop after the promoting decl-exprs to functions pass of abstract syntax
 tree simplification.
+.IP lambda-lift
+Stop after performing free value analysis and lambda lifting as part of
+abstract syntax tree simplification.
 .RE
 .SS Internals Options
 These options control the internal workings of the mitchell compiler and

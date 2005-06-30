@@ -1,4 +1,6 @@
 - desugar:
+   - reduce tree walking code duplication in desugaring passes
+   - create AST node building functions to simplify passes (?)
 - documentation:
    - documentation aimed more at actual users
    - write a formal semantics
