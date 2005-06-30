@@ -3,7 +3,7 @@
  * is only a single entry point into the desugaring process as it deals with
  * the order of the passes internally.
  *
- * $Id: desugar.h,v 1.8 2005/06/30 00:56:01 chris Exp $
+ * $Id: desugar.h,v 1.9 2005/06/30 12:52:53 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -26,16 +26,23 @@
 #define _DESUGAR_H 1
 
 #include "absyn.h"
+#include "absyn_walk.h"
 #include "basic_types.h"
 
 /* Entry point into the desugaring passes. */
 ast_t *desugar_ast (ast_t *ast);
 
 /* Individual passes - don't need to worry with these. */
-ast_t *desugar_case_exprs (ast_t *ast);
-ast_t *desugar_decl_exprs (ast_t *ast);
-ast_t *lift_functions (ast_t *ast);
+absyn_funcs_t *init_case_pass ();
+ast_t *desugar_case_exprs (absyn_funcs_t *funcs, ast_t *ast);
 
+absyn_funcs_t *init_decl_pass();
+ast_t *desugar_decl_exprs (absyn_funcs_t *funcs, ast_t *ast);
+
+absyn_funcs_t *init_lift_pass ();
+ast_t *lift_functions (absyn_funcs_t *funcs, ast_t *ast);
+
+/* Generally useful functions. */
 backlink_t *find_lexical_parent (backlink_t *bl);
 backlink_t *make_bl (link_type kind, void *node);
 absyn_id_expr_t *str_to_id_expr (mstring_t *str, unsigned int lineno,

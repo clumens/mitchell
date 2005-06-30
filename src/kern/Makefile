@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.30 2005/06/30 00:56:04 chris Exp $
+# $Id: Makefile,v 1.31 2005/06/30 12:52:56 chris Exp $
 
 CC = gcc
 override CFLAGS += -O2 -Wall -I../include
@@ -8,8 +8,9 @@ ifdef DEBUG
 	override CFLAGS += -g
 endif
 
-OBJS = absyn_printer.o desugar.o desugar_case.o desugar_decls.o lift.o list.o \
-		 main.o parse.o semant.o str.o symtab.o symtab_printer.o tokenize.o
+OBJS = absyn_printer.o absyn_walk.o desugar.o desugar_case.o desugar_decls.o \
+		 lift.o list.o main.o parse.o semant.o str.o symtab.o symtab_printer.o \
+		 tokenize.o
 
 all: mitchell
 
@@ -26,9 +27,13 @@ absyn_printer.o: absyn_printer.c \
 	../include/absyn.h ../include/config.h ../include/basic_types.h \
 	../include/error.h ../include/list.h
 
+absyn_walk.o: absyn_walk.c \
+	../include/absyn.h ../include/absyn_walk.h ../include/error.h \
+	../include/list.h ../include/memory.h
+
 desugar.o: desugar.c \
-	../include/absyn.h ../include/config.h ../include/desugar.h \
-	../include/error.h ../include/memory.h
+	../include/absyn.h ../include/absyn_walk.h ../include/config.h \
+	../include/desugar.h ../include/error.h ../include/memory.h
 
 desugar_case.o: desugar_case.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \

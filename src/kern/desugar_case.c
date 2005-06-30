@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.8 2005/06/30 00:49:15 chris Exp $
+ * $Id: desugar_case.c,v 1.9 2005/06/30 12:52:56 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,6 +31,7 @@
 #include <stdlib.h>
 
 #include "absyn.h"
+#include "absyn_walk.h"
 #include "basic_types.h"
 #include "desugar.h"
 #include "error.h"
@@ -39,31 +40,27 @@
 #include "str.h"
 #include "semant.h"
 
-static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node);
-static absyn_decl_expr_t *handle_decl_expr (absyn_decl_expr_t *node);
-static list_t *handle_decl_lst (list_t *lst);
-static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node);
-static list_t *handle_exn_lst (list_t *lst);
-static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node);
-static absyn_expr_t *handle_expr (absyn_expr_t *node);
-static list_t *handle_expr_lst (list_t *lst);
-static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node);
-static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node);
-static absyn_if_expr_t *handle_if_expr (absyn_if_expr_t *node);
-static absyn_module_decl_t *handle_module_decl (absyn_module_decl_t *node);
-static list_t *handle_record_assn (list_t *lst);
-static absyn_record_ref_t *handle_record_ref (absyn_record_ref_t *node);
-static absyn_val_decl_t *handle_val_decl (absyn_val_decl_t *node);
+static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
+                                                absyn_case_expr_t *node);
+static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node);
 
 /* Entry point for this pass. */
-ast_t *desugar_case_exprs (ast_t *ast)
+ast_t *desugar_case_exprs (absyn_funcs_t *funcs, ast_t *ast)
 {
    list_t *tmp;
 
    for (tmp = ast; tmp != NULL; tmp = tmp->next)
-      tmp->data = handle_module_decl (tmp->data);
+      tmp->data = funcs->visit_module_decl (funcs, tmp->data);
 
    return ast;
+}
+
+/* Initialization for this pass. */
+absyn_funcs_t *init_case_pass()
+{
+   absyn_funcs_t *retval = init_default_funcs();
+   retval->visit_expr = case_visit_expr;
+   return retval;
 }
 
 /* +================================================================+
@@ -211,7 +208,8 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    return retval;
 }
 
-static absyn_expr_t *build_if_expr (absyn_val_decl_t *val, list_t *lst)
+static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
+                                    list_t *lst)
 {
    absyn_expr_t *retval;
    absyn_if_expr_t *if_expr;
@@ -238,7 +236,7 @@ static absyn_expr_t *build_if_expr (absyn_val_decl_t *val, list_t *lst)
 
    if_expr->test_expr = make_test_expr (val, branch->branch);
    if_expr->test_expr->parent = bl;
-   if_expr->then_expr = handle_expr (branch->expr);
+   if_expr->then_expr = funcs->visit_expr (funcs, branch->expr);
    if_expr->then_expr->parent = bl;
 
    /* If this is the last element in the branch-lst, it's the default and
@@ -247,22 +245,24 @@ static absyn_expr_t *build_if_expr (absyn_val_decl_t *val, list_t *lst)
     */
    if (lst->next->next == NULL)
    {
-      if_expr->else_expr =
-         handle_expr(((absyn_branch_lst_t *) lst->next->data)->expr);
+      absyn_branch_lst_t *next_branch = lst->next->data;
+      if_expr->else_expr = funcs->visit_expr(funcs, next_branch->expr);
       if_expr->else_expr->parent = bl;
    }
    else
-      if_expr->else_expr = build_if_expr (val, lst->next);
+      if_expr->else_expr = build_if_expr (funcs, val, lst->next);
 
    retval->if_expr = if_expr;
    return retval;
 }
 
 /* +================================================================+
- * | SIMPLIFICATION FUNCTIONS - ONE PER (MOST) AST NODE TYPES       |
+ * | PASS-LOCAL AST WALKING FUNCTIONS                               |
  * +================================================================+
  */
-static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node)
+
+static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
+                                                absyn_case_expr_t *node)
 {
    absyn_decl_expr_t *retval;
    absyn_decl_t *test_decl;
@@ -287,7 +287,7 @@ static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node)
    test_decl->column = node->test->column;
    test_decl->parent = bl;
    test_decl->type = ABSYN_VAL_DECL;
-   test_decl->val_decl = expr_to_val_decl (handle_expr(node->test),
+   test_decl->val_decl = expr_to_val_decl (funcs->visit_expr(funcs, node->test),
                                            make_bl (LINK_DECL, test_decl));
 
    retval->decl_lst = list_append (retval->decl_lst, test_decl);
@@ -303,90 +303,20 @@ static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node)
    {
       absyn_branch_lst_t *branch = node->branch_lst->data;
 
-      retval->expr = handle_expr (branch->expr);
+      retval->expr = funcs->visit_expr (funcs, branch->expr);
       retval->expr->parent = bl;
    }
    else
    {
-      retval->expr = build_if_expr(test_decl->val_decl, node->branch_lst);
+      retval->expr = build_if_expr(funcs, test_decl->val_decl,
+                                   node->branch_lst);
       retval->expr->parent = bl;
    }
 
    return retval;
 }
 
-static absyn_decl_expr_t *handle_decl_expr (absyn_decl_expr_t *node)
-{
-   node->decl_lst = handle_decl_lst (node->decl_lst);
-   node->expr = handle_expr (node->expr);
-   return node;
-}
-
-static list_t *handle_decl_lst (list_t *lst)
-{
-   list_t *tmp;
-
-   for (tmp = lst; tmp != NULL; tmp = tmp->next)
-   {
-      absyn_decl_t *decl = tmp->data;
-
-      switch (decl->type) {
-         case ABSYN_FUN_DECL:
-            decl->fun_decl = handle_fun_decl (decl->fun_decl);
-            break;
-
-         case ABSYN_MODULE_DECL:
-            decl->module_decl = handle_module_decl (decl->module_decl);
-            break;
-
-         case ABSYN_TY_DECL:
-            break;
-
-         case ABSYN_VAL_DECL:
-            decl->val_decl = handle_val_decl (decl->val_decl);
-            break;
-
-#ifndef NEW_GRAMMAR
-         default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad decl->type");
-            exit(1);
-#endif
-      }
-   }
-
-   return lst;
-}
-
-static absyn_exn_handler_t *handle_exn_handler (absyn_exn_handler_t *node)
-{
-   node->handler_lst = handle_exn_lst (node->handler_lst);
-
-   if (node->default_handler != NULL)
-      node->default_handler->expr = handle_expr (node->default_handler->expr);
-
-   return node;
-}
-
-static list_t *handle_exn_lst (list_t *lst)
-{
-   list_t *tmp;
-
-   for (tmp = lst; tmp != NULL; tmp = tmp->next)
-   {
-      absyn_exn_lst_t *node = tmp->data;
-      node->expr = handle_expr(node->expr);
-   }
-
-   return lst;
-}
-
-static absyn_exn_expr_t *handle_exn_expr (absyn_exn_expr_t *node)
-{
-   node->values = handle_record_assn (node->values);
-   return node;
-}
-
-static absyn_expr_t *handle_expr (absyn_expr_t *node)
+static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 {
    switch (node->kind) {
       case ABSYN_BOOLEAN:
@@ -398,40 +328,47 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
 
       /* Convert case-exprs into decl-exprs, then recurse over those. */
       case ABSYN_CASE:
+      {
+         absyn_decl_expr_t *case_expr;
+
          node->kind = ABSYN_DECL;
-         node->decl_expr = handle_decl_expr(handle_case_expr (node->case_expr));
+         case_expr = case_visit_case_expr (funcs, node->case_expr);
+         node->decl_expr = funcs->visit_decl_expr(funcs, case_expr);
          break;
+      }
 
       case ABSYN_DECL:
-         node->decl_expr = handle_decl_expr (node->decl_expr);
+         node->decl_expr = funcs->visit_decl_expr (funcs, node->decl_expr);
          break;
 
       case ABSYN_EXN:
-         node->exn_expr = handle_exn_expr (node->exn_expr);
+         node->exn_expr = funcs->visit_exn_expr (funcs, node->exn_expr);
          break;
 
       case ABSYN_EXPR_LST:
-         node->expr_lst = handle_expr_lst (node->expr_lst);
+         node->expr_lst = funcs->visit_expr_lst (funcs, node->expr_lst);
          break;
 
       case ABSYN_FUN_CALL:
-         node->fun_call_expr = handle_fun_call (node->fun_call_expr);
+         node->fun_call_expr = funcs->visit_fun_call (funcs, 
+                                                      node->fun_call_expr);
          break;
 
       case ABSYN_IF:
-         node->if_expr = handle_if_expr (node->if_expr);
+         node->if_expr = funcs->visit_if_expr (funcs, node->if_expr);
          break;
 
       case ABSYN_RAISE:
-         node->raise_expr = handle_expr (node->raise_expr);
+         node->raise_expr = funcs->visit_expr (funcs, node->raise_expr);
          break;
 
       case ABSYN_RECORD_ASSN:
-         node->record_assn_lst = handle_record_assn (node->record_assn_lst);
+         node->record_assn_lst =
+            funcs->visit_record_assn (funcs, node->record_assn_lst);
          break;
 
       case ABSYN_RECORD_REF:
-         node->record_ref = handle_record_ref (node->record_ref);
+         node->record_ref = funcs->visit_record_ref (funcs, node->record_ref);
          break;
 
 #ifndef NEW_GRAMMAR
@@ -442,75 +379,8 @@ static absyn_expr_t *handle_expr (absyn_expr_t *node)
    }
 
    if (node->exn_handler != NULL)
-      node->exn_handler = handle_exn_handler (node->exn_handler);
+      node->exn_handler = funcs->visit_exn_handler (funcs, node->exn_handler);
 
-   return node;
-}
-
-static list_t *handle_expr_lst (list_t *lst)
-{
-   list_t *tmp;
-
-   for (tmp = lst; tmp != NULL; tmp = tmp->next)
-      tmp->data = handle_expr (tmp->data);
-
-   return lst;
-}
-
-static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node)
-{
-   list_t *tmp;
-
-   for (tmp = node->arg_lst; tmp != NULL; tmp = tmp->next)
-      tmp->data = handle_expr (tmp->data);
-
-   return node;
-}
-
-static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node)
-{
-   node->body = handle_decl_expr (node->body);
-   return node;
-}
-
-static absyn_if_expr_t *handle_if_expr (absyn_if_expr_t *node)
-{
-   node->test_expr = handle_expr (node->test_expr);
-   node->then_expr = handle_expr (node->then_expr);
-   node->else_expr = handle_expr (node->else_expr);
-   return node;
-}
-
-static absyn_module_decl_t *handle_module_decl (absyn_module_decl_t *node)
-{
-   node->decl_lst = handle_decl_lst (node->decl_lst);
-   return node;
-}
-
-static list_t *handle_record_assn (list_t *lst)
-{
-   list_t *tmp;
-
-   for (tmp = lst; tmp != NULL; tmp = tmp->next)
-   {
-      absyn_record_assn_t *node = tmp->data;
-      node->expr = handle_expr (node->expr);
-   }
-
-   return lst;
-}
-
-static absyn_record_ref_t *handle_record_ref (absyn_record_ref_t *node)
-{
-   if (node->rec->kind == ABSYN_FUN_CALL)
-      handle_fun_call (node->rec->fun_call_expr);
-
-   return node;
-}
-
-static absyn_val_decl_t *handle_val_decl (absyn_val_decl_t *node)
-{
-   node->init = handle_expr (node->init);
    return node;
 }
 
