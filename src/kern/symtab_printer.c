@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.10 2005/04/27 02:00:04 chris Exp $
+ * $Id: symtab_printer.c,v 1.11 2005/06/29 23:59:39 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -59,6 +59,9 @@ void symbol_dump (FILE *f, symbol_t *sym)
       case SYM_VALUE:
          fprintf (f, "VALUE{%ls,%ls}:%ls", STR(sym->name), STR(sym->label),
                      sym->info.ty == NULL ? L"" : ty_to_str(sym->info.ty));
+         break;
+
+      default:
          break;
    }
 }
