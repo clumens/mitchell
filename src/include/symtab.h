@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.15 2005/04/23 20:36:23 chris Exp $
+ * $Id: symtab.h,v 1.16 2005/06/29 23:45:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -45,9 +45,14 @@
  * still coexist.  Note:  SYM_FUNCTION and SYM_VALUE are different enum values,
  * but must be handled the same by the hashing function.  Same with SYM_EXN and
  * SYM_TYPE.
+ *
+ * We are overloading the use of this enum.  It is also used in AST id-expr
+ * nodes to describe exactly how the id-expr is used.  Therefore, we need
+ * a SYM_NONE for things like record element references that don't go in any
+ * subtable.
  */
 typedef enum { SYM_EXN, SYM_FUNCTION, SYM_MODULE, SYM_TYPE,
-               SYM_VALUE } subtable_t;
+               SYM_VALUE, SYM_NONE } subtable_t;
 
 typedef struct {
    struct ty_t *retval;

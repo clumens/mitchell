@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.47 2005/05/05 02:40:14 chris Exp $
+ * $Id: semant.c,v 1.48 2005/06/29 23:45:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -753,6 +753,7 @@ static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
    stack = enter_scope (stack);
    check_decl_lst (node->decl_lst, stack);
    node->ty = check_expr (node->expr, stack);
+   node->symtab = stack->symtab;
    stack = leave_scope (stack, L"decl-expr");
 
    return node->ty;
@@ -1102,6 +1103,7 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
    /* Check the type of the handler expression in that new environment. */
    node->ty = node->expr->ty = check_expr (node->expr, stack);
    
+   node->symtab = stack->symtab;
    stack = leave_scope (stack, L"exn-handler");
    return node->ty;
 }

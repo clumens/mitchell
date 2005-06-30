@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.6 2005/05/04 02:17:24 chris Exp $
+ * $Id: desugar_case.c,v 1.7 2005/06/29 23:45:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -276,6 +276,7 @@ static absyn_decl_expr_t *handle_case_expr (absyn_case_expr_t *node)
    retval->column = node->column;
    retval->parent = node->parent;
    retval->ty = node->ty;
+   retval->symtab = NULL;
 
    bl = make_bl (LINK_DECL_EXPR, retval);
 

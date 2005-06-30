@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.33 2005/05/04 23:29:06 chris Exp $
+ * $Id: absyn.h,v 1.34 2005/06/29 23:45:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -59,6 +59,7 @@ typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL, ABSYN_EXN,
 typedef struct absyn_id_expr_t {
    unsigned int lineno, column;
    backlink_t *parent;
+   subtable_t kind;
 
    mstring_t *symbol, *label;
    struct absyn_id_expr_t *sub;
@@ -85,6 +86,7 @@ typedef struct {
    unsigned int lineno, column;
    backlink_t *parent;
    ty_t *ty;
+   symtab_t *symtab;
 
    list_t *decl_lst;                      /* list of absyn_decl_t */
    struct absyn_expr_t *expr;
@@ -168,6 +170,7 @@ typedef struct absyn_exn_lst_t {
    unsigned int lineno, column;
    backlink_t *parent;
    ty_t *ty;
+   symtab_t *symtab;
 
    absyn_id_expr_t *exn_id;
    mstring_t *id;
@@ -252,6 +255,7 @@ typedef struct {
 typedef struct {
    unsigned int lineno, column;
    backlink_t *parent;
+   symtab_t *symtab;
 
    absyn_id_expr_t *symbol;
    list_t *decl_lst;                      /* list of absyn_decl_t */

@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.46 2005/05/04 23:29:09 chris Exp $
+ * $Id: parse.c,v 1.47 2005/06/29 23:45:05 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -544,6 +544,7 @@ static absyn_decl_expr_t *parse_decl_expr (backlink_t *parent)
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->parent = parent;
+   retval->symtab = NULL;
 
    bl = make_bl (LINK_DECL_EXPR, retval);
 
@@ -651,6 +652,7 @@ static list_t *parse_exn_lst (backlink_t *parent)
          new_ele->lineno = new_ele->expr->lineno;
          new_ele->column = new_ele->expr->column;
          new_ele->parent = parent;
+         new_ele->symtab = NULL;
 
          retval = list_append (retval, new_ele);
 
@@ -667,6 +669,7 @@ static list_t *parse_exn_lst (backlink_t *parent)
          new_ele->lineno = new_ele->exn_id->lineno;
          new_ele->column = new_ele->exn_id->column;
          new_ele->parent = parent;
+         new_ele->symtab = NULL;
 
          match(IDENTIFIER);
          new_ele->id = last_tok->string;
@@ -772,6 +775,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
    sym->parent = bl;
+   sym->kind = SYM_FUNCTION;
 
    retval->symbol = sym;
 
@@ -818,6 +822,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
       expr->decl_expr->parent = make_bl (LINK_EXPR, expr);
       expr->decl_expr->ty = retval->body->ty;
       expr->decl_expr->decl_lst = NULL;
+      expr->decl_expr->symtab = NULL;
       expr->decl_expr->expr = retval->body;
 
       /* Reparent the original expression. */
@@ -851,8 +856,13 @@ static absyn_id_expr_t *parse_id (backlink_t *parent)
    if (tok->type == DOT)
    {
       match(DOT);
+      retval->kind = SYM_MODULE;
       retval->sub = parse_id(make_bl(LINK_ID_EXPR, retval));
    }
+   else if (parent->kind == LINK_TY_DECL)
+      retval->kind = SYM_TYPE;
+   else
+      retval->kind = SYM_VALUE;
 
    LEAVING(__FUNCTION__);
    return retval;
@@ -888,6 +898,12 @@ static list_t *parse_id_lst (backlink_t *parent)
       sym->lineno = last_tok->lineno;
       sym->column = last_tok->column;
       sym->parent = bl;
+
+      if (parent->kind == LINK_FUN_DECL)
+         sym->kind = SYM_VALUE;
+      else
+         sym->kind = SYM_NONE;
+      
       new_ele->symbol = sym;
 
       match(COLON);
@@ -945,6 +961,7 @@ static absyn_module_decl_t *parse_module_decl (backlink_t *parent)
    retval->lineno = last_tok->lineno;
    retval->column = last_tok->column;
    retval->parent = parent;
+   retval->symtab = NULL;
 
    bl = make_bl (LINK_MODULE_DECL, retval);
 
@@ -955,6 +972,7 @@ static absyn_module_decl_t *parse_module_decl (backlink_t *parent)
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
    sym->parent = bl;
+   sym->kind = SYM_MODULE;
    
    retval->symbol = sym;
 
@@ -1122,6 +1140,7 @@ static list_t *parse_record_assn_lst (backlink_t *parent)
       sym->lineno = last_tok->lineno;
       sym->column = last_tok->column;
       sym->parent = bl;
+      sym->kind = SYM_NONE;
 
       new_ele->symbol = sym;
       match(ASSIGN);
@@ -1157,6 +1176,7 @@ static absyn_id_expr_t *parse_record_ref (backlink_t *parent)
    retval->parent = parent;
    retval->symbol = last_tok->string;
    retval->label = NULL;
+   retval->kind = SYM_NONE;
 
    if (tok->type == PIPE)
       retval->sub = parse_record_ref (make_bl(LINK_ID_EXPR, retval));
@@ -1181,7 +1201,9 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
    ENTERING (__FUNCTION__);
    MALLOC (retval, sizeof(absyn_expr_t));
 
-   /* This backlink is wrong so we'll need to set it in the cases below. */
+   /* This backlink is wrong so we'll need to set it in the cases below.  The
+    * type of the identifier is most likely also wrong, so set it below too.
+    */
    id = parse_id (parent);
 
    /* These will get set the same in each case regardless. */
@@ -1192,6 +1214,8 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
 
    if (in_set (tok, FOLLOW_SET[SET_SYM_REF]))
    {
+      id->kind = SYM_VALUE;
+
       retval->kind = ABSYN_ID;
       retval->identifier = id;
       retval->identifier->parent = make_bl (LINK_ID_EXPR, retval);
@@ -1202,6 +1226,8 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
 
       MALLOC (retval->record_ref, sizeof(absyn_record_ref_t));
       rec_bl = make_bl (LINK_RECORD_REF, retval->record_ref);
+
+      id->kind = SYM_VALUE;
 
       retval->kind = ABSYN_RECORD_REF;
       retval->record_ref->lineno = id->lineno;
@@ -1228,6 +1254,8 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
        */
       MALLOC (fun_call, sizeof(absyn_fun_call_t));
       fun_bl = make_bl (LINK_FUN_CALL, fun_call);
+
+      id->kind = SYM_FUNCTION;
 
       fun_call->lineno = retval->lineno;
       fun_call->column = retval->column;
@@ -1272,6 +1300,8 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
 
       MALLOC (retval->exn_expr, sizeof(absyn_exn_expr_t));
       exn_bl = make_bl (LINK_EXN, retval->exn_expr);
+
+      id->kind = SYM_EXN;
 
       retval->kind = ABSYN_EXN;
       retval->exn_expr->lineno = retval->lineno;
@@ -1448,6 +1478,7 @@ static absyn_ty_decl_t *parse_ty_decl (backlink_t *parent)
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
    sym->parent = bl;
+   sym->kind = SYM_TYPE;
 
    retval->symbol = sym;
 
@@ -1485,6 +1516,7 @@ static absyn_val_decl_t *parse_val_decl (backlink_t *parent)
    sym->lineno = last_tok->lineno;
    sym->column = last_tok->column;
    sym->parent = bl;
+   sym->kind = SYM_VALUE;
 
    retval->symbol = sym;
 
