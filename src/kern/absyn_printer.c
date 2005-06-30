@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.33 2005/06/29 23:45:05 chris Exp $
+ * $Id: absyn_printer.c,v 1.34 2005/06/30 00:49:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -390,7 +390,7 @@ static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int il)
    print_id_lst_t (node->formals, il+2);
    
    fprintf (out, "\n%*sbody =", INDENT(il+1), "");
-   print_expr_t (node->body, il+2);
+   print_decl_expr_t (node->body, il+2);
 
    fprintf (out, "\n%*s}", INDENT(il), "");
 }

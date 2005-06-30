@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.7 2005/06/29 23:45:05 chris Exp $
+ * $Id: desugar_case.c,v 1.8 2005/06/30 00:49:15 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -469,7 +469,7 @@ static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node)
 
 static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node)
 {
-   node->body = handle_expr (node->body);
+   node->body = handle_decl_expr (node->body);
    return node;
 }
 

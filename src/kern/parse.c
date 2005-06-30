@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.47 2005/06/29 23:45:05 chris Exp $
+ * $Id: parse.c,v 1.48 2005/06/30 00:49:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -754,6 +754,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
 {
    absyn_fun_decl_t *retval;
    absyn_id_expr_t *sym;
+   absyn_expr_t *body;
    backlink_t *bl;
 
    ENTERING (__FUNCTION__);
@@ -796,41 +797,34 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
    }
 
    match(ASSIGN);
-   retval->body = parse_expr(bl);
+   body = parse_expr(bl);
 
    /* If the body's not a decl-expr, we need to add one into the function
     * anyway so we have a place to lift things during AST simplification.  If
     * the decl-expr ends up with no decls, we'll remove it later.
     */
-   if (retval->body->kind != ABSYN_DECL)
+   if (body->kind != ABSYN_DECL)
    {
-      absyn_expr_t *expr;
+      absyn_decl_expr_t *decl_expr;
 
-      /* Make the new expr and fill it in. */
-      MALLOC(expr, sizeof(absyn_expr_t));
-      expr->lineno = retval->body->lineno;
-      expr->column = retval->body->column;
-      expr->parent = bl;
-      expr->exn_handler = NULL;
-      expr->kind = ABSYN_DECL;
-      expr->ty = retval->body->ty;
+      /* Make the new decl-expr to hold the body expr. */
+      MALLOC(decl_expr, sizeof(absyn_decl_expr_t));
+      decl_expr->lineno = body->lineno;
+      decl_expr->column = body->column;
+      decl_expr->parent = bl;
+      decl_expr->ty = body->ty;
+      decl_expr->decl_lst = NULL;
+      decl_expr->symtab = NULL;
+      decl_expr->expr = body;
 
-      /* Make the new decl-expr to be held in the new outer expr. */
-      MALLOC(expr->decl_expr, sizeof(absyn_decl_expr_t));
-      expr->decl_expr->lineno = retval->body->lineno;
-      expr->decl_expr->column = retval->body->column;
-      expr->decl_expr->parent = make_bl (LINK_EXPR, expr);
-      expr->decl_expr->ty = retval->body->ty;
-      expr->decl_expr->decl_lst = NULL;
-      expr->decl_expr->symtab = NULL;
-      expr->decl_expr->expr = retval->body;
+      /* Reparent the body expression. */
+      decl_expr->expr->parent = make_bl (LINK_DECL_EXPR, decl_expr);
 
-      /* Reparent the original expression. */
-      expr->decl_expr->expr->parent = make_bl (LINK_DECL_EXPR, expr->decl_expr);
-
-      /* And finally link the new expr in as the function's body. */
-      retval->body = expr;
+      /* And finally link the new decl-expr in as the function's body. */
+      retval->body = decl_expr;
    }
+   else
+      retval->body = body->decl_expr;
 
    LEAVING(__FUNCTION__);
    return retval;

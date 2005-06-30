@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.48 2005/06/29 23:45:05 chris Exp $
+ * $Id: semant.c,v 1.49 2005/06/30 00:49:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -750,11 +750,22 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
 static ty_t *check_decl_expr (absyn_decl_expr_t *node, tabstack_t *stack)
 {
-   stack = enter_scope (stack);
+   unsigned int entered_scope = 0;
+
+   if (node->symtab == NULL)
+   {
+      stack = enter_scope (stack);
+      entered_scope = 1;
+   }
+
    check_decl_lst (node->decl_lst, stack);
    node->ty = check_expr (node->expr, stack);
-   node->symtab = stack->symtab;
-   stack = leave_scope (stack, L"decl-expr");
+
+   if (entered_scope == 1)
+   {
+      node->symtab = stack->symtab;
+      stack = leave_scope (stack, L"decl-expr");
+   }
 
    return node->ty;
 }
@@ -1391,8 +1402,12 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
       formals_ast = formals_ast->next;
    }
 
-   /* Now check the function body within this augmented environment. */
-   body_ty = check_expr (node->body, stack);
+   /* Now check the function body within this augmented environment.  Note:
+    * in order to make free value analysis work right later, we need to make
+    * sure that the function parameters are defined in the body's environment.
+    */
+   node->body->symtab = stack->symtab;
+   body_ty = check_decl_expr (node->body, stack);
 
    /* Check that the body's return value matches with what the stated return
     * type was.

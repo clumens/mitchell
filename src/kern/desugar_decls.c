@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.8 2005/05/04 23:29:09 chris Exp $
+ * $Id: desugar_decls.c,v 1.9 2005/06/30 00:49:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -92,7 +92,6 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    absyn_fun_decl_t *retval;
 
    MALLOC (retval, sizeof(absyn_fun_decl_t));
-   MALLOC (retval->body, sizeof(absyn_expr_t));
 
    /* First create the shell of the new fun-decl, which will hold an expr
     * inside it.
@@ -110,14 +109,11 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
     */
    retval->symtab = symtab_new();
 
-   /* Now create the inner expr, which will hold a decl-expr. */
-   retval->body->lineno = in->lineno;
-   retval->body->column = in->column;
-   retval->body->parent = in->parent;
-   retval->body->kind = ABSYN_DECL;
-   retval->body->exn_handler = NULL;
-   retval->body->ty = in->ty;
-   retval->body->decl_expr = in;
+   /* Now link in the decl-expr as the function's body, making sure to reparent
+    * it.
+    */
+   retval->body = in;
+   in->parent = make_bl (LINK_FUN_DECL, retval);
 
    return retval;
 }
@@ -378,14 +374,7 @@ static absyn_fun_call_t *handle_fun_call (absyn_fun_call_t *node)
 
 static absyn_fun_decl_t *handle_fun_decl (absyn_fun_decl_t *node)
 {
-   if (node->body->kind == ABSYN_DECL)
-   {
-      decl_return_t *decl = handle_decl_expr (node->body->decl_expr, 0);
-      node->body->decl_expr = decl->decl_expr;
-   }
-   else
-      node->body = handle_expr (node->body);
-
+   node->body = ((decl_return_t *) handle_decl_expr (node->body, 0))->decl_expr;
    return node;
 }
 
