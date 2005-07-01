@@ -1,5 +1,5 @@
 #!/bin/bash
-# $Id: run-tests.sh,v 1.3 2005/07/01 01:38:46 chris Exp $
+# $Id: run-tests.sh,v 1.4 2005/07/01 04:40:40 chris Exp $
 
 # Options to pass to the mitchell compiler for all tests.
 GLOBAL_OPTS="-Werror"
@@ -26,14 +26,14 @@ for t in tests/*.mitchell; do
    fi
 
    # Extract information about the test from it.
-	LOCAL_OPTS="$(grep '# Options' $t | cut -d':' -f2- | crunch)"
+   LOCAL_OPTS="$(grep '# Options' $t | cut -d':' -f2- | crunch)"
    EXPECTED="$(grep '# Expected' $t | cut -d':' -f2 | crunch)"
 
-	echo -n "$(basename $t)... "
+   echo -n "$(basename $t)... "
 
    # Run and capture the return code.
-	errmsg=$(src/kern/mitchell $GLOBAL_OPTS $LOCAL_OPTS $t 2>&1)
-	retval=$?
+   errmsg=$(src/kern/mitchell $GLOBAL_OPTS $LOCAL_OPTS $t 2>&1)
+   retval=$?
 
    # Interpret return code.
    if [[ $retval > 128 ]]; then

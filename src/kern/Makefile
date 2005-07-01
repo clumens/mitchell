@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.31 2005/06/30 12:52:56 chris Exp $
+# $Id: Makefile,v 1.32 2005/07/01 04:41:12 chris Exp $
 
 CC = gcc
 override CFLAGS += -O2 -Wall -I../include
@@ -9,8 +9,8 @@ ifdef DEBUG
 endif
 
 OBJS = absyn_printer.o absyn_walk.o desugar.o desugar_case.o desugar_decls.o \
-		 lift.o list.o main.o parse.o semant.o str.o symtab.o symtab_printer.o \
-		 tokenize.o
+	lift.o list.o main.o parse.o semant.o str.o symtab.o symtab_printer.o \
+	tokenize.o
 
 all: mitchell
 
