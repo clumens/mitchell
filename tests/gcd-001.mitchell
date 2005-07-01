@@ -1,5 +1,6 @@
 # Description:  Finding the GCD of two numbers via Euclid's algorithm
 # Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ gcd: integer (a: integer, b: integer) ←

@@ -1,5 +1,6 @@
 # Description:  Factorial computation
 # Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ fact: integer (n: integer) ←

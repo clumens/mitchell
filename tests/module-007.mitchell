@@ -1,5 +1,6 @@
 # Description:  Two modules making mutually recursive calls.
 # Expected:  PASS
+# Disabled
 
 ℳ First ← decl
    ƒ one: integer () ← 1

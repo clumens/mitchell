@@ -1,5 +1,6 @@
 # Description:  Calculate the Fibonacci number using slow, simple recursion
 # Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ fib: integer (n: integer) ←

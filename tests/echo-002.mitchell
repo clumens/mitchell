@@ -1,6 +1,6 @@
-# A version of echo that uses the C-style Main.main interface.
-# Requires: preview 3
-# Expected: PASS
+# Description:  A version of echo that uses the C-style Main.main interface.
+# Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ recho: string (strs: list string) ←

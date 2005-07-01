@@ -1,5 +1,6 @@
 # Description:  Nested if-then-else expressions
 # Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ foo: integer () ←

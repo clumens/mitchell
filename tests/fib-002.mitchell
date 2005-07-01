@@ -1,5 +1,6 @@
 # Description:  Calculate the Fibonacci number using single recursion
 # Expected:  PASS
+# Disabled
 
 ℳ Main ← decl
    ƒ l: integer (n1: integer, n2: integer, n: integer) ←

@@ -1,13 +1,27 @@
 #!/bin/sh
+# $Id: run-tests.sh,v 1.2 2005/06/30 22:52:42 chris Exp $
 
 GLOBAL_OPTS="-Werror"
 
-passed=0
-failed=0
 dumped=0
+failed=0
+passed=0
+skipped=0
+
+crunch() {
+  while read FOO ; do
+    echo $FOO
+  done
+}
 
 for t in tests/*.mitchell; do
-	LOCAL_OPTS="$(grep Options $t | cut -d':' -f2-)"
+   if [ ! -z "$(grep Disabled $t)" ]; then
+      skipped=$(expr $skipped + 1)
+      continue
+   fi
+
+	LOCAL_OPTS="$(grep Options $t | cut -d':' -f2- | crunch)"
+   EXPECTED="$(grep Expected $t | cut -d':' -f2 | crunch)"
 
 	echo -n "$(basename $t)... "
 
@@ -17,8 +31,8 @@ for t in tests/*.mitchell; do
 	if [ $retval -gt 128 ]; then
       dumped=$(expr $dumped + 1)
 		echo "FAIL (CORE DUMPED)"
-	elif [ $retval -eq 0 -a ! -z "$(grep PASS $t)" -o  \
-	       $retval -eq 1 -a ! -z "$(grep FAIL $t)" ]; then
+   elif [ $retval -eq 0 -a $EXPECTED = "PASS" -o \
+          $retval -eq 1 -a $EXPECTED = "FAIL" ]; then
 		passed=$(expr $passed + 1)
 		echo "PASS"
 	else
@@ -27,7 +41,8 @@ for t in tests/*.mitchell; do
 	fi
 done
 
-echo "----------"
+echo "---------------"
 echo "$passed tests passed"
 echo "$failed tests failed"
 echo "$dumped tests dumped core"
+echo "$skipped tests skipped"
