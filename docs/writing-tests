@@ -1,0 +1,38 @@
+General Rules
+=============
+- Each test case should test exactly one feature or bug.
+- The test case should be given a simple but descriptive name - either for
+  what piece of the language it tests or for a bug - followed by a three
+  digit number.  This number means that several test cases may be written
+  for each feature/bug.
+- Remember to write test cases that are expected to fail as well as ones
+  that are expected to pass.
+- The test case must include some special purpose comments at the beginning,
+  discussed below.
+- When a bug is found, try to write a test case as soon as it is fixed and
+  add it to the suite so we can make sure it doesn't come up again in the
+  future.
+
+Test Case Comments
+==================
+Each test case must include a number of special comments right off.  These
+comments are used by the test suite controller to know what to expect,
+report results, etc.  In addition, there are a number of optional and
+case-specific other comments.
+
+The following are required:
+
+- Description - one line of free text describing exactly what the case tests
+- Expected - PASS or FAIL
+
+The following may be required:
+
+- HowFail - If the test is expected to FAIL, this comment is required and is
+  expected to be some output from the compiler.  The intent here is that we
+  can verify that the test is failing in the way it should.
+
+The following are optional:
+
+- Disabled - If present, this comment indicates the test is currently not run.
+- Options - Options to pass to the compiler
+- Requires - The compiler version required to use this test.
