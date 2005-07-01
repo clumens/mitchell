@@ -1,5 +1,6 @@
 # Description:  Function with duplicate argument names.
 # Expected:  FAIL
+# HowFail:  a: duplicate formal parameter already exists
 
 ℳ Main ← decl
    ƒ asdf: integer (a: boolean, a: boolean) ← 47

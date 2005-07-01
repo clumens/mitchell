@@ -1,5 +1,6 @@
 # Description:  Use of inferred type does not match actual type
 # Expected:  FAIL
+# HowFail:  type check error: if-expr test must return bolean type
 
 ℳ Main ← decl
    ʋ x ← 47

@@ -21,5 +21,4 @@
 - symbol table / type checker:
    - add type information to standard library stubs
 - testing:
-   - give tests knowledge of how they're expected to fail
    - automatic AST & simplification testing

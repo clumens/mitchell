@@ -1,5 +1,6 @@
 # Description:  Modules have a prototype section, like in the old days
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    ƒ main: integer ()

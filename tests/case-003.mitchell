@@ -1,5 +1,6 @@
 # Description:  Empty branch-lst
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    ƒ foo: integer () ←

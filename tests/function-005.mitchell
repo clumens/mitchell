@@ -1,5 +1,6 @@
 # Description:  Function with no body
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    ƒ asdf: integer ()

@@ -1,5 +1,6 @@
 # Description:  Function tries to return a type it defines itself.
 # Expected:  FAIL
+# HowFail:  some_ty: unknown symbol referenced
 
 ℳ Main ← decl
    ƒ foo: some_ty () ← decl

@@ -1,5 +1,6 @@
 # Description:  Misplaced default expression
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    ʋ i: integer ← 47

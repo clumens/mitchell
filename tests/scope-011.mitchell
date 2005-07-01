@@ -1,5 +1,6 @@
 # Description:  A group of recursive types broken up by a function.
 # Expected:  FAIL
+# HowFail:  data: unknown symbol referenced
 
 ℳ Main ← decl
    τ node ← { data: data, left: node, right: node }

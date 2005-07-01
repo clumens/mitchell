@@ -1,5 +1,6 @@
 # Description:  Type of actual arguments do not match formal parameters
 # Expected:  FAIL
+# HowFail:  type check error: type of actual parameter does not match type of formal
 
 ℳ Main ← decl
    ƒ asdf: integer (a: integer, b: string, c: boolean) ←

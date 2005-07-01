@@ -1,5 +1,6 @@
 # Description:  else clause is required
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    ƒ foo: integer () ←

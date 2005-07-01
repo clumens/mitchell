@@ -1,5 +1,6 @@
 # Description:  Handler without binding
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    τ Empty ← ℰ { msg: string }

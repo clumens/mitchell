@@ -1,5 +1,6 @@
 # Description:  An infinite loop of types
 # Expected:  FAIL
+# HowFail:  type check error: symbol is in an infinite type loop
 
 ℳ Main ← decl
    τ a ← b

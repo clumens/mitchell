@@ -1,5 +1,6 @@
 # Description:  Values and functions are in the same namespace
 # Expected:  FAIL
+# HowFail:  a: duplicate symbol already exists in this scope
 
 ℳ Main ← decl
    ʋ a: integer ← 47

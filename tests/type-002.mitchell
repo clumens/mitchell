@@ -1,5 +1,6 @@
 # Description:  Wrong syntax on type definition
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    τ uid: integer

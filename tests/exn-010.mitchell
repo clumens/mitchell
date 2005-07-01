@@ -1,5 +1,6 @@
 # Description:  Using parens to disambiguate
 # Expected:  FAIL
+# HowFail:  parse error
 
 ℳ Main ← decl
    τ Exn ← ℰ { x: integer }
