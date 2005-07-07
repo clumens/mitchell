@@ -15,7 +15,8 @@
    ƒ lst2b: list list string () ←
       lst2a ([[0, 1, 2], [3, 4, 5]])
 
-   ƒ lst3: list bool () ← []
+   # Can't yet have empty lists - need polymorphic typing first.
+   #ƒ lst3: list bool () ← []
 
    ƒ main: string () ← ""
 end
