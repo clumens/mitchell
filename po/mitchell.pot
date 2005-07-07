@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-07 01:01-0400\n"
+"POT-Creation-Date: 2005-07-07 01:17-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -367,7 +367,7 @@ msgstr ""
 msgid "Referenced symbol is a value instead of a function."
 msgstr ""
 
-#: ../src/kern/semant.c:1291
+#: ../src/kern/semant.c:1291 ../src/kern/semant.c:1379
 msgid "Referenced symbol has no type information."
 msgstr ""
 
@@ -390,10 +390,6 @@ msgstr ""
 
 #: ../src/kern/semant.c:1338
 msgid "formal parameter type"
-msgstr ""
-
-#: ../src/kern/semant.c:1379
-msgid "referenced symbol has no type information"
 msgstr ""
 
 #: ../src/kern/semant.c:1409

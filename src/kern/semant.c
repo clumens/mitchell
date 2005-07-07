@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.50 2005/07/07 05:04:20 chris Exp $
+ * $Id: semant.c,v 1.51 2005/07/07 05:17:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1376,7 +1376,7 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    if (fun_sym->info.function == NULL)
    {
       MITCHELL_INTERNAL_ERROR (cconfig.filename, 
-                               _("referenced symbol has no type information"));
+                               _("Referenced symbol has no type information."));
       fprintf (stderr, _("referenced symbol: %ls\n"), node->symbol->symbol);
       exit(1);
    }
