@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.11 2005/06/30 12:52:56 chris Exp $
+ * $Id: desugar.c,v 1.12 2005/07/07 05:04:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -54,6 +54,7 @@
 #include "desugar.h"
 #include "error.h"
 #include "memory.h"
+#include "translate.h"
 
 /* Entry point into the desugaring passes. */
 ast_t *desugar_ast (ast_t *ast)
@@ -63,7 +64,7 @@ ast_t *desugar_ast (ast_t *ast)
    walk_funcs = init_case_pass();
    ast = desugar_case_exprs (walk_funcs, ast);
    if (cconfig.debug.dump_absyn)
-      print_absyn (ast, &cconfig, "case-removed abstract syntax tree");
+      print_absyn (ast, &cconfig, _("case-removed abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_DESUGAR_CASE)
       exit(0);
@@ -71,7 +72,7 @@ ast_t *desugar_ast (ast_t *ast)
    walk_funcs = init_decl_pass();
    ast = desugar_decl_exprs (walk_funcs, ast);
    if (cconfig.debug.dump_absyn)
-      print_absyn (ast, &cconfig, "decl-promoted abstract syntax tree");
+      print_absyn (ast, &cconfig, _("decl-promoted abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_DESUGAR_DECL)
       exit(0);
@@ -161,7 +162,7 @@ backlink_t *find_lexical_parent (backlink_t *bl)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad backlink type");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad backlink type"));
             exit(1);
 #endif
       }

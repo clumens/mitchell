@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.26 2005/03/29 05:52:56 chris Exp $
+ * $Id: tokenize.c,v 1.27 2005/07/07 05:04:21 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -37,20 +37,21 @@
 #include "error.h"
 #include "memory.h"
 #include "tokens.h"
+#include "translate.h"
 
 /* Maps a token value to an identifying string, for error reporting
  * purposes.  Note that the order of these strings must match up with the
  * order of the token_val_t structure in tokens.h.
  */
-const char *token_map[] = {
-   "BOOLEAN", "EXN", "IDENTIFIER", "INTEGER", "LIST", "STRING",
+const wchar_t *token_map[] = {
+   L"BOOLEAN", L"EXN", L"IDENTIFIER", L"INTEGER", L"LIST", L"STRING",
 
-   "ASSIGN", "BOTTOM", "CASE", "COLON", "COMMA", "DECL", "DOT", "ELSE", "END",
-   "FUNCTION", "HANDLE", "IF", "IN", "LBRACE", "LBRACK", "LPAREN", "MAPSTO",
-   "MODULE", "PIPE", "RAISE", "RBRACE", "RBRACK", "RPAREN", "THEN", "TYPE",
-   "VAL",
+   L"ASSIGN", L"BOTTOM", L"CASE", L"COLON", L"COMMA", L"DECL", L"DOT", L"ELSE",
+   L"END", L"FUNCTION", L"HANDLE", L"IF", L"IN", L"LBRACE", L"LBRACK",
+   L"LPAREN", L"MAPSTO", L"MODULE", L"PIPE", L"RAISE", L"RBRACE", L"RBRACK",
+   L"RPAREN", L"THEN", L"TYPE", L"VAL",
    
-   "COMMENT", "DBLQUOTE", "ENDOFFILE"};
+   L"COMMENT", L"DBLQUOTE", L"ENDOFFILE"};
 
 static unsigned int lineno = 1;
 static unsigned int column = 0;
@@ -84,9 +85,9 @@ static __inline__ wint_t read_char (FILE *f)
 
    if (errno == EILSEQ)
    {
-      ERROR ("fgetwc returned EILSEQ.  Please check that $LANG is set to a "
-             "UTF-8 aware\n\tlocale and that mitchell was compiled with "
-             "gcc-3.4 or more recent.\n\tExiting.");
+      ERROR (_("Unable to read character.  Please check that $LANG is set to a "
+               "UTF-8 aware\n\tlocale and that mitchell was compiled with "
+               "gcc-3.4 or more recent.\n\tExiting."));
       fclose (f);
       exit (1);
    }
@@ -107,9 +108,9 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
 {
    if (ungetwc (ch, f) == WEOF && errno == EILSEQ)
    {
-      ERROR ("ungetwc returned EILSEQ.  Please check that $LANG is set to a "
-             "UTF-8 aware\n\tlocale and that mitchell was compiled with "
-             "gcc-3.4 or more recent.\n\tExiting.");
+      ERROR (_("Unable to read character.  Please check that $LANG is set to a "
+               "UTF-8 aware\n\tlocale and that mitchell was compiled with "
+               "gcc-3.4 or more recent.\n\tExiting."));
       fclose (f);
       exit (1);
    }
@@ -200,7 +201,8 @@ static mstring_t *string_state (FILE *f)
          if ((ch = read_char (f)) == WEOF)
          {
             PARSE_ERROR (cconfig.filename, lineno, column);
-            fprintf (stderr, "\tpremature end of file while reading string\n");
+            fprintf (stderr, _("\tPremature end of file while reading "
+                               "string.\n"));
             fclose(f);
             exit(1);
          }
@@ -225,8 +227,8 @@ static mstring_t *string_state (FILE *f)
                    (str[3] = read_char(f)) == WEOF)
                {
                   PARSE_ERROR (cconfig.filename, lineno, column);
-                  fprintf (stderr, "\tpremature end of file while reading "
-                                   "string\n");
+                  fprintf (stderr, _("\tPremature end of file while reading "
+                                     "string.\n"));
                   fclose(f);
                   exit(1);
                }
@@ -235,7 +237,8 @@ static mstring_t *string_state (FILE *f)
                    !iswxdigit (str[2]) || !iswxdigit(str[3]))
                {
                   PARSE_ERROR (cconfig.filename, lineno, column);
-                  fprintf (stderr, "\tinvalid unicode character escape\n");
+                  fprintf (stderr, _("\tInvalid unicode character escape "
+                                     "sequence.\n"));
                   fclose(f);
                   exit(1);
                }
@@ -245,7 +248,8 @@ static mstring_t *string_state (FILE *f)
                if (errno == ERANGE || errno == EINVAL)
                {
                   PARSE_ERROR (cconfig.filename, lineno, column);
-                  fprintf (stderr, "\tinvalid unicode character escape\n");
+                  fprintf (stderr, _("\tInvalid unicode character escape "
+                                     "sequence.\n"));
                   fclose(f);
                   exit(1);
                }
@@ -260,8 +264,8 @@ static mstring_t *string_state (FILE *f)
                if ((ch = read_char (f)) == WEOF)
                {
                   PARSE_ERROR (cconfig.filename, lineno, column);
-                  fprintf (stderr, "\tpremature end of file while reading "
-                                   "string whitespace escape\n");
+                  fprintf (stderr, _("\tPremature end of file while reading "
+                                     "string whitespace escape sequence.\n"));
                   fclose(f);
                   exit(1);
                }
@@ -269,8 +273,8 @@ static mstring_t *string_state (FILE *f)
                if (ch != L'\\')
                {
                   PARSE_ERROR (cconfig.filename, lineno, column);
-                  fprintf (stderr, "\texpected '\\' at end of string "
-                                   "whitespace escape\n");
+                  fprintf (stderr, _("\tString whitespace escape sequences "
+                                     "must end with '\\'.\n"));
                   fclose(f);
                   exit(1);
                }
@@ -459,8 +463,8 @@ token_t *next_token (FILE *f)
 
             if (n == 0 && (errno == ERANGE || errno == EINVAL))
             {
-               MITCHELL_INTERNAL_ERROR(cconfig.filename,
-                                       "Could not perform number conversion");
+               MITCHELL_INTERNAL_ERROR(cconfig.filename, _("Could not perform "
+                                       "numeric conversion."));
                fclose (f);
                exit (1);
             }

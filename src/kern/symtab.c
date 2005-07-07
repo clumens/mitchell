@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.22 2005/06/29 23:45:05 chris Exp $
+ * $Id: symtab.c,v 1.23 2005/07/07 05:04:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
 #include "error.h"
 #include "memory.h"
 #include "symtab.h"
+#include "translate.h"
 
 static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
 {
@@ -135,7 +136,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "Invalid sym->kind.");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"));
             exit(1);
       }
    }
@@ -177,7 +178,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "Invalid sym->kind.");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"));
             exit(1);
       }
    }
@@ -259,7 +260,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "Invalid newsym->kind.");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad newsym->kind"));
             exit(1);
       }
    }
@@ -314,7 +315,7 @@ tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name)
 
          if ((out = fopen (cconfig.debug.symtab_outfile, "a")) == NULL)
          {
-            COULD_NOT_OPEN_ERROR (cconfig.debug.symtab_outfile, "writing");
+            COULD_NOT_WRITE_ERROR (cconfig.debug.symtab_outfile);
             exit(1);
          }
 

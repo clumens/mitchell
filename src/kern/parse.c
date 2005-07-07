@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.48 2005/06/30 00:49:16 chris Exp $
+ * $Id: parse.c,v 1.49 2005/07/07 05:04:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,9 +28,11 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#define _GNU_SOURCE
 #include <gc.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <wchar.h>
 
 #include "absyn.h"
@@ -38,8 +40,9 @@
 #include "desugar.h"
 #include "error.h"
 #include "memory.h"
-#include "tokens.h"
 #include "str.h"
+#include "tokens.h"
+#include "translate.h"
 
 static FILE *in;                    /* the input file */
 static token_t *tok;                /* lookahead token - not yet examined */
@@ -47,11 +50,11 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
 
 /* Macros to control debug printing only if the appropriate level is set. */
 #define ENTERING(fn) do { if (cconfig.debug.parser_debug > 0) \
-                             printf ("entering %s\n", fn); \
+                             printf (_("entering %s\n"), fn); \
                         } while (0)
 
 #define LEAVING(fn)  do { if (cconfig.debug.parser_debug > 0) \
-                             printf ("leaving %s\n", fn); \
+                             printf (_("leaving %s\n"), fn); \
                         } while (0)
 
 #define NRULES   26        /* number of parser rules in each set */
@@ -187,50 +190,62 @@ static unsigned int in_set (const token_t *t, const int set[])
    return 0;
 }
 
+#define WCSLEN(str)  (wcslen(str)*sizeof(wchar_t))
+
 /* Print out the members of the set argument. */
-static void print_set (const int set[])
+static wchar_t *set_to_str (const int set[])
 {
+   wchar_t *retval;
    unsigned int i;
 
-   fprintf (stderr, "{");
+   MALLOC(retval, sizeof(wchar_t)*2);
+   retval = wcscpy (retval, L"{");
 
    for (i = 0; set[i] != -1; i++)
-      fprintf (stderr, " %s", token_map[set[i]]);
+   {
+      REALLOC (retval, WCSLEN(retval)+WCSLEN(token_map[set[i]])+
+                       sizeof(wchar_t)*2);
+      retval = wcscat (retval, L" ");
+      retval = wcscat (retval, token_map[set[i]]);
+   }
 
-   fprintf (stderr, " }");
+   REALLOC (retval, WCSLEN(retval)+sizeof(wchar_t)*3);
+   retval = wcscat (retval, L" }");
+   return retval;
 }
+
+#undef WCSLEN
 
 /* Describe a token more completely so the user has a better idea of what
  * the parse error is talking about.  An even better idea would be to print
  * out a bunch of the context around the error, but I'm not feeling that
  * fancy yet.
  */
-static void describe_token (const token_t *t)
+static wchar_t *describe_token (const token_t *t)
 {
+   wchar_t *buf;
+
    if (t == NULL)
-      return;
+      return L"";
 
    switch (t->type) {
       case BOOLEAN:
-         fprintf (stderr, "%s(%s)", token_map[t->type],
-                                    t->boolean == 0 ? "f" : "t");
-         break;
+         if (t->boolean == 0)
+            return build_wcsstr(2, token_map[t->type], L"(f)");
+         else
+            return build_wcsstr(2, token_map[t->type], L"(t)");
 
       case IDENTIFIER:
-         fprintf (stderr, "%s(%ls)", token_map[t->type], t->string);
-         break;
+      case STRING:
+         return build_wcsstr(4, token_map[t->type], L"(", t->string, L")");
 
       case INTEGER:
-         fprintf (stderr, "%s(%li)", token_map[t->type], t->integer);
-         break;
-
-      case STRING:
-         fprintf (stderr, "%s(%ls)", token_map[t->type], t->string);
-         break;
+         MALLOC (buf, sizeof(wchar_t)*256);
+         swprintf (buf, 256, L"%li", t->integer);
+         return build_wcsstr(4, token_map[t->type], L"(", buf, L")");
 
       default:
-         fprintf (stderr, "%s", token_map[t->type]);
-         break;
+         return (wchar_t *) token_map[t->type];
    }
 }
 
@@ -241,11 +256,8 @@ static void describe_token (const token_t *t)
 static void parse_error(const token_t *t, const int accepted[])
 {
    PARSE_ERROR (cconfig.filename, t->lineno, t->column);
-   fprintf (stderr, "\texpected token from set ");
-   print_set (accepted);
-   fprintf (stderr, ", but got { ");
-   describe_token(t);
-   fprintf (stderr, " } instead\n");
+   fprintf (stderr, _("\tExpected token from set %ls, but got { %ls } "
+                      "instead.\n"), set_to_str (accepted), describe_token (t));
    exit(1);
 }
 
@@ -261,14 +273,14 @@ static void match (const unsigned int type)
    if (tok == NULL)
    {
       PARSE_ERROR (cconfig.filename, 0, 0);
-      fprintf (stderr, "\tpremature end of input file\n");
+      fprintf (stderr, _("\tPremature end of input file.\n"));
       exit (1);
    }
 
    if (tok->type == type)
    {
       if (cconfig.debug.parser_debug > 0)
-         printf ("  ate %s\n", token_map[type]);
+         printf (_("  ate %ls\n"), token_map[type]);
 
       /* Update pointer to previous token so we can make AST chunks. */
       last_tok = tok;
@@ -277,7 +289,7 @@ static void match (const unsigned int type)
       if ((tok = next_token (in)) == NULL)
       {
          PARSE_ERROR (cconfig.filename, 0, 0);
-         fprintf (stderr, "\tpremature end of input file\n");
+         fprintf (stderr, _("\tPremature end of input file.\n"));
          exit (1);
       }
    }
@@ -289,13 +301,13 @@ static void match (const unsigned int type)
  * to parse the start symbol.  Returns the abstract syntax tree, which is
  * built as a side-effect of the parsing.
  */
-ast_t *parse (const char *filename)
+ast_t *parse (char *filename)
 {
    list_t *retval = NULL;
 
    if ((in = fopen (filename, "r")) == NULL)
    {
-      COULD_NOT_OPEN_ERROR (filename, "reading");
+      COULD_NOT_READ_ERROR (filename);
       exit(1);
    }
 

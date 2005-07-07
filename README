@@ -62,6 +62,9 @@ The following are features of the Mitchell language and compiler:
    * Strict type checking promotes type safety and prevents various
      classes of errors in programs.
 
+   * Support for exceptions makes for easier error handling and cleaner
+     code.
+
 
 3. Build and Installation
 =========================
@@ -75,6 +78,9 @@ The following components are required to build the mitchell compiler:
 
    * Boehm GC library - Garbage collection library for C
                         http://www.hpl.hp.com/personal/Hans_Boehm/gc/
+
+   * GNU gettext - Required for internationalization of compiler messages.
+                   http://www.gnu.org/software/gettext/
 
 3.2. Building 
 -------------

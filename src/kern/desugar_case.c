@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.9 2005/06/30 12:52:56 chris Exp $
+ * $Id: desugar_case.c,v 1.10 2005/07/07 05:04:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -39,6 +39,7 @@
 #include "memory.h"
 #include "str.h"
 #include "semant.h"
+#include "translate.h"
 
 static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
                                                 absyn_case_expr_t *node);
@@ -192,7 +193,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
 #ifndef NEW_TYPES
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad type for left->ty");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad left->ty"));
          exit(1);
          break;
    }
@@ -373,7 +374,7 @@ static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
             exit(1);
 #endif
    }

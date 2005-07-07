@@ -3,7 +3,7 @@
  * Override these basic versions with more complicated ones if that's what
  * a certain pass requires.
  *  
- * $Id: absyn_walk.c,v 1.1 2005/06/30 12:52:56 chris Exp $
+ * $Id: absyn_walk.c,v 1.2 2005/07/07 05:04:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,6 +30,7 @@
 #include "error.h"
 #include "list.h"
 #include "memory.h"
+#include "translate.h"
 
 /* Set up an initial set of AST walking function pointers.  After calling this
  * function, individual passes are free to override any of the pointers with
@@ -98,7 +99,7 @@ list_t *visit_decl_lst (absyn_funcs_t *funcs, list_t *lst)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad decl->type");
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad decl->type"));
             exit(1);
 #endif
       }
@@ -187,7 +188,8 @@ absyn_expr_t *visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind for expr");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename,
+                                  _("bad node->kind"));
          exit(1);
    }
 

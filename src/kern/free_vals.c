@@ -11,7 +11,7 @@
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.2 2005/06/30 12:52:57 chris Exp $
+ * $Id: free_vals.c,v 1.3 2005/07/07 05:04:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -39,6 +39,7 @@
 #include "error.h"
 #include "list.h"
 #include "memory.h"
+#include "translate.h"
 
 static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node);
 
@@ -106,8 +107,8 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
          {
             absyn_id_expr_t *tmp;
             
-            fprintf (stderr, "%d:%d free value:  \n", node->identifier->lineno,
-                     node->identifier->column);
+            fprintf (stderr, _("%d:%d free value:  \n"),
+                     node->identifier->lineno, node->identifier->column);
 
             for (tmp = node->identifier; tmp != NULL; tmp = tmp->sub)
             {
@@ -142,13 +143,14 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
                break;
 
             default:
-               MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad parent->kind");
+               MITCHELL_INTERNAL_ERROR (cconfig.filename,
+                                        _("bad parent->kind"));
                exit(1);
          }
 
          if (table_lookup_entry (symtab, node->identifier->symbol,
                                  SYM_VALUE) == NULL)
-            fprintf (stderr, "%d:%d free value:  %ls\n",
+            fprintf (stderr, _("%d:%d free value:  %ls\n"),
                      node->identifier->lineno, node->identifier->column,
                      node->identifier->symbol);
 
@@ -177,7 +179,7 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind for expr");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
          exit(1);
    }
 

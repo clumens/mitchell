@@ -1,6 +1,6 @@
 /* Pretty printer for the symbol tables.
  *
- * $Id: symtab_printer.c,v 1.11 2005/06/29 23:59:39 chris Exp $
+ * $Id: symtab_printer.c,v 1.12 2005/07/07 05:04:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -27,6 +27,7 @@
 #include "basic_types.h"
 #include "semant.h"
 #include "symtab.h"
+#include "translate.h"
 
 #define STR(s)  (s) == NULL ? L"" : (s)
 
@@ -73,7 +74,7 @@ void table_dump (FILE *f, symtab_t *symtab, mstring_t *scope_name)
    unsigned int i;
 
    fprintf (f, "----------------------------------------\n");
-   fprintf (f, "Leaving scope for symbol: %ls\n", scope_name);
+   fprintf (f, _("Leaving scope for symbol: %ls\n"), scope_name);
 
    for (i = 0; i < SYMTAB_ROWS; i++)
    {
@@ -105,7 +106,7 @@ void symtab_dump (FILE *f, tabstack_t *tabstack, mstring_t *scope_name)
    tabstack_t *tmp = tabstack;
 
    fprintf (f, "========================================\n");
-   fprintf (f, "Leaving module: %ls\n", scope_name);
+   fprintf (f, _("Leaving module: %ls\n"), scope_name);
 
    while (tmp != NULL)
    {

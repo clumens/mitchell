@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.36 2005/07/06 20:45:04 chris Exp $
+ * $Id: main.c,v 1.37 2005/07/07 05:04:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -36,6 +36,7 @@
 #include "parse.h"
 #include "semant.h"
 #include "str.h"
+#include "translate.h"
 #include "version.h"
 
 /* What we want getopt_long to return. */
@@ -76,30 +77,30 @@ compiler_config_t cconfig = { .last_phase = 0,
 
 static void help_general ()
 {
-   printf ("General Options:\n");
-   printf ("-last-phase=phase\tStop compilation after the given phase\n");
+   printf (_("General Options:\n"));
+   printf (_("-last-phase=phase\tStop compilation after the given phase.\n"));
 }
 
 static void help_internal_debug ()
 {
-   printf ("Internal Debugging Options:\n");
-   printf ("-Idebug-parser=N\tSet debugging output level for the tokenizer"
-           " and parser\n");
-   printf ("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file',"
-           " or <infile>.ast\n\t\t\tby default\n");
-   printf ("-Idump-symtab[=file]\tDump the symbol tables to 'file',"
-           " or <infile>.symtab\n\t\t\tby default\n");
+   printf (_("Internal Debugging Options:\n"));
+   printf (_("-Idebug-parser=N\tSet debugging output level for the tokenizer "
+             "and parser.\n"));
+   printf (_("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file', "
+             "or <infile>.ast\n\t\t\tby default.\n"));
+   printf (_("-Idump-symtab[=file]\tDump the symbol tables to 'file', "
+             "or <infile>.symtab\n\t\t\tby default.\n"));
 }
 
 static void help_warnings ()
 {
-   printf ("Warning Options:\n");
-   printf ("-Werror\t\t\tTerminate compilation on warnings, as on errors\n");
+   printf (_("Warning Options:\n"));
+   printf (_("-Werror\t\t\tStop compilation on warnings, as on errors.\n"));
 }
 
 static void verbose_help (const char *progname)
 {
-   printf ("usage:  %s <infile>\n", progname);
+   printf (_("Usage: %s <infile>\n"), progname);
    help_general();
    printf ("\n");
    help_internal_debug();
@@ -110,14 +111,15 @@ static void verbose_help (const char *progname)
 
 static void help (const char *progname)
 {
-   printf ("usage:  %s <infile>\n", progname);
-   printf ("\t-verbose-help for a list of all command line arguments\n");
+   printf (_("Usage: %s <infile>\n"), progname);
+   printf (_("\t-verbose-help for a list of all command line arguments\n"));
    exit (0);
 }
 
 static void version (const char *progname)
 {
-   printf ("mitchell version %s\n© 2004-2005 Chris Lumens\n", MITCHELL_VERSION);
+   printf (_("mitchell version %s\n© 2004-2005 Chris Lumens\n"),
+           MITCHELL_VERSION);
    exit (0);
 }
 
@@ -149,8 +151,8 @@ static void handle_arguments (int argc, char **argv)
          case OPT_LAST_PHASE:
             if (!optarg)
             {
-               ERROR ("-last-phase requires an argument.  See the man page "
-                      "for details.");
+               ERROR (_("-last-phase requires an argument.  See the man page "
+                        "for details."));
                exit(1);
             }
 
@@ -166,8 +168,8 @@ static void handle_arguments (int argc, char **argv)
                cconfig.last_phase = LAST_DESUGAR_LIFT;
             else
             {
-               ERROR ("Invalid option supplied to -last-phase.  See the man "
-                      "page for details.");
+               ERROR (_("Invalid option supplied to -last-phase.  See the man "
+                        "page for details."));
                exit(1);
             }
 
@@ -178,8 +180,8 @@ static void handle_arguments (int argc, char **argv)
                cconfig.debug.parser_debug = atoi(optarg);
             else
             {
-               ERROR ("-Idebug-parser requires an argument.  See the man page "
-                      "for details.");
+               ERROR (_("-Idebug-parser requires an argument.  See the man "
+                        "page for details."));
                exit(1);
             }
 
@@ -248,6 +250,8 @@ int main (int argc, char **argv)
 
    /* Grab locale information from the environment. */
    setlocale (LC_ALL, "");
+   bindtextdomain (PACKAGE, LOCALEDIR);
+   textdomain (PACKAGE);
 
    /* Make sure we are in a UTF-8 aware locale.  If not, bail out.  We have to
     * do this because if the environment is wrong, the tokenizer will explode
@@ -255,11 +259,11 @@ int main (int argc, char **argv)
     */
    if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
    {
-      ERROR("Your current locale is not UTF-8 aware.  The mitchell compiler "
-            "requires\n\tthe proper environment settings to be able to read "
-            "source files.  You\n\twill need to set your $LANG or $LC_ALL "
-            "environment variables to a locale\n\twhich is UTF-8 aware.  A "
-            "good setting for $LANG might be en_US-UTF-8.\n\tExiting.");
+      ERROR(_("Your current locale is not UTF-8 aware.  The mitchell compiler "
+              "requires\n\tthe proper environment settings to be able to read "
+              "source files.  You\n\twill need to set your $LANG or $LC_ALL "
+              "environment variables to a locale\n\twhich is UTF-8 aware.  A "
+              "good setting for $LANG might be en_US-UTF-8.\n\tExiting."));
       exit(1);
    }
 
@@ -267,7 +271,7 @@ int main (int argc, char **argv)
    ast = parse (cconfig.filename);
 
    if (cconfig.debug.dump_absyn)
-      print_absyn (ast, &cconfig, "Initial abstract syntax tree");
+      print_absyn (ast, &cconfig, _("Initial abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_PARSER)
       return 0;
@@ -279,7 +283,7 @@ int main (int argc, char **argv)
 
    simple_ast = desugar_ast (ast);
    if (cconfig.debug.dump_absyn)
-      print_absyn (simple_ast, &cconfig, "Simplified abstract syntax tree");
+      print_absyn (simple_ast, &cconfig, _("Simplified abstract syntax tree"));
 
    return 0;
 }

@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.16 2005/03/29 05:52:52 chris Exp $
+ * $Id: tokens.h,v 1.17 2005/07/07 05:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -49,7 +49,7 @@ typedef struct {
 } token_t;
 
 /* Maps a token's enum value to a descriptive string. */
-extern const char *token_map[];
+extern const wchar_t *token_map[];
 
 /* Return the next token from the previously opened file f, or NULL if no
  * more tokens are available.

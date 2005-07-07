@@ -12,7 +12,7 @@ Grammar:
   inferred from the initializing expression.  One may still be provided for
   clarity.
 Internals:
-- Added a backlink_t type and a link of this type to every AST noded.  The
+- Added a backlink_t type and a link of this type to every AST node.  The
   backlink points at the parent node in the tree.
 - Renamed compiler_config to cconfig.
 - print_absyn now takes a header argument since we're going to dump the AST
@@ -21,8 +21,14 @@ Internals:
 - absyn_expr_t has a pointer to an exception handler.
 - Added AST simplification passes to convert arbitrary trees into a more
   regular format for IR generation.
+- Function bodies may only be decl-exprs.
+- Added symtab pointers to all AST nodes that define a new level of scope.
 Misc:
 - Added the beginnings of a language reference.
+- Updated test suite to enable skipping tests and that tests fail for the
+  correct reasons.
+- Support internationalization of compiler messages, though no translations
+  have been done yet.
 
 mitchell preview 4
 ==================

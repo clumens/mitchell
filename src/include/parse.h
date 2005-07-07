@@ -3,7 +3,7 @@
  * This is done for both validation of the input file and for building the
  * abstract syntax tree.
  *
- * $Id: parse.h,v 1.3 2004/11/01 05:11:43 chris Exp $
+ * $Id: parse.h,v 1.4 2005/07/07 05:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,7 +34,7 @@
 /* Parse the file provided by the caller.  Returns a pointer to the root node
  * of the abstract syntax tree.
  */
-ast_t *parse (const char *filename);
+ast_t *parse (char *filename);
 
 #ifdef __cplusplus
    }

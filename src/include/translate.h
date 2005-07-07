@@ -1,6 +1,6 @@
-/* Memory management macros and functions.
+/* Help for string translations.
  *
- * $Id: memory.h,v 1.3 2005/07/07 05:04:14 chris Exp $
+ * $Id: translate.h,v 1.1 2005/07/07 05:04:14 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -19,34 +19,14 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
-#ifndef _MEMORY_H
-#define _MEMORY_H 1
+#ifndef _TRANSLATE_H
+#define _TRANSLATE_H 1
 
-#include <gc.h>
+#include <libintl.h>
 
-#include "config.h"
-#include "error.h"
-#include "translate.h"
-
-#define MALLOC(ptr, size) \
-   do { \
-      if (((ptr) = GC_MALLOC(size)) == NULL) \
-      { \
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, \
-                                  _("Error allocating memory.\n")); \
-         exit (1); \
-      } \
-   } while (0)
-
-#define REALLOC(ptr, size) \
-   do { \
-      if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
-      { \
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, \
-                                  _("Error allocating memory.\n")); \
-         exit (1); \
-      } \
-   } while (0)
+#define _(String)             gettext(String)
+#define gettext_noop(String)  String
+#define N_(String)            gettext_noop(String)
 
 #endif
 

@@ -1,7 +1,10 @@
-# $Id: Makefile,v 1.32 2005/07/01 04:41:12 chris Exp $
+# $Id: Makefile,v 1.33 2005/07/07 05:04:19 chris Exp $
+
+include ../../Includes.mk
 
 CC = gcc
-override CFLAGS += -O2 -Wall -I../include
+override CFLAGS += -O2 -Wall -I../include -DPACKAGE=\"mitchell\" \
+	-DLOCALEDIR=\"$(LOCALEDIR)\"
 override LDFLAGS += -lgc -ldl
 
 ifdef DEBUG
@@ -9,8 +12,8 @@ ifdef DEBUG
 endif
 
 OBJS = absyn_printer.o absyn_walk.o desugar.o desugar_case.o desugar_decls.o \
-	lift.o list.o main.o parse.o semant.o str.o symtab.o symtab_printer.o \
-	tokenize.o
+	error.o lift.o list.o main.o parse.o semant.o str.o symtab.o \
+	symtab_printer.o tokenize.o
 
 all: mitchell
 
@@ -25,26 +28,33 @@ clean:
 #####################################################################
 absyn_printer.o: absyn_printer.c \
 	../include/absyn.h ../include/config.h ../include/basic_types.h \
-	../include/error.h ../include/list.h
+	../include/error.h ../include/list.h ../include/translate.h
 
 absyn_walk.o: absyn_walk.c \
 	../include/absyn.h ../include/absyn_walk.h ../include/error.h \
-	../include/list.h ../include/memory.h
+	../include/list.h ../include/memory.h ../include/translate.h
 
 desugar.o: desugar.c \
 	../include/absyn.h ../include/absyn_walk.h ../include/config.h \
-	../include/desugar.h ../include/error.h ../include/memory.h
+	../include/desugar.h ../include/error.h ../include/memory.h \
+	../include/translate.h
 
 desugar_case.o: desugar_case.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
-	../include/error.h ../include/list.h ../include/memory.h ../include/str.h
+	../include/error.h ../include/list.h ../include/memory.h ../include/str.h \
+	../include/translate.h
 
 desugar_decls.o: desugar_decls.c \
 	../include/absyn.h ../include/basic_types.h ../include/desugar.h \
-	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h
+	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h \
+	../include/translate.h
+
+error.o: error.c \
+	../include/config.h ../include/error.h ../include/translate.h
 
 lift.o: lift.c \
-	../include/absyn.h ../include/desugar.h ../include/error.h ../include/list.h
+	../include/absyn.h ../include/desugar.h ../include/error.h \
+	../include/list.h ../include/translate.h
 
 list.o: list.c \
 	../include/list.h ../include/memory.h
@@ -52,27 +62,29 @@ list.o: list.c \
 main.o: main.c \
 	../include/absyn.h ../include/config.h ../include/desugar.h \
 	../include/error.h ../include/memory.h ../include/parse.h \
-	../include/semant.h ../include/version.h
+	../include/semant.h ../include/translate.h ../include/version.h
 
 parse.o: parse.c \
 	../include/absyn.h ../include/config.h ../include/error.h \
-	../include/memory.h ../include/str.h ../include/tokens.h
+	../include/memory.h ../include/str.h ../include/tokens.h \
+	../include/translate.h
 
 semant.o: semant.c \
 	../include/absyn.h ../include/basic_types.h ../include/error.h \
-	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h
+	../include/list.h ../include/memory.h ../include/str.h ../include/symtab.h \
+	../include/translate.h
 
 str.o: str.c \
 	../include/basic_types.h ../include/memory.h ../include/str.h
 
 symtab.o: symtab.c \
 	../include/basic_types.h ../include/config.h ../include/error.h \
-	../include/memory.h ../include/symtab.h
+	../include/memory.h ../include/symtab.h ../include/translate.h
 
 symtab_printer.o: symtab_printer.c \
 	../include/basic_types.h ../include/config.h ../include/semant.h \
-	../include/symtab.h
+	../include/symtab.h ../include/translate.h
 
 tokenize.o: tokenize.c \
 	../include/basic_types.h ../include/config.h ../include/error.h \
-	../include/memory.h ../include/tokens.h
+	../include/memory.h ../include/tokens.h ../include/translate.h

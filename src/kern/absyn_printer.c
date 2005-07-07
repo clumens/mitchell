@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.34 2005/06/30 00:49:15 chris Exp $
+ * $Id: absyn_printer.c,v 1.35 2005/07/07 05:04:19 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,6 +31,7 @@
 #include "basic_types.h"
 #include "error.h"
 #include "list.h"
+#include "translate.h"
 
 /* More mutually recursive functions means more forward declarations. */
 static void print_branch_lst_t (list_t *lst, unsigned int il);
@@ -68,7 +69,7 @@ void print_absyn (ast_t *ast, compiler_config_t *config, char *header)
    {
       if ((out = fopen (config->debug.absyn_outfile, "w")) == NULL)
       {
-         COULD_NOT_OPEN_ERROR (config->debug.absyn_outfile, "writing");
+         COULD_NOT_WRITE_ERROR (config->debug.absyn_outfile);
          exit(1);
       }
    }
@@ -167,7 +168,7 @@ static void print_decl_t (absyn_decl_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->type");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->type"));
          exit(1);
 #endif
    }
@@ -336,7 +337,7 @@ static void print_expr_t (absyn_expr_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
          exit(1);
 #endif
    }
@@ -538,7 +539,7 @@ static void print_ty_t (absyn_ty_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, "bad node->kind");
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
          exit(1);
 #endif
    }
