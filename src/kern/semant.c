@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.51 2005/07/07 05:17:58 chris Exp $
+ * $Id: semant.c,v 1.52 2005/07/07 18:51:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -1506,7 +1506,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    {
       BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
                         node->symbol->symbol,
-                        _("Symbol may not contain a dot"));
+                        _("Symbol may not contain a dot."));
       exit(1);
    }
 
@@ -1646,7 +1646,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
          {
             BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
                               node->rec->fun_call_expr->identifier->symbol,
-                              _("Referenced symbol is not a record"));
+                              _("Referenced symbol is not a record."));
             exit(1);
          }
          break;
@@ -1743,7 +1743,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
       {
          TYPE_ERROR (cconfig.filename, node->lineno, node->column,
                      _("Type of value initializer does not match declared "
-                       "type"), _("declared type"), ty_to_str (val_ty),
+                       "type."), _("declared type"), ty_to_str (val_ty),
                      _("initializer type"), ty_to_str (expr_ty));
          exit(1);
       }

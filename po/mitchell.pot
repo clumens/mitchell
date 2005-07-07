@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-07 01:17-0400\n"
+"POT-Creation-Date: 2005-07-07 14:50-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -97,7 +97,7 @@ msgstr ""
 
 #: ../src/kern/error.c:96 ../src/kern/error.c:127
 #, c-format
-msgid "Non-exhaustive match in case-expr.  Adding an else branch is recommended to avoid runtime errors.\n"
+msgid "Non-exhaustive match in case expression.  Adding an else branch is recommended to avoid runtime errors.\n"
 msgstr ""
 
 #: ../src/kern/error.c:103
@@ -433,7 +433,7 @@ msgid "else expression type"
 msgstr ""
 
 #: ../src/kern/semant.c:1509
-msgid "Symbol may not contain a dot"
+msgid "Symbol may not contain a dot."
 msgstr ""
 
 #: ../src/kern/semant.c:1591
@@ -449,7 +449,7 @@ msgid "Symbol may not be used as a record or exception."
 msgstr ""
 
 #: ../src/kern/semant.c:1649
-msgid "Referenced symbol is not a record"
+msgid "Referenced symbol is not a record."
 msgstr ""
 
 #: ../src/kern/semant.c:1701
@@ -457,7 +457,7 @@ msgid "Type declaration has no definition."
 msgstr ""
 
 #: ../src/kern/semant.c:1745
-msgid "Type of value initializer does not match declared type"
+msgid "Type of value initializer does not match declared type."
 msgstr ""
 
 #: ../src/kern/semant.c:1747

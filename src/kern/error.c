@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.c,v 1.1 2005/07/07 05:04:20 chris Exp $
+ * $Id: error.c,v 1.2 2005/07/07 18:51:41 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -93,8 +93,8 @@ void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
                                 unsigned int column)
 {
    _error (file, line, column);
-   fprintf (stderr, _("Non-exhaustive match in case-expr.  Adding an else "
-                      "branch is recommended to avoid runtime errors.\n"));
+   fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "
+                      "else branch is recommended to avoid runtime errors.\n"));
 }
 
 void PARSE_ERROR (char *file, unsigned int line, unsigned int column)
@@ -124,8 +124,8 @@ void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line,
                                   unsigned int column)
 {
    _warning (file, line, column);
-   fprintf (stderr, _("Non-exhaustive match in case-expr.  Adding an else "
-                      "branch is recommended to avoid runtime errors.\n"));
+   fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "
+                      "else branch is recommended to avoid runtime errors.\n"));
    WARNINGS_AS_ERRORS();
 }
 
