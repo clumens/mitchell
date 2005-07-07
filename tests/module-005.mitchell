@@ -1,6 +1,6 @@
 # Description:  Modules cannot be declared outside the top level.
 # Expected:  FAIL
-# HowFail:  parse error
+# HowFail:  Parse error on input file.
 
 ℳ Outer ← decl
    ƒ func: boolean () ← decl

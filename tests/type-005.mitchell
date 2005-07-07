@@ -1,6 +1,6 @@
 # Description:  Record definition missing an ending id
 # Expected:  FAIL
-# HowFail:  parse error
+# HowFail:  Parse error on input file.
 
 ℳ Main ← decl
    τ person ← {name: string, age: integer, }

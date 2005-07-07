@@ -1,6 +1,6 @@
 # Description:  Two values of the same name in the same scope
 # Expected:  FAIL
-# HowFail:  a: duplicate symbol already exists in this scope
+# HowFail:  a: A symbol with this name already exists in this scope.
 
 ℳ Main ← decl
    ʋ a: integer ← 47

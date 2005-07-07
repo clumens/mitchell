@@ -1,6 +1,6 @@
 # Description:  Using something other than a boolean, integer, or string as the test expression
 # Expected:  FAIL
-# HowFail:  type check error: test expression is not a basic type
+# HowFail:  Type check error: Type of test expression is not a basic type.
 
 ℳ Main ← decl
    ʋ lst: list integer ← [1, 2, 3]

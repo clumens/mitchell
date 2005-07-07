@@ -1,6 +1,6 @@
 # Description:  Passing a nested record as an argument when just a regular record is specified
 # Expected:  FAIL
-# HowFail:  type check error: type of actual parameter does not match type of formal
+# HowFail:  Type check error: Type of actual parameter does not match type of formal parameter.
 
 ℳ Main ← decl
    ƒ rec2a: integer (b: {zoop: string}) ←

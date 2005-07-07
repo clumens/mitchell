@@ -1,6 +1,6 @@
 # Description:  Function return value does not match declared type
 # Expected:  FAIL
-# HowFail:  type check error: type of function body does not match declared type
+# HowFail:  Type check error: Type of function body does not match declaration.
 
 ℳ Main ← decl
    τ rec ← { a: integer }

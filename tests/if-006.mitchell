@@ -1,6 +1,6 @@
 # Description:  Unterminated case expression as part of if-then-else
 # Expected:  FAIL
-# HowFail:  parse error
+# HowFail:  Parse error on input file.
 
 ℳ Main ← decl
    ƒ foo: integer () ←

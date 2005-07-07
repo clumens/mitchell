@@ -1,6 +1,6 @@
 # Description:  Type of branch tests doesn't match type of test-expr
 # Expected:  FAIL
-# HowFail:  type check error: branch test must have the same type as the test-expr
+# HowFail:  Type check error: Branch test must have the same type as the test expression.
 
 ℳ Main ← decl
    ƒ asdf: string () ← "asdf"

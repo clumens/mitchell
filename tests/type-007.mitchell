@@ -1,6 +1,6 @@
 # Description:  Record with duplicate fields
 # Expected:  FAIL
-# HowFail:  age: duplicate symbol already exists in this record type
+# HowFail:  age: Record definition already contains a symbol with this name.
 
 ℳ Main ← decl
    τ people ← {name: string, age: integer, is_male: boolean, age: string}

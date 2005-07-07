@@ -1,6 +1,6 @@
 # Description:  Function with a more complicated but empty body
 # Expected:  FAIL
-# HowFail:  parse error
+# HowFail:  Parse error on input file.
 
 ℳ Main ← decl
    ƒ asdf: integer () ← decl

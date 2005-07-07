@@ -1,6 +1,6 @@
 # Description:  Nested module tries to use value from outer module without fully qualifying it.
 # Expected:  FAIL
-# HowFail:  outer_v: unknown symbol referenced
+# HowFail:  outer_v: Referenced symbol is unknown.
 
 ℳ Outer ← decl
    ʋ outer_v: boolean ← t

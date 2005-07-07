@@ -1,6 +1,6 @@
 # Description:  handler type does not match record expr's type (subtle)
 # Expected:  FAIL
-# HowFail:  type check error: type of exn handler does not match type of expression
+# HowFail:  Type check error: Type of exception handler does not match type of expression.
 
 ℳ Main ← decl
    τ Exn ← ℰ { val: integer }

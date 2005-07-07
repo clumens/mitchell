@@ -1,6 +1,6 @@
 # Description:  Number of actual arguments does not match number of formal parameters
 # Expected:  FAIL
-# HowFail:  number of actual parameters does not match number of formals
+# HowFail:  Number of actual parameters does not match number of formals.
 
 ℳ Main ← decl
    ƒ asdf: integer (a: integer, b: string, c: boolean) ←
