@@ -4,7 +4,7 @@
  * loose as I want with the token lookahead.  So here's the grammar,
  * whatever it may be.
  *
- * $Id: grammar,v 1.18 2005/04/06 02:22:17 chris Exp $
+ * $Id: grammar,v 1.19 2005/07/08 17:32:23 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -136,6 +136,7 @@ sym-ref ::= id
           | id arg-lst record-ref
           | id LBRACE record-assn-lst RBRACE
 /* }}} */
+
 
 /* Terminals {{{ */
 ASSIGN ::= ←
