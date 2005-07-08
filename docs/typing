@@ -5,7 +5,7 @@
  * any discrepancy between the rules and the explanation, the rules are
  * always correct.
  *
- * $Id: typing,v 1.6 2005/01/07 02:39:40 chris Exp $
+ * $Id: typing,v 1.7 2005/07/08 17:35:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -159,7 +159,7 @@ definitions are equivalent:
 Name Scope
 ==========
 Mitchell is a lexically-scoped language with nested modules, providing
-different namespaces for types, module names, and functions/values.
+different namespaces for types/exceptions, module names, and functions/values.
 Modules may further contain other modules.  A module's symbol table exists
 for the entire lifetime of the program, while the symbol table for a
 function or decl block only exists while that local block is being type
@@ -192,9 +192,9 @@ complications.  The rules are as follows:
      naked identifier does not jump out of the current module.
 
      As a special exception to this rule, the global namespace will be
-     searched next in order to handle the base types.  This currently
-     allows the base types to be redefined.  It's not yet decided whether
-     that should be allowed behavior or not.
+     searched next in order to handle the base types.  An identifier may
+     not have the same name as any of the types defined in the global
+     namespace.
 
    * If an identifier is given that consists of period-delimited names, it
      must be referring to a symbol defined in a module.  The entire path
@@ -218,3 +218,12 @@ complications.  The rules are as follows:
      in the group.
 
    * Values may not make reference to values that are not yet defined.
+
+   * A name must be unique within its defining scope.  However, a name may
+     override one defined in a more outer level of scope, as long as it
+     does not override one of the types defined in the global namespace.
+
+     A special note here is that for implementation reasons, if a
+     function's body is a decl expression, no names in that decl
+     expression may override any parameters passed to the function.  This
+     is currently considered a bug.
