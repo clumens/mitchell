@@ -21,16 +21,21 @@ correct.
 
 What this document does is explain the language in more simple and less
 mathematical terms to experienced programmers.  It is meant to serve as an
-introduction to the mitchell programming language.
+introduction to the Mitchell programming language.
 
 
 2. Types
 ========
-Mitchell has very few types.  The most basic types are boolean, integer,
+Mitchell has a few types.  The most basic types are boolean, integer,
 string, and ⊥.  These types may be thought of as atomic - they don't break
 down into anything more simple.  Mitchell also defines three more
 complicated types:  lists, records, and exceptions.  In addition, modules
 may define their own types.
+
+Mitchell is strictly type checked.  That is, there is no implicit
+conversion from one type to another based on context.  All expressions
+must return value of a defined type and these types must match the
+declarations given.  See the typing file for the type rules used.
 
 2.1. boolean
 ------------
@@ -99,12 +104,32 @@ type.  All elements of a list must be of the same type - these are
 monomorphic lists, not like those found in Scheme.  Values in the list
 have no special initial ordering other than that they are stored in the
 order of assignment.  List literals consist of a comma-separated list of
-expressions surrounded by square brackets.
+expressions surrounded by square brackets.  For instance:
+
+   [0, 1, 2, 3]
+
+Two list types are equivalent if the types of the underlying types are
+equivalent.
 
 Operations on lists will be handled by the List module.
 
 2.6. record
 -----------
+The record type is not a basic type - it may be composed of several
+different elements of any previously defined type.  Each element in a
+record type is given an identifier, and this identifier must be unique to
+the record type.  Two record types may have the same set of element
+identifiers, however.  Elements in a record have no special ordering.
+Record literals consist of a comma-separated list of assignments
+surrounded by braces.  For instance:
+
+   { a ← 47, b ← "asdf" }
+
+Two record types are equivalent if they have the same named elements with
+equivalent types.  Order of the elements does not matter in equivalence.
+
+There are no valid operations on record types except for element access,
+provided by the | operator.
 
 2.7. exception
 --------------
@@ -112,15 +137,80 @@ Operations on lists will be handled by the List module.
 
 3. Expressions
 ==============
+The expression is the most important unit of syntax in the Mitchell
+language.  An expression is a statement that returns a value with a
+specific type.  Statements, on the other hand, have no value or type.
+Unlike most popular programming languages, Mitchell uses expressions much
+more extensively than statements.  This can make for some interesting
+possibilities though the programmer must also be careful with the typing.
 
 3.1. case Expressions
 ---------------------
+case-expr ::= CASE test-expr IN branch-lst END
+
+branch-lst ::= branch-test-expr MAPSTO result-expr
+             | branch-test-expr MAPSTO result-expr COMMA branch-lst
+             | ELSE MAPSTO default-expr
+
+branch-test-expr ::= id
+                   | INTEGER
+                   | STRING
+                   | BOOLEAN
+
+The case expression is a rather complex piece of syntax.  It consists of a
+test expression and a list of branches.  Each branch in the list consists
+of a branch test expression and a result expression.  Branches are
+separated by commas.
+
+First, the test expression is evaluated.  Then, each branch test
+expression in the list is evaluated until one is found that matches the
+result of the test expression.  For this reason, all test expressions must
+have the same type.  When a matching result is found, the result
+expression is evaluated and that value and type is returned for the entire
+case expression.  All result expressions must have the same type.
+
+The allowed types for the test expressions is limited to integers,
+strings, and booleans.  There is no restriction on the type of the result
+expressions.
+
+The case expression may also include a default expression.  If no branch
+test expressions match, the default expression becomes the result of the
+case.  This default is not required, however.  If the compiler is unable
+to determine at runtime that all possibilities for the result of the test
+expression are covered by the branches, a warning will be issued.  If no
+match is found a runtime, an exception will be thrown and execution
+halted.  The compiler is able to determine that all possibilities are
+covered if a default expression is provided or if the type of the tests is
+boolean.
 
 3.2. decl Expressions
 ---------------------
+decl-expr ::= DECL decl-lst IN expr END
+
+The decl expression creates a new level of lexical scope.  The definitions
+contained in decl-lst may includes types, exceptions, functions, and
+values.  Modules are not accepted in the decl-expr.  These definitions
+only exist through the end of the expression.  After evaluating all value
+definitions found in the decl-lst and updating the environment with these
+definitions, the expr is evaluated.  The type of the expr is the type of
+the entire expression and the value is returned as the value of the entire
+expression.
 
 3.3. if-then-else Expressions
 -----------------------------
+if-expr ::= IF test-expr THEN then-expr ELSE else-expr
+
+The if-then-else expression is different from similar forms found in other
+programming languages.  Since this is an expression, it must return a
+value with a particular type.  For this reason, both the then and else
+branches must be included.  If the else was not required, then the
+expression may not return a value.  Therefore, this is not allowed.  A
+nice side effect of this is that there is no ambiguity regarding nested
+if-then-else expressions as is found in C.
+
+The test-expr must evaluate to a boolean type, and both the then-expr and
+the else-expr must evaluate to the same type.  This type will be the type
+of the entire expression.
 
 3.4. Symbol References
 ----------------------
