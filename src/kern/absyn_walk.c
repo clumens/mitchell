@@ -3,7 +3,7 @@
  * Override these basic versions with more complicated ones if that's what
  * a certain pass requires.
  *  
- * $Id: absyn_walk.c,v 1.3 2005/07/13 23:35:59 chris Exp $
+ * $Id: absyn_walk.c,v 1.4 2005/07/14 01:32:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -257,9 +257,7 @@ list_t *visit_record_assn (absyn_funcs_t *funcs, list_t *lst)
 absyn_record_ref_t *visit_record_ref (absyn_funcs_t *funcs,
                                       absyn_record_ref_t *node)
 {
-   if (node->rec->kind == ABSYN_FUN_CALL)
-      funcs->visit_fun_call (funcs, node->rec->fun_call_expr);
-
+   funcs->visit_expr (funcs, node->rec);
    return node;
 }
 
