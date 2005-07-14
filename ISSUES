@@ -6,3 +6,6 @@ Known problems
      before we can support this)
    - calling functions in the standard library doesn't work (no type
      information is associated with the functions in the symtab stubs)
+- scope
+   - can't make a value with the same name as a function parameter since
+     function parameters implicitly get added to decl's scope
