@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.c,v 1.3 2005/07/13 23:35:59 chris Exp $
+ * $Id: error.c,v 1.4 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -20,6 +20,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
+#include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
 
@@ -66,9 +67,17 @@ void COULD_NOT_WRITE_ERROR (char *file)
    fprintf (stderr, _("%s Error: Could not open file for writing.\n"), file);
 }
 
-void ERROR (char *msg)
+void ERROR (const char *format, ...)
 {
-   fprintf (stderr, _("Error: %s\n"), msg);
+   va_list ap;
+   
+   fprintf (stderr, _("Error: "));
+
+   va_start (ap, format);
+   vfprintf (stderr, _(format), ap);
+   va_end (ap);
+
+   exit(1);
 }
 
 void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column,
@@ -83,11 +92,19 @@ void FCLOSE_ERROR (char *file)
    fprintf (stderr, _("%s Error: Could not close file.\n"), file);
 }
 
-void MITCHELL_INTERNAL_ERROR (char *file, char *msg, char *srcfile,
-                              unsigned int line)
+void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line,
+                              const char *format, ...)
 {
-   fprintf (stderr, _("%s Mitchell compiler internal error: %s:%d: %s\n"),
-                    file, srcfile, line, msg);
+   va_list ap;
+   
+   fprintf (stderr, _("%s Mitchell internal compiler error: %s:%d: "),
+                    file, srcfile, line);
+
+   va_start (ap, format);
+   vfprintf (stderr, _(format), ap);
+   va_end (ap);
+
+   exit(1);
 }
 
 void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
@@ -98,10 +115,19 @@ void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
                       "else branch is recommended to avoid runtime errors.\n"));
 }
 
-void PARSE_ERROR (char *file, unsigned int line, unsigned int column)
+void PARSE_ERROR (char *file, unsigned int line, unsigned int column,
+                  const char *format, ...)
 {
+   va_list ap;
+   
    _error (file, line, column);
-   fprintf (stderr, _("Parse error on input file.\n"));
+   fprintf (stderr, _("Parse error on input file.\n\t"));
+
+   va_start (ap, format);
+   vfprintf (stderr, _(format), ap);
+   va_end (ap);
+
+   exit(1);   
 }
 
 void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column,
@@ -110,6 +136,7 @@ void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column,
    _error (file, line, column);
    fprintf (stderr, _("Type check error: The following symbol is in an "
                       "infinite loop of type definitions: %ls\n"), ty);
+   exit(1);
 }
 
 void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg,
@@ -118,6 +145,7 @@ void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg,
    _error (file, line, column);
    fprintf (stderr, _("Type check error: %s\n\t%s: %ls\n\t%s: %ls\n"),
                     msg, ty1_msg, ty1, ty2_msg, ty2);
+   exit(1);
 }
 
 /* Warnings, which do not stop compilation (unless you want them to). */

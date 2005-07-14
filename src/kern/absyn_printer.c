@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.36 2005/07/13 23:35:59 chris Exp $
+ * $Id: absyn_printer.c,v 1.37 2005/07/14 03:02:51 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -168,9 +168,8 @@ static void print_decl_t (absyn_decl_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->type"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST decl node type not handled.\n"));
 #endif
    }
 }
@@ -339,9 +338,8 @@ static void print_expr_t (absyn_expr_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"), 
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST expr node type not handled.\n"));
 #endif
    }
 
@@ -542,9 +540,8 @@ static void print_ty_t (absyn_ty_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST type node type not handled.\n"));
 #endif
    }
 }

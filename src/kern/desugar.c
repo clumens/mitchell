@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.13 2005/07/14 01:59:16 chris Exp $
+ * $Id: desugar.c,v 1.14 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -160,9 +160,8 @@ backlink_t *find_lexical_parent (backlink_t *bl)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad backlink type"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("New backlink type not handled.\n"));
 #endif
       }
    }

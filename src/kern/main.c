@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.37 2005/07/07 05:04:20 chris Exp $
+ * $Id: main.c,v 1.38 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -150,11 +150,8 @@ static void handle_arguments (int argc, char **argv)
 
          case OPT_LAST_PHASE:
             if (!optarg)
-            {
-               ERROR (_("-last-phase requires an argument.  See the man page "
-                        "for details."));
-               exit(1);
-            }
+               ERROR (N_("-last-phase requires an argument.  See the man page "
+                         "for details."));
 
             if (strcmp (optarg, "parser") == 0)
                cconfig.last_phase = LAST_PARSER;
@@ -167,11 +164,8 @@ static void handle_arguments (int argc, char **argv)
             else if (strcmp (optarg, "lambda-lift") == 0)
                cconfig.last_phase = LAST_DESUGAR_LIFT;
             else
-            {
-               ERROR (_("Invalid option supplied to -last-phase.  See the man "
-                        "page for details."));
-               exit(1);
-            }
+               ERROR (N_("Invalid option supplied to -last-phase.  See the man "
+                         "page for details."));
 
             break;
 
@@ -179,11 +173,8 @@ static void handle_arguments (int argc, char **argv)
             if (optarg)
                cconfig.debug.parser_debug = atoi(optarg);
             else
-            {
-               ERROR (_("-Idebug-parser requires an argument.  See the man "
-                        "page for details."));
-               exit(1);
-            }
+               ERROR (N_("-Idebug-parser requires an argument.  See the man "
+                         "page for details."));
 
             break;
 
@@ -258,14 +249,11 @@ int main (int argc, char **argv)
     * on reading the source file and the user will get some horrible message.
     */
    if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
-   {
-      ERROR(_("Your current locale is not UTF-8 aware.  The mitchell compiler "
-              "requires\n\tthe proper environment settings to be able to read "
-              "source files.  You\n\twill need to set your $LANG or $LC_ALL "
-              "environment variables to a locale\n\twhich is UTF-8 aware.  A "
-              "good setting for $LANG might be en_US-UTF-8.\n\tExiting."));
-      exit(1);
-   }
+      ERROR(N_("Your current locale is not UTF-8 aware.  The mitchell compiler "
+               "requires\n\tthe proper environment settings to be able to read "
+               "source files.  You\n\twill need to set your $LANG or $LC_ALL "
+               "environment variables to a locale\n\twhich is UTF-8 aware.  A "
+               "good setting for $LANG might be en_US-UTF-8.\n\tExiting."));
 
    handle_arguments (argc, argv);
    ast = parse (cconfig.filename);

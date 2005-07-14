@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.13 2005/07/14 01:59:16 chris Exp $
+ * $Id: desugar_decls.c,v 1.14 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -161,10 +161,11 @@ static backlink_t *place_new_decl (backlink_t *parent, absyn_decl_t *decl)
       }
 
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("Invalid parent for decl.\n"));
    }
+
+   return NULL;
 }
 
 /* +================================================================+
@@ -241,9 +242,8 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST expr node type not handled.\n"));
    }
 
    if (node->exn_handler != NULL)

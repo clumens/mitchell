@@ -11,7 +11,7 @@
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.4 2005/07/14 01:59:17 chris Exp $
+ * $Id: free_vals.c,v 1.5 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -78,10 +78,12 @@ static symtab_t *get_symtab (absyn_expr_t *node, backlink_t *parent)
          return ((absyn_module_decl_t *) parent->ptr)->symtab;
 
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("Node's parent does not contain a "
+                                     "symbol table.\n"));
    }
+
+   return NULL;
 }
 
 /* +================================================================+
@@ -201,9 +203,8 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST expr node type not handled.\n"));
    }
 
    if (node->exn_handler != NULL)

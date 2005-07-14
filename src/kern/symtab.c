@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.24 2005/07/13 23:36:00 chris Exp $
+ * $Id: symtab.c,v 1.25 2005/07/14 03:02:53 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -136,9 +136,9 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+                                     sym->name);
       }
    }
    else
@@ -179,9 +179,9 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+                                     sym->name);
       }
    }
 
@@ -262,9 +262,9 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad newsym->kind"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+                                     newsym->name);
       }
    }
 

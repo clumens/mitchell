@@ -3,7 +3,7 @@
  * Override these basic versions with more complicated ones if that's what
  * a certain pass requires.
  *  
- * $Id: absyn_walk.c,v 1.4 2005/07/14 01:32:52 chris Exp $
+ * $Id: absyn_walk.c,v 1.5 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -99,9 +99,9 @@ list_t *visit_decl_lst (absyn_funcs_t *funcs, list_t *lst)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad decl->type"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("New AST type node type not "
+                                        "handled.\n"));
 #endif
       }
    }
@@ -189,9 +189,8 @@ absyn_expr_t *visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
-                                  __FILE__, __LINE__);
-         exit(1);
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New AST expr node type not handled.\n"));
    }
 
    if (node->exn_handler != NULL)

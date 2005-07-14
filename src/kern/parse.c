@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.49 2005/07/07 05:04:20 chris Exp $
+ * $Id: parse.c,v 1.50 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -255,10 +255,9 @@ static wchar_t *describe_token (const token_t *t)
  */
 static void parse_error(const token_t *t, const int accepted[])
 {
-   PARSE_ERROR (cconfig.filename, t->lineno, t->column);
-   fprintf (stderr, _("\tExpected token from set %ls, but got { %ls } "
-                      "instead.\n"), set_to_str (accepted), describe_token (t));
-   exit(1);
+   PARSE_ERROR (cconfig.filename, t->lineno, t->column, N_("Expected token from"
+                " set %ls, but got { %ls } instead.\n"), set_to_str (accepted),
+               describe_token (t));
 }
 
 /* Check the type of the lookahead token.  If we match, read the next
@@ -271,11 +270,8 @@ static void match (const unsigned int type)
    int temp_set[2] = { type, -1 };
 
    if (tok == NULL)
-   {
-      PARSE_ERROR (cconfig.filename, 0, 0);
-      fprintf (stderr, _("\tPremature end of input file.\n"));
-      exit (1);
-   }
+      PARSE_ERROR (cconfig.filename, 0, 0,
+                   N_("Premature end of input file.\n"));
 
    if (tok->type == type)
    {
@@ -287,11 +283,8 @@ static void match (const unsigned int type)
       
       /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
-      {
-         PARSE_ERROR (cconfig.filename, 0, 0);
-         fprintf (stderr, _("\tPremature end of input file.\n"));
-         exit (1);
-      }
+         PARSE_ERROR (cconfig.filename, 0, 0,
+                      N_("Premature end of input file.\n"));
    }
    else
       parse_error (tok, temp_set);

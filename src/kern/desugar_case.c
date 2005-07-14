@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.11 2005/07/13 23:35:59 chris Exp $
+ * $Id: desugar_case.c,v 1.12 2005/07/14 03:02:52 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -193,10 +193,8 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
 #ifndef NEW_TYPES
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad left->ty"), __FILE__,
-                                  __LINE__);
-         exit(1);
-         break;
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                  N_("New type not handled by unalias.\n"));
    }
 
    MALLOC (id->sub, sizeof(absyn_id_expr_t));
@@ -375,9 +373,9 @@ static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
-                                     __FILE__, __LINE__);
-            exit(1);
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
+                                     N_("New AST expr node type not "
+                                        "handled.\n"));
 #endif
    }
 
