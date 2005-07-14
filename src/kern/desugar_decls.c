@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.11 2005/07/07 05:04:19 chris Exp $
+ * $Id: desugar_decls.c,v 1.12 2005/07/13 23:35:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -184,7 +184,8 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
             }
 
             default:
-               MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"));
+               MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
+                                        __FILE__, __LINE__);
                exit(1);
          }
 
@@ -226,7 +227,8 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
+                                  __FILE__, __LINE__);
          exit(1);
    }
 

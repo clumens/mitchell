@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.12 2005/07/07 05:04:14 chris Exp $
+ * $Id: error.h,v 1.13 2005/07/13 23:35:57 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -34,7 +34,8 @@ void ERROR (char *msg);
 void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column,
                     char *msg);
 void FCLOSE_ERROR (char *file);
-void MITCHELL_INTERNAL_ERROR (char *file, char *msg);
+void MITCHELL_INTERNAL_ERROR (char *file, char *msg, char *srcfile,
+                              unsigned int line);
 void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
                                 unsigned int column);
 void PARSE_ERROR (char *file, unsigned int line, unsigned int column);

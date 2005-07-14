@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.52 2005/07/07 18:51:41 chris Exp $
+ * $Id: semant.c,v 1.53 2005/07/13 23:35:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -244,7 +244,8 @@ wchar_t *ty_to_str (const ty_t *ty)
 
 #ifndef NEW_TYPES
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad ty->ty"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad ty->ty"),
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }
@@ -559,7 +560,8 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }
@@ -608,7 +610,8 @@ static ty_finite ty_is_finite (ty_t *ty)
 
 #ifndef NEW_TYPES
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad ty->ty"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad ty->ty"), __FILE__,
+                                  __LINE__);
          exit(1);
 #endif
    }
@@ -955,7 +958,8 @@ static void check_decl_lst (list_t *lst, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad decl->type"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad decl->type"),
+                                     __FILE__, __LINE__);
             exit(1);
 #endif
       }
@@ -1196,7 +1200,8 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }
@@ -1289,7 +1294,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
    if (s->info.function == NULL)
    {
       MITCHELL_INTERNAL_ERROR (cconfig.filename, _("Referenced symbol has no "
-                               "type information."));
+                               "type information."), __FILE__, __LINE__);
       fprintf (stderr, _("referenced symbol: %ls\n"), node->identifier->symbol);
       exit(1);
    }
@@ -1376,7 +1381,8 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
    if (fun_sym->info.function == NULL)
    {
       MITCHELL_INTERNAL_ERROR (cconfig.filename, 
-                               _("Referenced symbol has no type information."));
+                               _("Referenced symbol has no type information."),
+                               __FILE__, __LINE__);
       fprintf (stderr, _("referenced symbol: %ls\n"), node->symbol->symbol);
       exit(1);
    }
@@ -1517,6 +1523,11 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    new_sym->name = node->symbol->symbol;
    new_sym->label = node->symbol->label;
    new_sym->info.stack = enter_scope (new_sym->info.stack);
+
+   /* Store a pointer to the module's top-level symbol table, which contains
+    * entries for everything defined at the top of the module's scope.
+    */
+   node->symtab = new_sym->info.stack->symtab;
    
    /* Add the module's symbol table entry, with its pointer to initialized
     * inner symbol table.

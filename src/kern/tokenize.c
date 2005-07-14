@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.27 2005/07/07 05:04:21 chris Exp $
+ * $Id: tokenize.c,v 1.28 2005/07/13 23:36:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -464,7 +464,8 @@ token_t *next_token (FILE *f)
             if (n == 0 && (errno == ERANGE || errno == EINVAL))
             {
                MITCHELL_INTERNAL_ERROR(cconfig.filename, _("Could not perform "
-                                       "numeric conversion."));
+                                       "numeric conversion."), __FILE__,
+                                       __LINE__);
                fclose (f);
                exit (1);
             }

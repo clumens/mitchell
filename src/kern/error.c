@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.c,v 1.2 2005/07/07 18:51:41 chris Exp $
+ * $Id: error.c,v 1.3 2005/07/13 23:35:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -83,10 +83,11 @@ void FCLOSE_ERROR (char *file)
    fprintf (stderr, _("%s Error: Could not close file.\n"), file);
 }
 
-void MITCHELL_INTERNAL_ERROR (char *file, char *msg)
+void MITCHELL_INTERNAL_ERROR (char *file, char *msg, char *srcfile,
+                              unsigned int line)
 {
    fprintf (stderr, _("%s Mitchell compiler internal error: %s:%d: %s\n"),
-                    file, __FILE__, __LINE__, msg);
+                    file, srcfile, line, msg);
 }
 
 void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,

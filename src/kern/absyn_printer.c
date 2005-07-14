@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.35 2005/07/07 05:04:19 chris Exp $
+ * $Id: absyn_printer.c,v 1.36 2005/07/13 23:35:59 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -168,7 +168,8 @@ static void print_decl_t (absyn_decl_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->type"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->type"),
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }
@@ -253,6 +254,7 @@ static void print_exn_handler_t (absyn_exn_handler_t *node, unsigned int il)
 static void print_exn_lst_t (absyn_exn_lst_t *node, unsigned int il)
 {
    fprintf (out, "\n%*sexn_lst_t = {", INDENT(il), "");
+   fprintf (out, "\n%*ssymtab = %p", INDENT(il+1), "", node->symtab);
 
    if (node->exn_id != NULL)
    {
@@ -337,7 +339,8 @@ static void print_expr_t (absyn_expr_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"), 
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }
@@ -539,7 +542,8 @@ static void print_ty_t (absyn_ty_t *node, unsigned int il)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
+                                  __FILE__, __LINE__);
          exit(1);
 #endif
    }

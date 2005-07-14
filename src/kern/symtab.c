@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.23 2005/07/07 05:04:20 chris Exp $
+ * $Id: symtab.c,v 1.24 2005/07/13 23:36:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -136,7 +136,8 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"),
+                                     __FILE__, __LINE__);
             exit(1);
       }
    }
@@ -178,7 +179,8 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad sym->kind"),
+                                     __FILE__, __LINE__);
             exit(1);
       }
    }
@@ -260,7 +262,8 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad newsym->kind"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad newsym->kind"),
+                                     __FILE__, __LINE__);
             exit(1);
       }
    }
