@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.12 2005/07/13 23:35:59 chris Exp $
+ * $Id: desugar_decls.c,v 1.13 2005/07/14 01:59:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -127,6 +127,46 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
    return retval;
 }
 
+/* Add the new function decl to the AST.  We have three possibilities here -
+ * there would be a fourth (the possibility of the parent being a fun-decl)
+ * but we eliminated it in the parser by ensuring all functions have a decl-expr
+ * as their body.  One of the cases is special:  the exception handler creates
+ * a new symbol table for its exception value, but not a new level of scope.
+ */
+static backlink_t *place_new_decl (backlink_t *parent, absyn_decl_t *decl)
+{
+   switch (parent->kind) {
+      case LINK_DECL_EXPR:
+      {
+         absyn_decl_expr_t *p = (absyn_decl_expr_t *) parent->ptr;
+
+         decl->parent = make_bl (LINK_DECL_EXPR, p);
+         p->decl_lst = list_append (p->decl_lst, decl);
+         return make_bl (LINK_DECL, decl);
+      }
+
+      case LINK_EXN_LST:
+      {
+         absyn_exn_lst_t *p = (absyn_exn_lst_t *) parent->ptr;
+         return place_new_decl (find_lexical_parent (p->parent), decl);
+      }
+
+      case LINK_MODULE_DECL:
+      {
+         absyn_module_decl_t *p = (absyn_module_decl_t *) parent->ptr;
+
+         decl->parent = make_bl (LINK_MODULE_DECL, p);
+         p->decl_lst = list_append (p->decl_lst, decl);
+         return make_bl (LINK_DECL, decl);
+      }
+
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
+                                  __FILE__, __LINE__);
+         exit(1);
+   }
+}
+
 /* +================================================================+
  * | PASS-LOCAL AST WALKING FUNCTIONS                               |
  * +================================================================+
@@ -147,8 +187,14 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
          absyn_decl_t *decl;
          absyn_decl_expr_t *decl_expr =
             funcs->visit_decl_expr (funcs, node->decl_expr);
-         absyn_fun_decl_t *new_fun = decl_expr_to_fun_decl (decl_expr);
          backlink_t *parent = find_lexical_parent (node->parent);
+
+         /* Create a new function that holds the decl-expr as its body, then
+          * make a new decl for that function.  This decl needs to get added
+          * to the proper place in the AST and also into a symbol table for
+          * free value analysis.
+          */
+         absyn_fun_decl_t *new_fun = decl_expr_to_fun_decl (decl_expr);
 
          MALLOC(decl, sizeof(absyn_decl_t));
          decl->lineno = new_fun->lineno;
@@ -156,40 +202,8 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
          decl->type = ABSYN_FUN_DECL;
          decl->fun_decl = new_fun;
 
-         new_fun->parent = make_bl (LINK_DECL, decl);
-
-         /* We only have two possibilities here, because we eliminated the
-          * third in the parser by ensuring all functions have a decl-expr
-          * as their body.  We'll strip out empty decl-exprs later.
-          */
-         switch (parent->kind) {
-            case LINK_DECL_EXPR:
-            {
-               absyn_decl_expr_t *p = (absyn_decl_expr_t *) parent->ptr;
-
-               decl->parent = make_bl (LINK_DECL_EXPR, p);
-               p->decl_lst = list_append (p->decl_lst, decl);
-               return make_fun_call_expr (new_fun->symbol,
-                                          make_bl (LINK_DECL, decl));
-            }
-
-            case LINK_MODULE_DECL:
-            {
-               absyn_module_decl_t *p = (absyn_module_decl_t *) parent->ptr;
-
-               decl->parent = make_bl (LINK_MODULE_DECL, p);
-               p->decl_lst = list_append (p->decl_lst, decl);
-               return make_fun_call_expr (new_fun->symbol,
-                                          make_bl (LINK_DECL, decl));
-            }
-
-            default:
-               MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
-                                        __FILE__, __LINE__);
-               exit(1);
-         }
-
-         break;
+         new_fun->parent = place_new_decl (parent, decl);
+         return make_fun_call_expr (new_fun->symbol, make_bl (LINK_DECL, decl));
       }
 
       case ABSYN_EXN:

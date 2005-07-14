@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.12 2005/07/07 05:04:19 chris Exp $
+ * $Id: desugar.c,v 1.13 2005/07/14 01:59:16 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -105,6 +105,7 @@ backlink_t *find_lexical_parent (backlink_t *bl)
       /* Aggravating. */
       switch (tmp->kind) {
          case LINK_DECL_EXPR:
+         case LINK_EXN_LST:
          case LINK_FUN_DECL:
          case LINK_MODULE_DECL:
             return tmp;
@@ -123,9 +124,6 @@ backlink_t *find_lexical_parent (backlink_t *bl)
 
          case LINK_EXN_HANDLER:
             tmp = ((absyn_exn_handler_t *) tmp->ptr)->parent; break;
-
-         case LINK_EXN_LST:
-            tmp = ((absyn_exn_lst_t *) tmp->ptr)->parent; break;
 
          case LINK_EXPR:
             tmp = ((absyn_expr_t *) tmp->ptr)->parent; break;
@@ -162,7 +160,8 @@ backlink_t *find_lexical_parent (backlink_t *bl)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad backlink type"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad backlink type"),
+                                     __FILE__, __LINE__);
             exit(1);
 #endif
       }

@@ -11,7 +11,7 @@
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.3 2005/07/07 05:04:20 chris Exp $
+ * $Id: free_vals.c,v 1.4 2005/07/14 01:59:17 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -62,6 +62,28 @@ absyn_funcs_t *init_lift_pass()
    return retval;
 }
 
+static symtab_t *get_symtab (absyn_expr_t *node, backlink_t *parent)
+{
+   switch (parent->kind) {
+      case LINK_DECL_EXPR:
+         return ((absyn_decl_expr_t *) parent->ptr)->symtab;
+
+      case LINK_EXN_LST:
+         return ((absyn_exn_lst_t *) parent->ptr)->symtab;
+
+      case LINK_FUN_DECL:
+         return ((absyn_fun_decl_t *) parent->ptr)->symtab;
+
+      case LINK_MODULE_DECL:
+         return ((absyn_module_decl_t *) parent->ptr)->symtab;
+
+      default:
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad parent->kind"),
+                                  __FILE__, __LINE__);
+         exit(1);
+   }
+}
+
 /* +================================================================+
  * | PASS-LOCAL AST WALKING FUNCTIONS                               |
  * +================================================================+
@@ -95,8 +117,10 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 
       case ABSYN_ID:
       {
-         backlink_t *parent;
-         symtab_t *symtab;
+         backlink_t *parent = find_lexical_parent (node->parent);
+         symtab_t *symtab = get_symtab (node, parent);
+         unsigned int lineno = node->identifier->lineno;
+         unsigned int column = node->identifier->column;
 
          /* We only need to check values to see if they're bound or not. */
          if (node->identifier->kind != SYM_VALUE)
@@ -107,8 +131,7 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
          {
             absyn_id_expr_t *tmp;
             
-            fprintf (stderr, _("%d:%d free value:  \n"),
-                     node->identifier->lineno, node->identifier->column);
+            fprintf (stderr, _("%d:%d free value:  \n"), lineno, column);
 
             for (tmp = node->identifier; tmp != NULL; tmp = tmp->sub)
             {
@@ -122,37 +145,36 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
             break;
          }
 
+         fprintf (stderr, "checking: %ls\n", node->identifier->symbol);
+
          /* If the value is not found in the innermost symtab, it's free. */
-         parent = find_lexical_parent (node->parent);
-
-         switch (parent->kind) {
-            case LINK_DECL_EXPR:
-               symtab = ((absyn_decl_expr_t *) parent->ptr)->symtab;
-               break;
-
-            case LINK_EXN_LST:
-               symtab = ((absyn_exn_lst_t *) parent->ptr)->symtab;
-               break;
-
-            case LINK_FUN_DECL:
-               symtab = ((absyn_fun_decl_t *) parent->ptr)->symtab;
-               break;
-
-            case LINK_MODULE_DECL:
-               symtab = ((absyn_module_decl_t *) parent->ptr)->symtab;
-               break;
-
-            default:
-               MITCHELL_INTERNAL_ERROR (cconfig.filename,
-                                        _("bad parent->kind"));
-               exit(1);
-         }
-
          if (table_lookup_entry (symtab, node->identifier->symbol,
-                                 SYM_VALUE) == NULL)
-            fprintf (stderr, _("%d:%d free value:  %ls\n"),
-                     node->identifier->lineno, node->identifier->column,
-                     node->identifier->symbol);
+                                 SYM_VALUE) == NULL &&
+             table_lookup_entry (symtab, node->identifier->symbol,
+                                 SYM_EXN) == NULL)
+         {
+            /* However, exception handlers are weird.  The exception value is
+             * placed into a new environment, but the handler itself does not
+             * exist in a new level of scope.  So we also need to check the
+             * next outer symbol table.  Yes, this is kind of stupid.
+             */
+            if (parent->kind == LINK_EXN_LST)
+            {
+               backlink_t *gparent =
+                  find_lexical_parent (((absyn_exn_lst_t *) parent->ptr)->parent);
+               symtab_t *gsymtab = get_symtab(node, gparent);
+                  
+               if (table_lookup_entry (gsymtab, node->identifier->symbol,
+                                       SYM_VALUE) == NULL &&
+                   table_lookup_entry (gsymtab, node->identifier->symbol,
+                                       SYM_EXN) == NULL)
+                  fprintf (stderr, _("%d:%d free value:  %ls\n"),
+                           lineno, column, node->identifier->symbol);
+            }
+            else
+               fprintf (stderr, _("%d:%d free value:  %ls\n"),
+                        lineno, column, node->identifier->symbol);
+         }
 
          break;
       }
@@ -179,7 +201,8 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, _("bad node->kind"),
+                                  __FILE__, __LINE__);
          exit(1);
    }
 
