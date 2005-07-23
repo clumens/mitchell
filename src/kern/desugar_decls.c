@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.14 2005/07/14 03:02:52 chris Exp $
+ * $Id: desugar_decls.c,v 1.15 2005/07/23 18:12:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -84,6 +84,8 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    retval->parent = in->parent;
    retval->symbol = str_to_id_expr (make_unique_str (L"__decl_expr"),
                                     in->lineno, in->column);
+   retval->symbol->kind = SYM_FUNCTION;
+   retval->symbol->parent = make_bl (LINK_FUN_DECL, retval);
    retval->formals = NULL;             /* will be fixed by lambda lifting */
 
    /* Create a new symbol table for the new function.  We won't be doing

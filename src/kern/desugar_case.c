@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.12 2005/07/14 03:02:52 chris Exp $
+ * $Id: desugar_case.c,v 1.13 2005/07/23 18:12:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -99,6 +99,8 @@ static absyn_val_decl_t *expr_to_val_decl (absyn_expr_t *in, backlink_t *bl)
    retval->ty = in->ty;
    retval->symbol = str_to_id_expr (make_unique_str (L"__val_decl"),
                                     in->lineno, in->column);
+   retval->symbol->kind = SYM_VALUE;
+   retval->symbol->parent = make_bl (LINK_VAL_DECL, retval);
    retval->ty_decl = NULL;
    retval->init = in;
 
@@ -250,7 +252,10 @@ static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
       if_expr->else_expr->parent = bl;
    }
    else
+   {
       if_expr->else_expr = build_if_expr (funcs, val, lst->next);
+      if_expr->else_expr->parent = bl;
+   }
 
    retval->if_expr = if_expr;
    return retval;

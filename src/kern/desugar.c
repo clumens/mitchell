@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.14 2005/07/14 03:02:52 chris Exp $
+ * $Id: desugar.c,v 1.15 2005/07/23 18:12:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -192,6 +192,7 @@ absyn_id_expr_t *str_to_id_expr (mstring_t *str, unsigned int lineno,
    retval->symbol = str;
    retval->label = str;
    retval->sub = NULL;
+   retval->parent = NULL;
 
    return retval;
 }
