@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.37 2005/07/14 03:02:51 chris Exp $
+ * $Id: absyn_printer.c,v 1.38 2005/07/23 15:46:22 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,6 +32,14 @@
 #include "error.h"
 #include "list.h"
 #include "translate.h"
+
+/* Must be in the same order as link_type from absyn.h. */
+static const char *link_map[] = {
+   "LINK_BRANCH_LST", "LINK_CASE_EXPR", "LINK_DECL", "LINK_EXN",
+   "LINK_EXN_HANDLER", "LINK_EXN_LST", "LINK_DECL_EXPR", "LINK_EXPR",
+   "LINK_FUN_CALL", "LINK_FUN_DECL", "LINK_ID_EXPR", "LINK_ID_LST",
+   "LINK_IF_EXPR", "LINK_MODULE_DECL", "LINK_RAISE", "LINK_RECORD_ASSN",
+   "LINK_RECORD_REF", "LINK_TY", "LINK_TY_DECL", "LINK_VAL_DECL" };
 
 /* More mutually recursive functions means more forward declarations. */
 static void print_branch_lst_t (list_t *lst, unsigned int il);
@@ -104,7 +112,9 @@ static void print_branch_lst_t (list_t *lst, unsigned int il)
    {
       absyn_branch_lst_t *node = tmp->data;
 
-      fprintf (out, "\n%*sbranch_lst_t = {", INDENT(il), "");
+      fprintf (out, "\n%*sbranch_lst_t(%p) = {", INDENT(il), "", node);
+      fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+               link_map[node->parent->kind], node->parent->ptr);
 
       fprintf (out, "\n%*sbranch =", INDENT(il+1), "");
       print_expr_t (node->branch, il+2);
@@ -118,7 +128,9 @@ static void print_branch_lst_t (list_t *lst, unsigned int il)
 
 static void print_case_expr_t (absyn_case_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*scase_expr_t = {", INDENT(il), "");
+   fprintf (out, "\n%*scase_expr_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*stest =", INDENT(il+1), "");
    print_expr_t (node->test, il+2);
@@ -147,7 +159,9 @@ static void print_case_expr_t (absyn_case_expr_t *node, unsigned int il)
 
 static void print_decl_t (absyn_decl_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sdecl_t =", INDENT(il), "");
+   fprintf (out, "\n%*sdecl_t(%p) =", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    switch (node->type) {
       case ABSYN_FUN_DECL:
@@ -176,7 +190,9 @@ static void print_decl_t (absyn_decl_t *node, unsigned int il)
 
 static void print_decl_expr_t (absyn_decl_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sdecl_expr_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sdecl_expr_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
    fprintf (out, "\n%*ssymtab = %p", INDENT(il+1), "", node->symtab);
 
    fprintf (out, "\n%*sdecl_lst =", INDENT(il+1), "");
@@ -192,7 +208,7 @@ static void print_decl_lst (list_t *lst, unsigned int il)
 {
    list_t *tmp;
 
-   fprintf (out, "\n%*sdecl_lst_t = [", INDENT(il), "");
+   fprintf (out, "\n%*sdecl_lst_t(%p) = [", INDENT(il), "", lst);
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
@@ -207,7 +223,9 @@ static void print_decl_lst (list_t *lst, unsigned int il)
 
 static void print_exn_expr_t (absyn_exn_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sexn_expr_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sexn_expr_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*sidentifier =", INDENT(il+1), "");
    print_id_expr_t (node->identifier, il+2);
@@ -220,7 +238,9 @@ static void print_exn_expr_t (absyn_exn_expr_t *node, unsigned int il)
 
 static void print_exn_handler_t (absyn_exn_handler_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sexn_handler_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sexn_handler_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    if (node->handler_lst != NULL)
    {
@@ -252,7 +272,9 @@ static void print_exn_handler_t (absyn_exn_handler_t *node, unsigned int il)
 
 static void print_exn_lst_t (absyn_exn_lst_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sexn_lst_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sexn_lst_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
    fprintf (out, "\n%*ssymtab = %p", INDENT(il+1), "", node->symtab);
 
    if (node->exn_id != NULL)
@@ -273,7 +295,9 @@ static void print_exn_lst_t (absyn_exn_lst_t *node, unsigned int il)
 
 static void print_expr_t (absyn_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sexpr_t =", INDENT(il), "");
+   fprintf (out, "\n%*sexpr_t(%p) =", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    switch (node->kind)
    {
@@ -351,7 +375,7 @@ static void print_expr_lst (list_t *lst, unsigned int il)
 {
    list_t *tmp;
 
-   fprintf (out, "\n%*sexpr_lst_t = [", INDENT(il), "");
+   fprintf (out, "\n%*sexpr_lst_t(%p) = [", INDENT(il), "", lst);
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
@@ -366,7 +390,9 @@ static void print_expr_lst (list_t *lst, unsigned int il)
 
 static void print_fun_call_t (absyn_fun_call_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sfun_call_expr = {", INDENT(il), "");
+   fprintf (out, "\n%*sfun_call_expr(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*sidentifier =", INDENT(il+1), "");
    print_id_expr_t (node->identifier, il+2);
@@ -379,7 +405,9 @@ static void print_fun_call_t (absyn_fun_call_t *node, unsigned int il)
 
 static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sfun_decl_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sfun_decl_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
    fprintf (out, "\n%*ssymtab = %p", INDENT(il+1), "", node->symtab);
 
    fprintf (out, "\n%*ssymbol =", INDENT(il+1), "");
@@ -399,8 +427,11 @@ static void print_fun_decl_t (absyn_fun_decl_t *node, unsigned int il)
 
 static void print_id_expr_t (absyn_id_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sid_expr_t(%ls, %ls)", INDENT(il), "", node->symbol,
-                 node->label);
+   fprintf (out, "\n%*sid_expr_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
+   fprintf (out, "\n%*s(symbol, label) = (%ls, %ls)", INDENT(il+1), "",
+            node->symbol, node->label);
    if (node->sub != NULL)
       print_id_expr_t (node->sub, il+1);
 }
@@ -409,7 +440,7 @@ static void print_id_lst_t (list_t *lst, unsigned int il)
 {
    list_t *tmp;
 
-   fprintf (out, "\n%*sid_lst_t = [", INDENT(il), "");
+   fprintf (out, "\n%*sid_lst_t(%p) = [", INDENT(il), "", lst);
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
@@ -429,7 +460,9 @@ static void print_id_lst_t (list_t *lst, unsigned int il)
 
 static void print_if_expr_t (absyn_if_expr_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sif_expr_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sif_expr_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*stest_expr =", INDENT(il+1), "");
    print_expr_t (node->test_expr, il+2);
@@ -445,7 +478,7 @@ static void print_if_expr_t (absyn_if_expr_t *node, unsigned int il)
 
 static void print_module_decl_t (absyn_module_decl_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*smodule_decl_t = {", INDENT(il), "");
+   fprintf (out, "\n%*smodule_decl_t(%p) = {", INDENT(il), "", node);
    fprintf (out, "\n%*ssymtab = %p", INDENT(il+1), "", node->symtab);
 
    fprintf (out, "\n%*ssymbol =", INDENT(il+1), "");
@@ -461,7 +494,7 @@ static void print_module_lst (list_t *lst, unsigned int il)
 {
    list_t *tmp;
 
-   fprintf (out, "\n%*smodule_lst_t = [", INDENT(il), "");
+   fprintf (out, "\n%*smodule_lst_t(%p) = [", INDENT(il), "", lst);
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
@@ -478,7 +511,7 @@ static void print_record_assn_t (list_t *lst, unsigned int il)
 {
    list_t *tmp;
 
-   fprintf (out, "\n%*srecord_lst = [", INDENT(il), "");
+   fprintf (out, "\n%*srecord_lst(%p) = [", INDENT(il), "", lst);
 
    for (tmp = lst; tmp != NULL; tmp = tmp->next)
    {
@@ -497,7 +530,9 @@ static void print_record_ref_t (absyn_record_ref_t *node, unsigned int il)
    if (node == NULL)
       return;
 
-   fprintf (out, "\n%*srecord_ref = {", INDENT(il), "");
+   fprintf (out, "\n%*srecord_ref(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*srec =", INDENT(il+1), "");
    print_expr_t (node->rec, il+2);
@@ -513,7 +548,9 @@ static void print_ty_t (absyn_ty_t *node, unsigned int il)
    if (node == NULL)
       return;
 
-   fprintf (out, "\n%*sty_t =", INDENT(il), "");
+   fprintf (out, "\n%*sty_t(%p) =", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    switch (node->kind) {
       case ABSYN_TY_BOTTOM:
@@ -548,7 +585,9 @@ static void print_ty_t (absyn_ty_t *node, unsigned int il)
 
 static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sty_decl_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sty_decl_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*ssymbol =", INDENT(il+1), "");
    print_id_expr_t (node->symbol, il+2);
@@ -561,7 +600,9 @@ static void print_ty_decl_t (absyn_ty_decl_t *node, unsigned int il)
 
 static void print_val_decl_t (absyn_val_decl_t *node, unsigned int il)
 {
-   fprintf (out, "\n%*sval_decl_t = {", INDENT(il), "");
+   fprintf (out, "\n%*sval_decl_t(%p) = {", INDENT(il), "", node);
+   fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "",
+            link_map[node->parent->kind], node->parent->ptr);
 
    fprintf (out, "\n%*ssymbol =", INDENT(il+1), "");
    print_id_expr_t (node->symbol, il+2);
