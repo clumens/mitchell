@@ -1,10 +1,10 @@
-# $Id: Makefile,v 1.33 2005/07/07 05:04:19 chris Exp $
+# $Id: Makefile,v 1.34 2005/08/04 03:15:40 chris Exp $
 
 include ../../Includes.mk
 
 CC = gcc
 override CFLAGS += -O2 -Wall -I../include -DPACKAGE=\"mitchell\" \
-	-DLOCALEDIR=\"$(LOCALEDIR)\"
+	-DLOCALEDIR=\"$(LOCALEDIR)\" -fno-strict-aliasing
 override LDFLAGS += -lgc -ldl
 
 ifdef DEBUG
