@@ -11,7 +11,7 @@
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.6 2005/08/04 03:23:31 chris Exp $
+ * $Id: free_vals.c,v 1.7 2005/08/04 04:37:26 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -32,9 +32,11 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 #include "absyn.h"
 #include "absyn_walk.h"
+#include "config.h"
 #include "desugar.h"
 #include "error.h"
 #include "list.h"
@@ -43,6 +45,8 @@
 
 static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
 static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data);
+
+static FILE *out = NULL;
 
 /* Entry point for this pass. */
 ast_t *lift_functions (absyn_funcs_t *funcs, ast_t *ast)
@@ -61,6 +65,18 @@ absyn_funcs_t *init_lift_pass()
    absyn_funcs_t *retval = init_default_funcs();
    retval->visit_expr = lift_visit_expr;
    retval->visit_fun_decl = lift_visit_fun_decl;
+
+   if (cconfig.debug.free_val_outfile == NULL || strcmp ("-", cconfig.debug.free_val_outfile) == 0)
+      out = stdout;
+   else
+   {
+      if ((out = fopen (cconfig.debug.free_val_outfile, "w")) == NULL)
+      {
+         COULD_NOT_WRITE_ERROR (cconfig.debug.free_val_outfile);
+         exit(1);
+      }
+   }
+   
    return retval;
 }
 
@@ -96,17 +112,17 @@ static void report_free (absyn_id_expr_t *node)
 {
    absyn_id_expr_t *tmp;
 
-   fprintf (stderr, "%d:%d: ", node->lineno, node->column);
+   fprintf (out, "%d:%d: ", node->lineno, node->column);
 
    for (tmp = node; tmp != NULL; tmp = tmp->sub)
    {
       if (tmp->sub == NULL)
-         fprintf (stderr, "%ls", tmp->symbol);
+         fprintf (out, "%ls", tmp->symbol);
       else
-         fprintf (stderr, "%ls.", tmp->symbol);
+         fprintf (out, "%ls.", tmp->symbol);
    }
 
-   fprintf (stderr, "\n");
+   fprintf (out, "\n");
 }
 
 /* +================================================================+
@@ -219,10 +235,10 @@ static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_de
 
    node->body = funcs->visit_decl_expr (funcs, node->body, (void **) (&free_values));
 
-   if (free_values == NULL)
+   if (free_values == NULL || cconfig.debug.dump_free_vals == 0)
       return node;
 
-   fprintf (stderr, _("Free values in function %ls:\n"), node->symbol->symbol);
+   fprintf (out, _("Free values in function %ls:\n"), node->symbol->symbol);
 
    for (tmp = free_values; tmp != NULL; tmp = tmp->next)
    {

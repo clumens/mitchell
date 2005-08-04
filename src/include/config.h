@@ -2,7 +2,7 @@
  * of the compiler.  For the most part, this configuration is set by the
  * command line options provided by the user.
  *
- * $Id: config.h,v 1.12 2005/06/30 00:56:00 chris Exp $
+ * $Id: config.h,v 1.13 2005/08/04 04:37:25 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -24,8 +24,7 @@
 #ifndef _CONFIG_H
 #define _CONFIG_H 1
 
-typedef enum { LAST_PARSER = 1, LAST_TYPECHECK, LAST_DESUGAR_CASE,
-               LAST_DESUGAR_DECL, LAST_DESUGAR_LIFT } last_phase_t;
+typedef enum { LAST_PARSER = 1, LAST_TYPECHECK, LAST_DESUGAR_CASE, LAST_DESUGAR_DECL, LAST_DESUGAR_LIFT } last_phase_t;
 
 typedef struct {
    char *filename;                     /* the file we're compiling */
@@ -40,6 +39,8 @@ typedef struct {
       char *absyn_outfile;             /* if dump_absyn is set, the dest */
       unsigned int dump_symtab;        /* dump the symbol tables or not? */
       char *symtab_outfile;            /* if dump_symtab is set, the dest */
+      unsigned int dump_free_vals;     /* dump the free value lists or not? */
+      char *free_val_outfile;          /* if dump_free_vals is set, the dest */
    } debug;
 } compiler_config_t;
 

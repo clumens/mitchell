@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.39 2005/08/04 03:16:11 chris Exp $
+ * $Id: main.c,v 1.40 2005/08/04 04:37:26 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -42,7 +42,7 @@
 /* What we want getopt_long to return. */
 typedef enum { OPT_HELP = 1000, OPT_VERBOSE_HELP, OPT_VERSION,
                OPT_LAST_PHASE,
-               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN, OPT_IDUMP_SYMTAB,
+               OPT_IDEBUG_PARSER, OPT_IDUMP_ABSYN, OPT_IDUMP_SYMTAB, OPT_IDUMP_FREE_VALS,
                OPT_WERROR } config_vals_t;
 
 /* The command line arguments we accept. */
@@ -61,6 +61,7 @@ static struct option longopts[] = {
    { "Idebug-parser", 1, NULL, OPT_IDEBUG_PARSER },
    { "Idump-absyn", 2, NULL, OPT_IDUMP_ABSYN },
    { "Idump-symtab", 2, NULL, OPT_IDUMP_SYMTAB },
+   { "Idump-free-vals", 2, NULL, OPT_IDUMP_FREE_VALS },
 
    /* Options for dealing with warnings */
    { "Werror", 0, NULL, OPT_WERROR },
@@ -73,7 +74,8 @@ compiler_config_t cconfig = { .last_phase = 0,
                               .warnings_are_errors = 0,
                               .debug.parser_debug = 0,
                               .debug.dump_absyn = 0,
-                              .debug.dump_symtab = 0};
+                              .debug.dump_symtab = 0,
+                              .debug.dump_free_vals = 0 };
 
 static void help_general ()
 {
@@ -84,12 +86,9 @@ static void help_general ()
 static void help_internal_debug ()
 {
    printf (_("Internal Debugging Options:\n"));
-   printf (_("-Idebug-parser=N\tSet debugging output level for the tokenizer "
-             "and parser.\n"));
-   printf (_("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file', "
-             "or <infile>.ast\n\t\t\tby default.\n"));
-   printf (_("-Idump-symtab[=file]\tDump the symbol tables to 'file', "
-             "or <infile>.symtab\n\t\t\tby default.\n"));
+   printf (_("-Idebug-parser=N\tSet debugging output level for the tokenizer and parser.\n"));
+   printf (_("-Idump-absyn[=file]\tDump the abstract syntax tree to 'file', or <infile>.ast\n\t\t\tby default.\n"));
+   printf (_("-Idump-symtab[=file]\tDump the symbol tables to 'file', or <infile>.symtab\n\t\t\tby default.\n"));
 }
 
 static void help_warnings ()
@@ -118,8 +117,7 @@ static void help (const char *progname)
 
 static void version (const char *progname)
 {
-   printf (_("mitchell version %s\n© 2004-2005 Chris Lumens\n"),
-           MITCHELL_VERSION);
+   printf (_("mitchell version %s\n© 2004-2005 Chris Lumens\n"), MITCHELL_VERSION);
    exit (0);
 }
 
@@ -130,8 +128,7 @@ static void handle_arguments (int argc, char **argv)
    if (argc == 1)
       help (argv[0]);
 
-   while ((retval = getopt_long_only (argc, argv, shortopts, longopts,
-                                      &index)) != -1)
+   while ((retval = getopt_long_only (argc, argv, shortopts, longopts, &index)) != -1)
    {
       switch (retval) {
          case 'h':
@@ -150,8 +147,9 @@ static void handle_arguments (int argc, char **argv)
 
          case OPT_LAST_PHASE:
             if (!optarg)
-               ERROR (N_("-last-phase requires an argument.  See the man page "
-                         "for details.\n"));
+               ERROR (N_("-last-phase requires an argument.  See the man page for details.\n"
+                         "\tPossible arguments: parser, typecheck, desugar-case, desugar-decl\n"
+                         "\t                    lambda-lift\n"));
 
             if (strcmp (optarg, "parser") == 0)
                cconfig.last_phase = LAST_PARSER;
@@ -164,8 +162,8 @@ static void handle_arguments (int argc, char **argv)
             else if (strcmp (optarg, "lambda-lift") == 0)
                cconfig.last_phase = LAST_DESUGAR_LIFT;
             else
-               ERROR (N_("Invalid option supplied to -last-phase.  See the man "
-                         "page for details.\n"));
+               ERROR (N_("Invalid option supplied to -last-phase.  See the man page for details.\n"
+                         "\tPossible arguments: parser, typecheck, desugar-case, desugar-decl lambda-lift\n"));
 
             break;
 
@@ -173,9 +171,7 @@ static void handle_arguments (int argc, char **argv)
             if (optarg)
                cconfig.debug.parser_debug = atoi(optarg);
             else
-               ERROR (N_("-Idebug-parser requires an argument.  See the man "
-                         "page for details.\n"));
-
+               ERROR (N_("-Idebug-parser requires an argument.  See the man page for details.\n"));
             break;
 
          case OPT_IDUMP_ABSYN:
@@ -196,6 +192,15 @@ static void handle_arguments (int argc, char **argv)
                cconfig.debug.symtab_outfile = strdup(optarg);
             else
                cconfig.debug.symtab_outfile = NULL;
+            break;
+
+         case OPT_IDUMP_FREE_VALS:
+            /* Likewise. */
+            cconfig.debug.dump_free_vals = 1;
+            if (optarg)
+               cconfig.debug.free_val_outfile = strdup(optarg);
+            else
+               cconfig.debug.free_val_outfile = NULL;
             break;
 
          case OPT_WERROR:
@@ -220,18 +225,22 @@ static void handle_arguments (int argc, char **argv)
    if (cconfig.debug.dump_absyn && cconfig.debug.absyn_outfile == NULL)
    {
       MALLOC (cconfig.debug.absyn_outfile, strlen(cconfig.filename)+5);
-      cconfig.debug.absyn_outfile = strcpy(cconfig.debug.absyn_outfile,
-                                           cconfig.filename);
+      cconfig.debug.absyn_outfile = strcpy(cconfig.debug.absyn_outfile, cconfig.filename);
       cconfig.debug.absyn_outfile = strcat(cconfig.debug.absyn_outfile, ".ast");
    }
  
    if (cconfig.debug.dump_symtab && cconfig.debug.symtab_outfile == NULL)
    {
       MALLOC (cconfig.debug.symtab_outfile, strlen(cconfig.filename)+8);
-      cconfig.debug.symtab_outfile = strcpy(cconfig.debug.symtab_outfile,
-                                            cconfig.filename);
-      cconfig.debug.symtab_outfile = strcat(cconfig.debug.symtab_outfile,
-                                            ".symtab");
+      cconfig.debug.symtab_outfile = strcpy(cconfig.debug.symtab_outfile, cconfig.filename);
+      cconfig.debug.symtab_outfile = strcat(cconfig.debug.symtab_outfile, ".symtab");
+   }
+
+   if (cconfig.debug.dump_free_vals && cconfig.debug.free_val_outfile == NULL)
+   {
+      MALLOC (cconfig.debug.free_val_outfile, strlen(cconfig.filename)+6);
+      cconfig.debug.free_val_outfile = strcpy(cconfig.debug.free_val_outfile, cconfig.filename);
+      cconfig.debug.free_val_outfile = strcat(cconfig.debug.free_val_outfile, ".free");
    }
 }
 
@@ -249,11 +258,11 @@ int main (int argc, char **argv)
     * on reading the source file and the user will get some horrible message.
     */
    if (strncmp (nl_langinfo(CODESET), "UTF-8", 5) != 0)
-      ERROR(N_("Your current locale is not UTF-8 aware.  The mitchell compiler "
-               "requires\n\tthe proper environment settings to be able to read "
-               "source files.  You\n\twill need to set your $LANG or $LC_ALL "
-               "environment variables to a locale\n\twhich is UTF-8 aware.  A "
-               "good setting for $LANG might be en_US-UTF-8.\n\tExiting."));
+      ERROR(N_("Your current locale is not UTF-8 aware.  The mitchell compiler requires\n"
+               "\tthe proper environment settings to be able to read source files.  You\n"
+               "\twill need to set your $LANG or $LC_ALL environment variables to a locale\n"
+               "\twhich is UTF-8 aware.  A good setting for $LANG might be en_US-UTF-8.\n"
+               "\tExiting."));
 
    handle_arguments (argc, argv);
    ast = parse (cconfig.filename);
