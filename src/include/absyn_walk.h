@@ -3,7 +3,7 @@
  * Override these basic versions with more complicated ones if that's what
  * a certain pass requires.
  *  
- * $Id: absyn_walk.h,v 1.1 2005/06/30 12:52:53 chris Exp $
+ * $Id: absyn_walk.h,v 1.2 2005/08/04 03:21:00 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,10 +33,10 @@
  * and type.  The second one defines that function's prototype.
  */
 #define TRAV_FUNC_PTR(name, type) \
-   type (* name)(struct absyn_funcs_t *funcs, type node)
+   type (* name)(struct absyn_funcs_t *funcs, type node, void **user_data)
 
 #define TRAV_FUNC_PROTO(name, type) \
-   type name (absyn_funcs_t *funcs, type node)
+   type name (absyn_funcs_t *funcs, type node, void **user_data)
 
 typedef struct absyn_funcs_t {
    TRAV_FUNC_PTR(visit_decl_expr, absyn_decl_expr_t *);

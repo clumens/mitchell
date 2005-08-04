@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.13 2005/07/23 18:12:43 chris Exp $
+ * $Id: desugar_case.c,v 1.14 2005/08/04 03:21:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -41,9 +41,8 @@
 #include "semant.h"
 #include "translate.h"
 
-static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
-                                                absyn_case_expr_t *node);
-static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node);
+static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs, absyn_case_expr_t *node, void **user_data);
+static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
 
 /* Entry point for this pass. */
 ast_t *desugar_case_exprs (absyn_funcs_t *funcs, ast_t *ast)
@@ -51,7 +50,7 @@ ast_t *desugar_case_exprs (absyn_funcs_t *funcs, ast_t *ast)
    list_t *tmp;
 
    for (tmp = ast; tmp != NULL; tmp = tmp->next)
-      tmp->data = funcs->visit_module_decl (funcs, tmp->data);
+      tmp->data = funcs->visit_module_decl (funcs, tmp->data, NULL);
 
    return ast;
 }
@@ -97,8 +96,7 @@ static absyn_val_decl_t *expr_to_val_decl (absyn_expr_t *in, backlink_t *bl)
    retval->column = in->lineno;
    retval->parent = bl;
    retval->ty = in->ty;
-   retval->symbol = str_to_id_expr (make_unique_str (L"__val_decl"),
-                                    in->lineno, in->column);
+   retval->symbol = str_to_id_expr (make_unique_str (L"__val_decl"), in->lineno, in->column);
    retval->symbol->kind = SYM_VALUE;
    retval->symbol->parent = make_bl (LINK_VAL_DECL, retval);
    retval->ty_decl = NULL;
@@ -114,8 +112,7 @@ static absyn_val_decl_t *expr_to_val_decl (absyn_expr_t *in, backlink_t *bl)
  * to see if we should follow this then-expr branch or not.  This sure is a
  * lot of work for something that should be so simple.
  */
-static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
-                                     absyn_expr_t *right)
+static absyn_expr_t *make_test_expr (absyn_val_decl_t *left, absyn_expr_t *right)
 {
    absyn_expr_t *retval, *val_expr;
    absyn_fun_call_t *fun_call;
@@ -195,8 +192,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
 #ifndef NEW_TYPES
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New type not handled by unalias.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New type not handled by unalias.\n"));
    }
 
    MALLOC (id->sub, sizeof(absyn_id_expr_t));
@@ -210,8 +206,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left,
    return retval;
 }
 
-static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
-                                    list_t *lst)
+static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val, list_t *lst)
 {
    absyn_expr_t *retval;
    absyn_if_expr_t *if_expr;
@@ -238,7 +233,7 @@ static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
 
    if_expr->test_expr = make_test_expr (val, branch->branch);
    if_expr->test_expr->parent = bl;
-   if_expr->then_expr = funcs->visit_expr (funcs, branch->expr);
+   if_expr->then_expr = funcs->visit_expr (funcs, branch->expr, NULL);
    if_expr->then_expr->parent = bl;
 
    /* If this is the last element in the branch-lst, it's the default and
@@ -248,7 +243,7 @@ static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
    if (lst->next->next == NULL)
    {
       absyn_branch_lst_t *next_branch = lst->next->data;
-      if_expr->else_expr = funcs->visit_expr(funcs, next_branch->expr);
+      if_expr->else_expr = funcs->visit_expr(funcs, next_branch->expr, NULL);
       if_expr->else_expr->parent = bl;
    }
    else
@@ -266,8 +261,7 @@ static absyn_expr_t *build_if_expr (absyn_funcs_t *funcs, absyn_val_decl_t *val,
  * +================================================================+
  */
 
-static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
-                                                absyn_case_expr_t *node)
+static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs, absyn_case_expr_t *node, void **user_data)
 {
    absyn_decl_expr_t *retval;
    absyn_decl_t *test_decl;
@@ -292,7 +286,7 @@ static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
    test_decl->column = node->test->column;
    test_decl->parent = bl;
    test_decl->type = ABSYN_VAL_DECL;
-   test_decl->val_decl = expr_to_val_decl (funcs->visit_expr(funcs, node->test),
+   test_decl->val_decl = expr_to_val_decl (funcs->visit_expr(funcs, node->test, user_data),
                                            make_bl (LINK_DECL, test_decl));
 
    retval->decl_lst = list_append (retval->decl_lst, test_decl);
@@ -301,27 +295,25 @@ static absyn_decl_expr_t *case_visit_case_expr (absyn_funcs_t *funcs,
     * if the branch_lst is only one element long, we can use that as the body
     * of the decl-expr.  Otherwise, we need to construct the chained if-exprs.
     */
-   node->branch_lst = list_append (node->branch_lst,
-                                   expr_to_branch_lst(node->default_expr, bl));
+   node->branch_lst = list_append (node->branch_lst, expr_to_branch_lst(node->default_expr, bl));
 
    if (list_length (node->branch_lst) == 1)
    {
       absyn_branch_lst_t *branch = node->branch_lst->data;
 
-      retval->expr = funcs->visit_expr (funcs, branch->expr);
+      retval->expr = funcs->visit_expr (funcs, branch->expr, user_data);
       retval->expr->parent = bl;
    }
    else
    {
-      retval->expr = build_if_expr(funcs, test_decl->val_decl,
-                                   node->branch_lst);
+      retval->expr = build_if_expr(funcs, test_decl->val_decl, node->branch_lst);
       retval->expr->parent = bl;
    }
 
    return retval;
 }
 
-static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
+static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data)
 {
    switch (node->kind) {
       case ABSYN_BOOLEAN:
@@ -337,55 +329,51 @@ static absyn_expr_t *case_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
          absyn_decl_expr_t *case_expr;
 
          node->kind = ABSYN_DECL;
-         case_expr = case_visit_case_expr (funcs, node->case_expr);
-         node->decl_expr = funcs->visit_decl_expr(funcs, case_expr);
+         case_expr = case_visit_case_expr (funcs, node->case_expr, user_data);
+         node->decl_expr = funcs->visit_decl_expr(funcs, case_expr, user_data);
          break;
       }
 
       case ABSYN_DECL:
-         node->decl_expr = funcs->visit_decl_expr (funcs, node->decl_expr);
+         node->decl_expr = funcs->visit_decl_expr (funcs, node->decl_expr, user_data);
          break;
 
       case ABSYN_EXN:
-         node->exn_expr = funcs->visit_exn_expr (funcs, node->exn_expr);
+         node->exn_expr = funcs->visit_exn_expr (funcs, node->exn_expr, user_data);
          break;
 
       case ABSYN_EXPR_LST:
-         node->expr_lst = funcs->visit_expr_lst (funcs, node->expr_lst);
+         node->expr_lst = funcs->visit_expr_lst (funcs, node->expr_lst, user_data);
          break;
 
       case ABSYN_FUN_CALL:
-         node->fun_call_expr = funcs->visit_fun_call (funcs, 
-                                                      node->fun_call_expr);
+         node->fun_call_expr = funcs->visit_fun_call (funcs, node->fun_call_expr, user_data);
          break;
 
       case ABSYN_IF:
-         node->if_expr = funcs->visit_if_expr (funcs, node->if_expr);
+         node->if_expr = funcs->visit_if_expr (funcs, node->if_expr, user_data);
          break;
 
       case ABSYN_RAISE:
-         node->raise_expr = funcs->visit_expr (funcs, node->raise_expr);
+         node->raise_expr = funcs->visit_expr (funcs, node->raise_expr, user_data);
          break;
 
       case ABSYN_RECORD_ASSN:
-         node->record_assn_lst =
-            funcs->visit_record_assn (funcs, node->record_assn_lst);
+         node->record_assn_lst = funcs->visit_record_assn (funcs, node->record_assn_lst, user_data);
          break;
 
       case ABSYN_RECORD_REF:
-         node->record_ref = funcs->visit_record_ref (funcs, node->record_ref);
+         node->record_ref = funcs->visit_record_ref (funcs, node->record_ref, user_data);
          break;
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                     N_("New AST expr node type not "
-                                        "handled.\n"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST expr node type not handled.\n"));
 #endif
    }
 
    if (node->exn_handler != NULL)
-      node->exn_handler = funcs->visit_exn_handler (funcs, node->exn_handler);
+      node->exn_handler = funcs->visit_exn_handler (funcs, node->exn_handler, user_data);
 
    return node;
 }

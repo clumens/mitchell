@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.15 2005/07/23 18:12:43 chris Exp $
+ * $Id: desugar_decls.c,v 1.16 2005/08/04 03:21:02 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -41,7 +41,7 @@
 #include "symtab.h"
 #include "translate.h"
 
-static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node);
+static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
 
 /* Entry point for this pass. */
 ast_t *desugar_decl_exprs (absyn_funcs_t *funcs, ast_t *ast)
@@ -49,7 +49,7 @@ ast_t *desugar_decl_exprs (absyn_funcs_t *funcs, ast_t *ast)
    list_t *tmp;
 
    for (tmp = ast; tmp != NULL; tmp = tmp->next)
-      tmp->data = funcs->visit_module_decl (funcs, tmp->data);
+      tmp->data = funcs->visit_module_decl (funcs, tmp->data, NULL);
 
    return ast;
 }
@@ -82,8 +82,7 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    retval->lineno = in->lineno;
    retval->column = in->column;
    retval->parent = in->parent;
-   retval->symbol = str_to_id_expr (make_unique_str (L"__decl_expr"),
-                                    in->lineno, in->column);
+   retval->symbol = str_to_id_expr (make_unique_str (L"__decl_expr"), in->lineno, in->column);
    retval->symbol->kind = SYM_FUNCTION;
    retval->symbol->parent = make_bl (LINK_FUN_DECL, retval);
    retval->formals = NULL;             /* will be fixed by lambda lifting */
@@ -120,8 +119,7 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
 
    retval->fun_call_expr->lineno = in->lineno;
    retval->fun_call_expr->column = in->column;
-   retval->fun_call_expr->parent =
-      make_bl (LINK_FUN_CALL, retval->fun_call_expr);
+   retval->fun_call_expr->parent = make_bl (LINK_FUN_CALL, retval->fun_call_expr);
    retval->fun_call_expr->ty = NULL;
    retval->fun_call_expr->identifier = in;
    retval->fun_call_expr->arg_lst = NULL;
@@ -163,8 +161,7 @@ static backlink_t *place_new_decl (backlink_t *parent, absyn_decl_t *decl)
       }
 
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("Invalid parent for decl.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Invalid parent for decl.\n"));
    }
 
    return NULL;
@@ -175,7 +172,7 @@ static backlink_t *place_new_decl (backlink_t *parent, absyn_decl_t *decl)
  * +================================================================+
  */
 
-static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
+static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data)
 {
    switch (node->kind) {
       case ABSYN_BOOLEAN:
@@ -188,8 +185,7 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
       case ABSYN_DECL:
       {
          absyn_decl_t *decl;
-         absyn_decl_expr_t *decl_expr =
-            funcs->visit_decl_expr (funcs, node->decl_expr);
+         absyn_decl_expr_t *decl_expr = funcs->visit_decl_expr (funcs, node->decl_expr, user_data);
          backlink_t *parent = find_lexical_parent (node->parent);
 
          /* Create a new function that holds the decl-expr as its body, then
@@ -210,33 +206,31 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
       }
 
       case ABSYN_EXN:
-         node->exn_expr = funcs->visit_exn_expr (funcs, node->exn_expr);
+         node->exn_expr = funcs->visit_exn_expr (funcs, node->exn_expr, user_data);
          break;
 
       case ABSYN_EXPR_LST:
-         node->expr_lst = funcs->visit_expr_lst (funcs, node->expr_lst);
+         node->expr_lst = funcs->visit_expr_lst (funcs, node->expr_lst, user_data);
          break;
 
       case ABSYN_FUN_CALL:
-         node->fun_call_expr = funcs->visit_fun_call (funcs,
-                                                      node->fun_call_expr);
+         node->fun_call_expr = funcs->visit_fun_call (funcs, node->fun_call_expr, user_data);
          break;
 
       case ABSYN_IF:
-         node->if_expr = funcs->visit_if_expr (funcs, node->if_expr);
+         node->if_expr = funcs->visit_if_expr (funcs, node->if_expr, user_data);
          break;
 
       case ABSYN_RAISE:
-         node->raise_expr = funcs->visit_expr (funcs, node->raise_expr);
+         node->raise_expr = funcs->visit_expr (funcs, node->raise_expr, user_data);
          break;
 
       case ABSYN_RECORD_ASSN:
-         node->record_assn_lst =
-            funcs->visit_record_assn (funcs, node->record_assn_lst);
+         node->record_assn_lst = funcs->visit_record_assn (funcs, node->record_assn_lst, user_data);
          break;
 
       case ABSYN_RECORD_REF:
-         node->record_ref = funcs->visit_record_ref (funcs, node->record_ref);
+         node->record_ref = funcs->visit_record_ref (funcs, node->record_ref, user_data);
          break;
 
       /* Running into a case expression is impossible, but this shuts up gcc. */
@@ -244,12 +238,11 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node)
 #ifndef NEW_GRAMMAR
       default:
 #endif
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New AST expr node type not handled.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST expr node type not handled.\n"));
    }
 
    if (node->exn_handler != NULL)
-      node->exn_handler = funcs->visit_exn_handler (funcs, node->exn_handler);
+      node->exn_handler = funcs->visit_exn_handler (funcs, node->exn_handler, user_data);
 
    return node;
 }
