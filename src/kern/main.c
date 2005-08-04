@@ -1,7 +1,7 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.38 2005/07/14 03:02:52 chris Exp $
+ * $Id: main.c,v 1.39 2005/08/04 03:16:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -151,7 +151,7 @@ static void handle_arguments (int argc, char **argv)
          case OPT_LAST_PHASE:
             if (!optarg)
                ERROR (N_("-last-phase requires an argument.  See the man page "
-                         "for details."));
+                         "for details.\n"));
 
             if (strcmp (optarg, "parser") == 0)
                cconfig.last_phase = LAST_PARSER;
@@ -165,7 +165,7 @@ static void handle_arguments (int argc, char **argv)
                cconfig.last_phase = LAST_DESUGAR_LIFT;
             else
                ERROR (N_("Invalid option supplied to -last-phase.  See the man "
-                         "page for details."));
+                         "page for details.\n"));
 
             break;
 
@@ -174,7 +174,7 @@ static void handle_arguments (int argc, char **argv)
                cconfig.debug.parser_debug = atoi(optarg);
             else
                ERROR (N_("-Idebug-parser requires an argument.  See the man "
-                         "page for details."));
+                         "page for details.\n"));
 
             break;
 
