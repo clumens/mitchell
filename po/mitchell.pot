@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-07-13 23:02-0400\n"
+"POT-Creation-Date: 2005-08-04 00:37-0400\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -20,17 +20,17 @@ msgstr ""
 msgid "Error allocating memory.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:172
+#: ../src/kern/absyn_printer.c:186
 msgid "New AST decl node type not handled.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:342 ../src/kern/absyn_walk.c:193
-#: ../src/kern/desugar_case.c:377 ../src/kern/desugar_decls.c:246
-#: ../src/kern/lift.c:207 ../src/kern/semant.c:1177
+#: ../src/kern/absyn_printer.c:366 ../src/kern/absyn_walk.c:184
+#: ../src/kern/desugar_case.c:371 ../src/kern/desugar_decls.c:241
+#: ../src/kern/lift.c:222 ../src/kern/semant.c:1177
 msgid "New AST expr node type not handled.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:544 ../src/kern/absyn_walk.c:103
+#: ../src/kern/absyn_printer.c:581 ../src/kern/absyn_walk.c:100
 #: ../src/kern/semant.c:248 ../src/kern/semant.c:563 ../src/kern/semant.c:612
 #: ../src/kern/semant.c:944
 msgid "New AST type node type not handled.\n"
@@ -48,11 +48,11 @@ msgstr ""
 msgid "New backlink type not handled.\n"
 msgstr ""
 
-#: ../src/kern/desugar_case.c:197
+#: ../src/kern/desugar_case.c:195
 msgid "New type not handled by unalias.\n"
 msgstr ""
 
-#: ../src/kern/desugar_decls.c:165
+#: ../src/kern/desugar_decls.c:164
 msgid "Invalid parent for decl.\n"
 msgstr ""
 
@@ -121,41 +121,36 @@ msgid ""
 "\t%s: %ls\n"
 msgstr ""
 
-#: ../src/kern/lift.c:82
+#: ../src/kern/lift.c:105
 msgid "Node's parent does not contain a symbol table.\n"
 msgstr ""
 
-#: ../src/kern/lift.c:136
+#: ../src/kern/lift.c:241
 #, c-format
-msgid "%d:%d free value:  \n"
+msgid "Free values in function %ls:\n"
 msgstr ""
 
-#: ../src/kern/lift.c:173 ../src/kern/lift.c:177
-#, c-format
-msgid "%d:%d free value:  %ls\n"
-msgstr ""
-
-#: ../src/kern/main.c:80
+#: ../src/kern/main.c:82
 #, c-format
 msgid "General Options:\n"
 msgstr ""
 
-#: ../src/kern/main.c:81
+#: ../src/kern/main.c:83
 #, c-format
 msgid "-last-phase=phase\tStop compilation after the given phase.\n"
 msgstr ""
 
-#: ../src/kern/main.c:86
+#: ../src/kern/main.c:88
 #, c-format
 msgid "Internal Debugging Options:\n"
 msgstr ""
 
-#: ../src/kern/main.c:87
+#: ../src/kern/main.c:89
 #, c-format
 msgid "-Idebug-parser=N\tSet debugging output level for the tokenizer and parser.\n"
 msgstr ""
 
-#: ../src/kern/main.c:89
+#: ../src/kern/main.c:90
 #, c-format
 msgid ""
 "-Idump-absyn[=file]\tDump the abstract syntax tree to 'file', or <infile>.ast\n"
@@ -169,46 +164,51 @@ msgid ""
 "\t\t\tby default.\n"
 msgstr ""
 
-#: ../src/kern/main.c:97
+#: ../src/kern/main.c:96
 #, c-format
 msgid "Warning Options:\n"
 msgstr ""
 
-#: ../src/kern/main.c:98
+#: ../src/kern/main.c:97
 #, c-format
 msgid "-Werror\t\t\tStop compilation on warnings, as on errors.\n"
 msgstr ""
 
-#: ../src/kern/main.c:103 ../src/kern/main.c:114
+#: ../src/kern/main.c:102 ../src/kern/main.c:113
 #, c-format
 msgid "Usage: %s <infile>\n"
 msgstr ""
 
-#: ../src/kern/main.c:115
+#: ../src/kern/main.c:114
 #, c-format
 msgid "\t-verbose-help for a list of all command line arguments\n"
 msgstr ""
 
-#: ../src/kern/main.c:121
+#: ../src/kern/main.c:120
 #, c-format
 msgid ""
 "mitchell version %s\n"
 "© 2004-2005 Chris Lumens\n"
 msgstr ""
 
-#: ../src/kern/main.c:153
-msgid "-last-phase requires an argument.  See the man page for details."
+#: ../src/kern/main.c:150
+msgid ""
+"-last-phase requires an argument.  See the man page for details.\n"
+"\tPossible arguments: parser, typecheck, desugar-case, desugar-decl\n"
+"\t                    lambda-lift\n"
 msgstr ""
 
-#: ../src/kern/main.c:167
-msgid "Invalid option supplied to -last-phase.  See the man page for details."
+#: ../src/kern/main.c:165
+msgid ""
+"Invalid option supplied to -last-phase.  See the man page for details.\n"
+"\tPossible arguments: parser, typecheck, desugar-case, desugar-decl lambda-lift\n"
 msgstr ""
 
-#: ../src/kern/main.c:176
-msgid "-Idebug-parser requires an argument.  See the man page for details."
+#: ../src/kern/main.c:174
+msgid "-Idebug-parser requires an argument.  See the man page for details.\n"
 msgstr ""
 
-#: ../src/kern/main.c:252
+#: ../src/kern/main.c:261
 msgid ""
 "Your current locale is not UTF-8 aware.  The mitchell compiler requires\n"
 "\tthe proper environment settings to be able to read source files.  You\n"
@@ -217,11 +217,11 @@ msgid ""
 "\tExiting."
 msgstr ""
 
-#: ../src/kern/main.c:262
+#: ../src/kern/main.c:271
 msgid "Initial abstract syntax tree"
 msgstr ""
 
-#: ../src/kern/main.c:274
+#: ../src/kern/main.c:283
 msgid "Simplified abstract syntax tree"
 msgstr ""
 
