@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.50 2005/07/14 03:02:52 chris Exp $
+ * $Id: parse.c,v 1.51 2005/08/10 01:40:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -60,12 +60,10 @@ static token_t *last_tok = NULL;    /* previous token - needed for AST */
 #define NRULES   26        /* number of parser rules in each set */
 #define SET_SIZE 20        /* max number of elements in each rule */
 
-enum { SET_ARG_LST, SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL,
-       SET_DECL_EXPR, SET_DECL_LST, SET_EXN_HANDLER, SET_EXN_LST, SET_EXPR,
-       SET_EXPR_LST, SET_FUN_DECL, SET_ID, SET_ID_LST,
-       SET_IF_EXPR, SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_NAKED_EXPR,
-       SET_RECORD_ASSN_LST, SET_RECORD_REF, SET_SYM_REF, SET_TOP_DECL,
-       SET_TOP_DECL_LST, SET_TY, SET_TY_DECL, SET_VAL_DECL };
+enum { SET_ARG_LST, SET_BRANCH_EXPR, SET_BRANCH_LST, SET_CASE_EXPR, SET_DECL, SET_DECL_EXPR, SET_DECL_LST,
+       SET_EXN_HANDLER, SET_EXN_LST, SET_EXPR, SET_EXPR_LST, SET_FUN_DECL, SET_ID, SET_ID_LST, SET_IF_EXPR,
+       SET_MODULE_DECL, SET_MODULE_DECL_LST, SET_NAKED_EXPR, SET_RECORD_ASSN_LST, SET_RECORD_REF, SET_SYM_REF,
+       SET_TOP_DECL, SET_TOP_DECL_LST, SET_TY, SET_TY_DECL, SET_VAL_DECL };
 
 static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* arg-lst */ { LPAREN, -1 },
@@ -77,18 +75,15 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
    /* decl-lst */ { FUNCTION, TYPE, VAL, -1 },
    /* exn-handler */ { HANDLE, -1 },
    /* exn-lst */ { ELSE, IDENTIFIER, -1 },
-   /* expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE,
-                LBRACK, LPAREN, RAISE, STRING, -1 },
-   /* expr-lst */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER,
-                    LBRACE, LBRACK, LPAREN, RAISE, STRING, -1 },
+   /* expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK, LPAREN, RAISE, STRING, -1 },
+   /* expr-lst */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK, LPAREN, RAISE, STRING, -1 },
    /* fun-decl */ { FUNCTION, -1 },
    /* id */ { IDENTIFIER, -1 },
    /* id-lst */ { IDENTIFIER, -1 },
    /* if-expr */ { IF, -1 },
    /* module-decl */ { MODULE, -1 },
    /* module-decl-lst */ { MODULE, -1 },
-   /* naked-expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER,
-                      LBRACE, LBRACK, RAISE, STRING, -1 },
+   /* naked-expr */ { BOOLEAN, BOTTOM, CASE, DECL, IDENTIFIER, IF, INTEGER, LBRACE, LBRACK, RAISE, STRING, -1 },
    /* record-assn-lst */ { IDENTIFIER, -1 },
    /* record-ref */ { PIPE, -1 },
    /* sym-ref */ { IDENTIFIER, -1 },
@@ -100,42 +95,31 @@ static const int FIRST_SET[NRULES][SET_SIZE] = {
 };
 
 static const int FOLLOW_SET[NRULES][SET_SIZE] = {
-   /* arg-lst */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, PIPE,
-                   RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* arg-lst */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, PIPE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* branch-expr */ { MAPSTO, -1 },
    /* branch-lst */ { END, -1 },
-   /* case-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                     RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* case-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
-   /* decl-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                     RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* decl-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* decl-lst */ { IN, -1 },
-   /* exn-handler */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                       RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* exn-handler */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* exn-lst */ { END, -1 },
-   /* expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* expr-lst */ { RBRACK, RPAREN, -1 },
    /* fun-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
-   /* id */ { ASSIGN, COMMA, ELSE, END, FUNCTION, HANDLE, IDENTIFIER, IN,
-              LBRACE, LPAREN, MAPSTO, MODULE, PIPE, RBRACE, RPAREN, RPAREN,
-              THEN, TYPE, VAL, -1 },
+   /* id */ { ASSIGN, COMMA, ELSE, END, FUNCTION, HANDLE, IDENTIFIER, IN, LBRACE, LPAREN, MAPSTO, MODULE, PIPE,
+              RBRACE, RPAREN, RPAREN, THEN, TYPE, VAL, -1 },
    /* id-lst */ { RBRACE, RPAREN, -1 },
-   /* if-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                   RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* if-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* module-decl */ { END, ENDOFFILE, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* module-decl-lst */ { ENDOFFILE, -1 },
-   /* naked-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                      RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* naked-expr */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* record-assn-lst */ { RBRACE, -1 },
-   /* record-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                      RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
-   /* sym-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE,
-                   RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* record-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
+   /* sym-ref */ { COMMA, ELSE, END, FUNCTION, HANDLE, IN, MODULE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL, -1 },
    /* top-decl */ { END, FUNCTION, MODULE, TYPE, VAL, -1 },
    /* top-decl-lst */ { END, -1 },
-   /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, MODULE, RBRACE,
-              RPAREN, TYPE, VAL, -1 },
+   /* ty */ { ASSIGN, COMMA, END, FUNCTION, IN, LPAREN, MODULE, RBRACE, RPAREN, TYPE, VAL, -1 },
    /* ty-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 },
    /* val-decl */ { END, FUNCTION, IN, MODULE, TYPE, VAL, -1 }
 };
@@ -203,8 +187,7 @@ static wchar_t *set_to_str (const int set[])
 
    for (i = 0; set[i] != -1; i++)
    {
-      REALLOC (retval, WCSLEN(retval)+WCSLEN(token_map[set[i]])+
-                       sizeof(wchar_t)*2);
+      REALLOC (retval, WCSLEN(retval)+WCSLEN(token_map[set[i]])+ sizeof(wchar_t)*2);
       retval = wcscat (retval, L" ");
       retval = wcscat (retval, token_map[set[i]]);
    }
@@ -255,9 +238,8 @@ static wchar_t *describe_token (const token_t *t)
  */
 static void parse_error(const token_t *t, const int accepted[])
 {
-   PARSE_ERROR (cconfig.filename, t->lineno, t->column, N_("Expected token from"
-                " set %ls, but got { %ls } instead.\n"), set_to_str (accepted),
-               describe_token (t));
+   PARSE_ERROR (cconfig.filename, t->lineno, t->column, N_("Expected token from set %ls, but got { %ls } instead.\n"),
+                set_to_str (accepted), describe_token (t));
 }
 
 /* Check the type of the lookahead token.  If we match, read the next
@@ -270,8 +252,7 @@ static void match (const unsigned int type)
    int temp_set[2] = { type, -1 };
 
    if (tok == NULL)
-      PARSE_ERROR (cconfig.filename, 0, 0,
-                   N_("Premature end of input file.\n"));
+      PARSE_ERROR (cconfig.filename, 0, 0, N_("Premature end of input file.\n"));
 
    if (tok->type == type)
    {
@@ -283,8 +264,7 @@ static void match (const unsigned int type)
       
       /* Grab a new token out of the stream for lookahead. */
       if ((tok = next_token (in)) == NULL)
-         PARSE_ERROR (cconfig.filename, 0, 0,
-                      N_("Premature end of input file.\n"));
+         PARSE_ERROR (cconfig.filename, 0, 0, N_("Premature end of input file.\n"));
    }
    else
       parse_error (tok, temp_set);
@@ -1272,8 +1252,7 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
          retval->record_ref->lineno = retval->lineno;
          retval->record_ref->column = retval->column;
          retval->record_ref->parent = make_bl (LINK_EXPR, retval);
-         retval->record_ref->element =
-            parse_record_ref(make_bl (LINK_RECORD_REF, retval->record_ref));
+         retval->record_ref->element = parse_record_ref(make_bl (LINK_RECORD_REF, retval->record_ref));
 
          /* We have to wrap the fun_call in an expr, of course. */
          MALLOC (retval->record_ref->rec, sizeof(absyn_expr_t));
@@ -1334,8 +1313,7 @@ static absyn_decl_t *parse_top_decl (backlink_t *parent)
          retval->lineno = tok->lineno;
          retval->column = tok->column;
          retval->parent = parent;
-         retval->module_decl =
-            parse_module_decl(make_bl(LINK_MODULE_DECL, retval));
+         retval->module_decl = parse_module_decl(make_bl(LINK_MODULE_DECL, retval));
          break;
 
       case FUNCTION:

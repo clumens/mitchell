@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.c,v 1.4 2005/07/14 03:02:52 chris Exp $
+ * $Id: error.c,v 1.5 2005/08/10 01:40:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -50,8 +50,7 @@ static void WARNINGS_AS_ERRORS()
 /* Errors, which should be followed by whatever other text needs to be printed
  * and then an exit(1).
  */
-void BAD_SYMBOL_ERROR (char *file, unsigned int line, unsigned int column,
-                       wchar_t *sym, char *msg)
+void BAD_SYMBOL_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *sym, char *msg)
 {
    _error (file, line, column);
    fprintf (stderr, "\n\t%ls: %s\n", sym, msg);
@@ -80,8 +79,7 @@ void ERROR (const char *format, ...)
    exit(1);
 }
 
-void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column,
-                    char *msg)
+void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column, char *msg)
 {
    _error (file, line, column);
    fprintf (stderr, "%s\n", msg);
@@ -92,13 +90,11 @@ void FCLOSE_ERROR (char *file)
    fprintf (stderr, _("%s Error: Could not close file.\n"), file);
 }
 
-void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line,
-                              const char *format, ...)
+void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line, const char *format, ...)
 {
    va_list ap;
    
-   fprintf (stderr, _("%s Mitchell internal compiler error: %s:%d: "),
-                    file, srcfile, line);
+   fprintf (stderr, _("%s Mitchell internal compiler error: %s:%d: "), file, srcfile, line);
 
    va_start (ap, format);
    vfprintf (stderr, _(format), ap);
@@ -107,16 +103,14 @@ void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line,
    exit(1);
 }
 
-void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
-                                unsigned int column)
+void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line, unsigned int column)
 {
    _error (file, line, column);
    fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "
                       "else branch is recommended to avoid runtime errors.\n"));
 }
 
-void PARSE_ERROR (char *file, unsigned int line, unsigned int column,
-                  const char *format, ...)
+void PARSE_ERROR (char *file, unsigned int line, unsigned int column, const char *format, ...)
 {
    va_list ap;
    
@@ -130,8 +124,7 @@ void PARSE_ERROR (char *file, unsigned int line, unsigned int column,
    exit(1);   
 }
 
-void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column,
-                      wchar_t *ty)
+void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *ty)
 {
    _error (file, line, column);
    fprintf (stderr, _("Type check error: The following symbol is in an "
@@ -139,18 +132,16 @@ void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column,
    exit(1);
 }
 
-void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg,
-                 char *ty1_msg, wchar_t *ty1, char *ty2_msg, wchar_t *ty2)
+void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg, char *ty1_msg, wchar_t *ty1,
+                 char *ty2_msg, wchar_t *ty2)
 {
    _error (file, line, column);
-   fprintf (stderr, _("Type check error: %s\n\t%s: %ls\n\t%s: %ls\n"),
-                    msg, ty1_msg, ty1, ty2_msg, ty2);
+   fprintf (stderr, _("Type check error: %s\n\t%s: %ls\n\t%s: %ls\n"), msg, ty1_msg, ty1, ty2_msg, ty2);
    exit(1);
 }
 
 /* Warnings, which do not stop compilation (unless you want them to). */
-void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line,
-                                  unsigned int column)
+void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line, unsigned int column)
 {
    _warning (file, line, column);
    fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "

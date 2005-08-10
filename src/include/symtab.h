@@ -5,7 +5,7 @@
  * the table where most new symbols will be added.  Leaving a level of scope
  * corresponds to removing this topmost table from the stack.
  *
- * $Id: symtab.h,v 1.16 2005/06/29 23:45:02 chris Exp $
+ * $Id: symtab.h,v 1.17 2005/08/10 01:40:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -51,8 +51,7 @@
  * a SYM_NONE for things like record element references that don't go in any
  * subtable.
  */
-typedef enum { SYM_EXN, SYM_FUNCTION, SYM_MODULE, SYM_TYPE,
-               SYM_VALUE, SYM_NONE } subtable_t;
+typedef enum { SYM_EXN, SYM_FUNCTION, SYM_MODULE, SYM_TYPE, SYM_VALUE, SYM_NONE } subtable_t;
 
 typedef struct {
    struct ty_t *retval;
@@ -98,8 +97,7 @@ typedef struct tabstack_t {
  *           whatever type is expected for type checking purposes
  *    TY_BOTTOM is the type for when there's no other type (⊥)
  */
-typedef enum { TY_ALIAS, TY_ANY, TY_BOOLEAN, TY_BOTTOM, TY_EXN, TY_INTEGER,
-               TY_LIST, TY_RECORD, TY_STRING } ty_kind;
+typedef enum { TY_ALIAS, TY_ANY, TY_BOOLEAN, TY_BOTTOM, TY_EXN, TY_INTEGER, TY_LIST, TY_RECORD, TY_STRING } ty_kind;
 
 /* Used for determining whether a type is part of an infinite loop or not. */
 typedef enum { TY_NOT_FINITE, TY_UNVISITED, TY_VISITED, TY_FINITE } ty_finite;
@@ -116,8 +114,7 @@ typedef struct ty_t {
    union {
       symbol_t      *alias;               /* TY_ALIAS */
       struct ty_t   *list_base_ty;        /* TY_LIST */
-      list_t        *elts;                /* TY_EXN, TY_RECORD - list of
-                                             element_t */
+      list_t        *elts;                /* TY_EXN, TY_RECORD - list of element_t */
    };
 } ty_t;
 
@@ -127,14 +124,11 @@ typedef struct ty_t {
  */
 
 /* Functions for manipulating a single symbol table. */
-symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
-                              subtable_t kind);
+symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name, subtable_t kind);
 symtab_t *symtab_new();
 int table_add_entry (symtab_t *symtab, symbol_t *symbol);
-unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
-                                 subtable_t kind);
-int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
-                        symbol_t *newsym);
+unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name, subtable_t kind);
+int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind, symbol_t *newsym);
 
 /* Functions for manipulating an entire stack of symbol tables.  These should
  * be used by client code for symbol table management, rather than the single
@@ -143,12 +137,9 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
 tabstack_t *enter_scope (tabstack_t *tabstack);
 tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name);
 int symtab_add_entry (tabstack_t *tabstack, symbol_t *symbol);
-symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name,
-                               subtable_t kind);
-unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name,
-                                  subtable_t kind);
-unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name,
-                                        subtable_t kind);
+symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name, subtable_t kind);
+unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name, subtable_t kind);
+unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name, subtable_t kind);
 
 /* Functions to dump the symbol tables. */
 void symbol_dump (FILE *f, symbol_t *sym);

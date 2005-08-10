@@ -5,7 +5,7 @@
  * and also because it needs to be as simple as possible for future
  * reimplementation in the language itself.
  *
- * $Id: tokenize.c,v 1.29 2005/07/14 03:02:53 chris Exp $
+ * $Id: tokenize.c,v 1.30 2005/08/10 01:40:12 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -46,9 +46,8 @@
 const wchar_t *token_map[] = {
    L"BOOLEAN", L"EXN", L"IDENTIFIER", L"INTEGER", L"LIST", L"STRING",
 
-   L"ASSIGN", L"BOTTOM", L"CASE", L"COLON", L"COMMA", L"DECL", L"DOT", L"ELSE",
-   L"END", L"FUNCTION", L"HANDLE", L"IF", L"IN", L"LBRACE", L"LBRACK",
-   L"LPAREN", L"MAPSTO", L"MODULE", L"PIPE", L"RAISE", L"RBRACE", L"RBRACK",
+   L"ASSIGN", L"BOTTOM", L"CASE", L"COLON", L"COMMA", L"DECL", L"DOT", L"ELSE", L"END", L"FUNCTION", L"HANDLE",
+   L"IF", L"IN", L"LBRACE", L"LBRACK", L"LPAREN", L"MAPSTO", L"MODULE", L"PIPE", L"RAISE", L"RBRACE", L"RBRACK",
    L"RPAREN", L"THEN", L"TYPE", L"VAL",
    
    L"COMMENT", L"DBLQUOTE", L"ENDOFFILE"};
@@ -66,8 +65,7 @@ static __inline__ unsigned int is_reserved (wchar_t ch)
 /* Function to test if a character is a valid number character. */
 static unsigned int number_member (wint_t ch)
 {
-   return !iswspace (ch) && !is_reserved (ch) &&
-          (iswdigit(ch) || iswlower(ch) == L'x');
+   return !iswspace (ch) && !is_reserved (ch) && (iswdigit(ch) || iswlower(ch) == L'x');
 }
 
 /* Function to test if a character is a valid word character. */
@@ -85,9 +83,9 @@ static __inline__ wint_t read_char (FILE *f)
 
    if (errno == EILSEQ)
    {
-      ERROR (_("Unable to read character.  Please check that $LANG is set to a "
-               "UTF-8 aware\n\tlocale and that mitchell was compiled with "
-               "gcc-3.4 or more recent.\n\tExiting."));
+      ERROR (_("Unable to read character.  Please check that $LANG is set to a UTF-8 aware\n"
+               "\tlocale and that mitchell was compiled with gcc-3.4 or more recent.\n"
+               "\tExiting."));
       fclose (f);
       exit (1);
    }
@@ -108,9 +106,9 @@ static __inline__ void unget_char (wint_t ch, FILE *f)
 {
    if (ungetwc (ch, f) == WEOF && errno == EILSEQ)
    {
-      ERROR (_("Unable to read character.  Please check that $LANG is set to a "
-               "UTF-8 aware\n\tlocale and that mitchell was compiled with "
-               "gcc-3.4 or more recent.\n\tExiting."));
+      ERROR (_("Unable to read character.  Please check that $LANG is set to a UTF-8 aware\n"
+               "\tlocale and that mitchell was compiled with " "gcc-3.4 or more recent.\n"
+               "\tExiting."));
       fclose (f);
       exit (1);
    }
@@ -201,8 +199,7 @@ static mstring_t *string_state (FILE *f)
          if ((ch = read_char (f)) == WEOF)
          {
             fclose(f);
-            PARSE_ERROR (cconfig.filename, lineno, column, N_("Premature end "
-                         "of file while reading string.\n"));
+            PARSE_ERROR (cconfig.filename, lineno, column, N_("Premature end of file while reading string.\n"));
          }
 
          switch (ch) {
@@ -219,23 +216,18 @@ static mstring_t *string_state (FILE *f)
                mint_t n;
                wchar_t str[4];
 
-               if ((str[0] = read_char(f)) == WEOF ||
-                   (str[1] = read_char(f)) == WEOF ||
-                   (str[2] = read_char(f)) == WEOF ||
-                   (str[3] = read_char(f)) == WEOF)
+               if ((str[0] = read_char(f)) == WEOF || (str[1] = read_char(f)) == WEOF ||
+                   (str[2] = read_char(f)) == WEOF || (str[3] = read_char(f)) == WEOF)
                {
                   fclose(f);
-                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Premature "
-                               "end of file while reading unicode character "
-                               "escape sequence.\n"));
+                  PARSE_ERROR (cconfig.filename, lineno, column,
+                               N_("Premature end of file while reading unicode character escape sequence.\n"));
                }
 
-               if (!iswxdigit (str[0]) || !iswxdigit(str[1]) ||
-                   !iswxdigit (str[2]) || !iswxdigit(str[3]))
+               if (!iswxdigit (str[0]) || !iswxdigit(str[1]) || !iswxdigit (str[2]) || !iswxdigit(str[3]))
                {
                   fclose(f);
-                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Invalid "
-                               "unicode character escape sequence.\n"));
+                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Invalid unicode character escape sequence.\n"));
                }
 
                n = wcstol (str, NULL, 16);
@@ -243,8 +235,7 @@ static mstring_t *string_state (FILE *f)
                if (errno == ERANGE || errno == EINVAL)
                {
                   fclose(f);
-                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Invalid "
-                               "unicode character escape sequence.\n"));
+                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Invalid unicode character escape sequence.\n"));
                }
 
                retval[new_len-2] = n;
@@ -257,17 +248,15 @@ static mstring_t *string_state (FILE *f)
                if ((ch = read_char (f)) == WEOF)
                {
                   fclose(f);
-                  PARSE_ERROR (cconfig.filename, lineno, column, N_("Premature "
-                               "end of file while reading string whitespace "
-                               "escape sequence.\n"));
+                  PARSE_ERROR (cconfig.filename, lineno, column,
+                               N_("Premature end of file while reading string whitespace escape sequence.\n"));
                }
 
                if (ch != L'\\')
                {
                   fclose(f);
-                  PARSE_ERROR (cconfig.filename, lineno, column, N_("String "
-                               "whitespace escape sequences must end with "
-                               "'\\'.\n"));
+                  PARSE_ERROR (cconfig.filename, lineno, column,
+                               N_("String whitespace escape sequences must end with '\\'.\n"));
                }
 
                new_len--;
@@ -458,9 +447,7 @@ token_t *next_token (FILE *f)
             {
                fclose(f);
                MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                        N_("Could not perform numeric "
-                                           "conversion on string: %ls\n"),
-                                        str);
+                                        N_("Could not perform numeric conversion on string: %ls\n"), str);
             }
 
             retval->integer = n;

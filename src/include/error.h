@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.h,v 1.14 2005/07/14 03:02:48 chris Exp $
+ * $Id: error.h,v 1.15 2005/08/10 01:40:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -28,30 +28,23 @@
 /* Errors, which should be followed by whatever other text needs to be printed
  * and then an exit(1).
  */
-void BAD_SYMBOL_ERROR (char *file, unsigned int line, unsigned int column,
-                       wchar_t *sym, char *msg);
+void BAD_SYMBOL_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *sym, char *msg);
 void COULD_NOT_READ_ERROR (char *file);
 void COULD_NOT_WRITE_ERROR (char *file);
 void ERROR (const char *format, ...) __attribute__ ((format (printf, 1, 2)));
-void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column,
-                    char *msg);
+void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column, char *msg);
 void FCLOSE_ERROR (char *file);
-void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line,
-                              const char *format, ...)
+void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line, const char *format, ...)
                              __attribute__ ((format (printf, 4, 5)));
-void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line,
-                                unsigned int column);
-void PARSE_ERROR (char *file, unsigned int line, unsigned int column,
-                  const char *format, ...)
+void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line, unsigned int column);
+void PARSE_ERROR (char *file, unsigned int line, unsigned int column, const char *format, ...)
                  __attribute__ ((format (printf, 4, 5)));
-void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column,
-                      wchar_t *ty);
-void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg,
-                 char *ty1_msg, wchar_t *ty1, char *ty2_msg, wchar_t *ty2);
+void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *ty);
+void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg, char *ty1_msg, wchar_t *ty1,
+                 char *ty2_msg, wchar_t *ty2);
 
 /* Warnings, which do not stop compilation. */
-void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line,
-                                  unsigned int column);
+void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line, unsigned int column);
 
 #endif
 

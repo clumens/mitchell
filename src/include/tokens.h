@@ -1,7 +1,7 @@
 /* This file defines the public interface to the tokenizer, which breaks up
  * the input file into a stream of tokens for use by the parser.
  *
- * $Id: tokens.h,v 1.17 2005/07/07 05:04:14 chris Exp $
+ * $Id: tokens.h,v 1.18 2005/08/10 01:40:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -30,9 +30,8 @@
 
 typedef enum { BOOLEAN, EXN, IDENTIFIER, INTEGER, LIST, STRING,
    
-               ASSIGN, BOTTOM, CASE, COLON, COMMA, DECL, DOT, ELSE, END,
-               FUNCTION, HANDLE, IF, IN, LBRACE, LBRACK, LPAREN, MAPSTO,
-               MODULE, PIPE, RAISE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL,
+               ASSIGN, BOTTOM, CASE, COLON, COMMA, DECL, DOT, ELSE, END, FUNCTION, HANDLE, IF, IN, LBRACE, LBRACK,
+               LPAREN, MAPSTO, MODULE, PIPE, RAISE, RBRACE, RBRACK, RPAREN, THEN, TYPE, VAL,
                
                COMMENT, DBLQUOTE, ENDOFFILE } token_val_t;
 

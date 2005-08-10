@@ -1,6 +1,6 @@
 /* Memory management macros and functions.
  *
- * $Id: memory.h,v 1.5 2005/07/14 03:02:49 chris Exp $
+ * $Id: memory.h,v 1.6 2005/08/10 01:40:09 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -31,15 +31,13 @@
 #define MALLOC(ptr, size) \
    do { \
       if (((ptr) = GC_MALLOC(size)) == NULL) \
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, \
-                                  N_("Error allocating memory.\n")); \
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Error allocating memory.\n")); \
    } while (0)
 
 #define REALLOC(ptr, size) \
    do { \
       if (((ptr) = GC_REALLOC(ptr, size)) == NULL) \
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, \
-                                  N_("Error allocating memory.\n")); \
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Error allocating memory.\n")); \
    } while (0)
 
 #endif

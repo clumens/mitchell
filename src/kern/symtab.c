@@ -1,6 +1,6 @@
 /* Symbol table manipulation.
  *
- * $Id: symtab.c,v 1.25 2005/07/14 03:02:53 chris Exp $
+ * $Id: symtab.c,v 1.26 2005/08/10 01:40:12 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -64,8 +64,7 @@ static inline unsigned int hash (const mstring_t *str, const subtable_t kind)
  */
 static inline unsigned int equal_kinds (const subtable_t a, const subtable_t b)
 {
-   if (((a == SYM_VALUE || a == SYM_FUNCTION) &&
-        (b == SYM_VALUE || b == SYM_FUNCTION)) ||
+   if (((a == SYM_VALUE || a == SYM_FUNCTION) && (b == SYM_VALUE || b == SYM_FUNCTION)) ||
        ((a == SYM_EXN || a == SYM_TYPE) && (b == SYM_EXN || b == SYM_TYPE)))
       return 1;
    else
@@ -136,8 +135,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Symbol has type of SYM_NONE: %ls\n"),
                                      sym->name);
       }
    }
@@ -179,8 +177,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Symbol has type of SYM_NONE: %ls\n"),
                                      sym->name);
       }
    }
@@ -189,8 +186,7 @@ int table_add_entry (symtab_t *symtab, symbol_t *sym)
 }
 
 /* Lookup an entry in the given symbol table. */
-symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
-                              subtable_t kind)
+symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name, subtable_t kind)
 {
    unsigned int row = hash (name, kind);
    symtab_entry_t *tmp;
@@ -199,16 +195,14 @@ symbol_t *table_lookup_entry (symtab_t *symtab, mstring_t *name,
       return NULL;
 
    for (tmp = (*symtab)[row] ; tmp != NULL ; tmp = tmp->next)
-      if (wcscmp ((wchar_t *) name, (wchar_t *) tmp->symbol->name) == 0 &&
-          equal_kinds (kind, tmp->symbol->kind))
+      if (wcscmp ((wchar_t *) name, (wchar_t *) tmp->symbol->name) == 0 && equal_kinds (kind, tmp->symbol->kind))
          return tmp->symbol;
 
    return NULL;
 }
 
 /* Does the given string exist in the symbol table?  Return success or not. */
-unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
-                                 subtable_t kind)
+unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name, subtable_t kind)
 {
    return table_lookup_entry (symtab, name, kind) == NULL ? 0 : 1;
 }
@@ -217,8 +211,7 @@ unsigned int table_entry_exists (symtab_t *symtab, mstring_t *name,
  * and replace with the symbol new.  If it does not exist, simply add new into
  * the symbol table.
  */
-int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
-                        symbol_t *newsym)
+int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind, symbol_t *newsym)
 {
    if (table_entry_exists (symtab, name, kind) == 0)
       return table_add_entry (symtab, newsym);
@@ -233,8 +226,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
        */
       while (1)
       {
-         if (wcscmp (name, cur->symbol->name) == 0 &&
-             equal_kinds (kind, cur->symbol->kind))
+         if (wcscmp (name, cur->symbol->name) == 0 && equal_kinds (kind, cur->symbol->kind))
             break;
          else
             cur = cur->next;
@@ -262,8 +254,7 @@ int table_update_entry (symtab_t *symtab, mstring_t *name, subtable_t kind,
             break;
 
          case SYM_NONE:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                     N_("Symbol has type of SYM_NONE: %ls\n"),
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("Symbol has type of SYM_NONE: %ls\n"),
                                      newsym->name);
       }
    }
@@ -309,8 +300,7 @@ tabstack_t *leave_scope (tabstack_t *tabstack, mstring_t *scope_name)
    /* Print out the symbol tables, if we're supposed to. */
    if (cconfig.debug.dump_symtab)
    {
-      if (cconfig.debug.symtab_outfile == NULL ||
-          strcmp ("-", cconfig.debug.symtab_outfile) == 0)
+      if (cconfig.debug.symtab_outfile == NULL || strcmp ("-", cconfig.debug.symtab_outfile) == 0)
          table_dump (stdout, tabstack->symtab, scope_name);
       else
       {
@@ -335,8 +325,7 @@ int symtab_add_entry (tabstack_t *tabstack, symbol_t *sym)
    return table_add_entry (tabstack->symtab, sym);
 }
 
-symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name,
-                               subtable_t kind)
+symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name, subtable_t kind)
 {
    tabstack_t *tmp = tabstack;
    symbol_t *retval;
@@ -353,15 +342,13 @@ symbol_t *symtab_lookup_entry (tabstack_t *tabstack, mstring_t *name,
    return NULL;
 }
 
-unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name,
-                                  subtable_t kind)
+unsigned int symtab_entry_exists (tabstack_t *tabstack, mstring_t *name, subtable_t kind)
 {
    return (symtab_lookup_entry (tabstack, name, kind) == NULL) ?
       0 : 1;
 }
 
-unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name,
-                                        subtable_t kind)
+unsigned int symtab_entry_exists_local (tabstack_t *tabstack, mstring_t *name, subtable_t kind)
 {
    return table_entry_exists (tabstack->symtab, name, kind);
 }

@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.54 2005/07/14 03:02:52 chris Exp $
+ * $Id: semant.c,v 1.55 2005/08/10 01:40:11 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -38,8 +38,7 @@
 
 /* Messages we seem to be printing a whole lot. */
 static char *unknown_sym_ref = N_("Referenced symbol is unknown.");
-static char *duplicate_sym = N_("A symbol with this name already exists in "
-                                "this scope.");
+static char *duplicate_sym = N_("A symbol with this name already exists in this scope.");
 
 /* This is the base environment, containing all the predefined values,
  * functions, modules, and types.  Keep this as absolutely small as possible.
@@ -157,8 +156,7 @@ wchar_t *ty_to_str (const ty_t *ty)
     * strings must match the order of the ty_kind enumeration in symtab.h.
     */
    static wchar_t *ty_map[] = {
-      L"alias", L"any", L"boolean", L"⊥", L"exn", L"integer", L"list",
-      L"record", L"string" };
+      L"alias", L"any", L"boolean", L"⊥", L"exn", L"integer", L"list", L"record", L"string" };
 
    if (ty == NULL)
       return NULL;
@@ -244,8 +242,7 @@ wchar_t *ty_to_str (const ty_t *ty)
 
 #ifndef NEW_TYPES
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New AST type node type not handled.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST type node type not handled.\n"));
 #endif
    }
 
@@ -270,8 +267,7 @@ ty_t *unalias (ty_t *ty)
 
 static int __ele_to_ele_cmp (void *lst_data, void *user_data)
 {
-   return wcscmp (((element_t *) lst_data)->identifier,
-                  ((element_t *) user_data)->identifier);
+   return wcscmp (((element_t *) lst_data)->identifier, ((element_t *) user_data)->identifier);
 }
 
 static int __ele_to_str_cmp (void *lst_data, void *user_data)
@@ -357,8 +353,7 @@ static unsigned int equal_types (ty_t *aliased_left, ty_t *aliased_right)
             /* If the elements do not have the same identifier with the same
              * type, fail.  Otherwise, we cycle around to the next one.
              */
-            if (wcscmp (left_ele->identifier, right_ele->identifier) != 0 ||
-                !equal_types (left_ele->ty, right_ele->ty))
+            if (wcscmp (left_ele->identifier, right_ele->identifier) != 0 || !equal_types (left_ele->ty, right_ele->ty))
                return 0;
 
             left_lst = left_lst->next;
@@ -380,8 +375,7 @@ static unsigned int equal_types (ty_t *aliased_left, ty_t *aliased_right)
  * Returns the symbol table entry if it exists (from which type information
  * can be extracted) or NULL otherwise.
  */
-static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind,
-                            tabstack_t *stack)
+static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind, tabstack_t *stack)
 {
    /* If there's no namespace, this is just a naked identifier.  That means
     * it must be resolved within the current module.  Traverse the current
@@ -436,8 +430,7 @@ static symbol_t *lookup_id (absyn_id_expr_t *node, subtable_t kind,
 /* First look up the symbol in the provided stack.  If it's not found there,
  * check the global symbol table.
  */
-static symbol_t *lookup_id_global (absyn_id_expr_t *node, subtable_t kind,
-                                   tabstack_t *stack)
+static symbol_t *lookup_id_global (absyn_id_expr_t *node, subtable_t kind, tabstack_t *stack)
 {
    symbol_t *s;
 
@@ -470,8 +463,7 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
          if ((s = lookup_id_global (node->identifier, SYM_TYPE, stack)) == NULL)
          {
-            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno,
-                              node->column, node->identifier->symbol,
+            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->identifier->symbol,
                               _(unknown_sym_ref));
             exit(1);
          }
@@ -542,14 +534,11 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
             new_ele->ty = ast_to_ty (cur_id->ty, stack);
 
             /* Two elements with the same name are not allowed. */
-            retval->elts = list_insert_unique (retval->elts, new_ele,
-                                               __ele_to_ele_cmp);
+            retval->elts = list_insert_unique (retval->elts, new_ele, __ele_to_ele_cmp);
             if (retval->elts == NULL)
             {
-               BAD_SYMBOL_ERROR (cconfig.filename, cur_id->lineno,
-                                 cur_id->column, cur_id->symbol->symbol,
-                                 _("Record definition already contains a "
-                                   "symbol with this name."));
+               BAD_SYMBOL_ERROR (cconfig.filename, cur_id->lineno, cur_id->column, cur_id->symbol->symbol,
+                                 _("Record definition already contains a symbol with this name."));
                exit(1);
             }
          }
@@ -559,8 +548,7 @@ static ty_t *ast_to_ty (absyn_ty_t *node, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New AST type node type not handled.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST type node type not handled.\n"));
 #endif
    }
 
@@ -608,8 +596,7 @@ static ty_finite ty_is_finite (ty_t *ty)
 
 #ifndef NEW_TYPES
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New AST type node type not handled.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST type node type not handled.\n"));
 #endif
    }
 
@@ -645,11 +632,9 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
     */
    node->test->ty = check_expr (node->test, stack);
 
-   if (!is_ty_kind (node->test->ty, TY_BOOLEAN) &&
-       !is_ty_kind (node->test->ty, TY_INTEGER) &&
+   if (!is_ty_kind (node->test->ty, TY_BOOLEAN) && !is_ty_kind (node->test->ty, TY_INTEGER) &&
        !is_ty_kind (node->test->ty, TY_STRING))
-      TYPE_ERROR (cconfig.filename, node->test->lineno,
-                  node->test->column,
+      TYPE_ERROR (cconfig.filename, node->test->lineno, node->test->column,
                   _("Type of test expression is not a basic type."),
                   _("test expresion type"), ty_to_str (node->test->ty),
                   _("expected type"), L"boolean, integer, string");
@@ -663,8 +648,7 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
 
       if (!equal_types (node->test->ty, b->branch->ty))
          TYPE_ERROR (cconfig.filename, b->branch->lineno, b->branch->column,
-                     _("Branch test must have the same type as the test "
-                       "expression."),
+                     _("Branch test must have the same type as the test expression."),
                      _("branch test type"), ty_to_str (node->test->ty),
                      _("test expression type"), ty_to_str (b->branch->ty));
 
@@ -707,13 +691,10 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
       if (node->branch_lst != NULL)
       {
          if (!equal_types (node->ty, node->default_expr->ty))
-            TYPE_ERROR (cconfig.filename, node->default_expr->lineno,
-                        node->default_expr->column,
-                        _("Default expression type does not match type of "
-                          "branch expressions."),
+            TYPE_ERROR (cconfig.filename, node->default_expr->lineno, node->default_expr->column,
+                        _("Default expression type does not match type of branch expressions."),
                         _("branch expression type"), ty_to_str (node->ty),
-                        _("default expression type"),
-                        ty_to_str (node->default_expr->ty));
+                        _("default expression type"), ty_to_str (node->default_expr->ty));
       }
       else
          node->ty = node->default_expr->ty;
@@ -728,16 +709,13 @@ static ty_t *check_case_expr (absyn_case_expr_t *node, tabstack_t *stack)
        * possibilities are covered (if the branch tests are identifiers
        * especially) so just throw a warning.
        */
-      if (is_ty_kind (node->test->ty, TY_INTEGER) ||
-          is_ty_kind (node->test->ty, TY_STRING))
+      if (is_ty_kind (node->test->ty, TY_INTEGER) || is_ty_kind (node->test->ty, TY_STRING))
       {
-         NONEXHAUSTIVE_MATCH_ERROR (cconfig.filename, node->lineno,
-                                    node->column);
+         NONEXHAUSTIVE_MATCH_ERROR (cconfig.filename, node->lineno, node->column);
          exit(1);
       }
       else
-         NONEXHAUSTIVE_MATCH_WARNING (cconfig.filename, node->lineno,
-                                      node->column);
+         NONEXHAUSTIVE_MATCH_WARNING (cconfig.filename, node->lineno, node->column);
    }
 
    return node->ty;
@@ -799,8 +777,7 @@ static void process_fun_block (list_t *start, list_t *end, tabstack_t *stack)
        * be stored in the order seen so we can match them against the actual
        * parameters at function call time and check type against type.
        */
-      for (ast_tmp = fun_decl->formals; ast_tmp != NULL;
-           ast_tmp = ast_tmp->next)
+      for (ast_tmp = fun_decl->formals; ast_tmp != NULL; ast_tmp = ast_tmp->next)
       {
          absyn_id_lst_t *formals_ast = ast_tmp->data;
 
@@ -819,8 +796,7 @@ static void process_fun_block (list_t *start, list_t *end, tabstack_t *stack)
        */
       if (symtab_add_entry (stack, new_sym) == -1)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, fun_decl->lineno, fun_decl->column,
-                           fun_name->symbol, _(duplicate_sym));
+         BAD_SYMBOL_ERROR (cconfig.filename, fun_decl->lineno, fun_decl->column, fun_name->symbol, _(duplicate_sym));
          exit(1);
       }
    }
@@ -847,12 +823,10 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
       /* You're not allowed to make a type that overrides anything in the global
        * scope, since that scope contains our base types.
        */
-      if (lookup_id (ty_sym, SYM_TYPE, global) != NULL ||
-          lookup_id (ty_sym, SYM_EXN, global) != NULL)
+      if (lookup_id (ty_sym, SYM_TYPE, global) != NULL || lookup_id (ty_sym, SYM_EXN, global) != NULL)
       {
          BAD_SYMBOL_ERROR (cconfig.filename, ty_sym->lineno, ty_sym->column,
-                           ty_sym->symbol, _("Type identifiers may not "
-                           "override symbols in the global scope."));
+                           ty_sym->symbol, _("Type identifiers may not override symbols in the global scope."));
          exit(1);
       }
 
@@ -873,8 +847,7 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
        */
       if (symtab_add_entry (stack, new_sym) == -1)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, ty_sym->lineno, ty_sym->column,
-                           ty_sym->symbol, _(duplicate_sym));
+         BAD_SYMBOL_ERROR (cconfig.filename, ty_sym->lineno, ty_sym->column, ty_sym->symbol, _(duplicate_sym));
          exit(1);
       }
    }
@@ -893,8 +866,7 @@ static void process_ty_block (list_t *start, list_t *end, tabstack_t *stack)
       absyn_ty_decl_t *ty_decl = ((absyn_decl_t *) tmp->data)->ty_decl;
 
       if (ty_is_finite (ty_decl->ty) == TY_NOT_FINITE)
-         TYPE_LOOP_ERROR (cconfig.filename, ty_decl->lineno,
-                          ty_decl->column, ty_decl->symbol->symbol);
+         TYPE_LOOP_ERROR (cconfig.filename, ty_decl->lineno, ty_decl->column, ty_decl->symbol->symbol);
    }
 }
 
@@ -911,8 +883,7 @@ static void check_decl_lst (list_t *lst, tabstack_t *stack)
          case ABSYN_FUN_DECL:
             /* Set the bounds of this function block to [start, end) */
             start = end = tmp;
-            while (end != NULL &&
-                   ((absyn_decl_t *) end->data)->type == ABSYN_FUN_DECL)
+            while (end != NULL && ((absyn_decl_t *) end->data)->type == ABSYN_FUN_DECL)
                end = tmp = tmp->next;
 
             process_fun_block (start, end, stack);
@@ -926,8 +897,7 @@ static void check_decl_lst (list_t *lst, tabstack_t *stack)
          case ABSYN_TY_DECL:
             /* Set the bounds of this type block to [start, end) */
             start = end = tmp;
-            while (end != NULL &&
-                   ((absyn_decl_t *) end->data)->type == ABSYN_TY_DECL)
+            while (end != NULL && ((absyn_decl_t *) end->data)->type == ABSYN_TY_DECL)
                end = tmp = end->next;
 
             process_ty_block (start, end, stack);
@@ -940,9 +910,7 @@ static void check_decl_lst (list_t *lst, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
          default:
-            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                     N_("New AST type node type not "
-                                        "handled.\n"));
+            MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST type node type not handled.\n"));
 #endif
       }
    }
@@ -956,17 +924,15 @@ static ty_t *check_exn_expr (absyn_exn_expr_t *node, tabstack_t *stack)
    /* Look up the type of node->identifier to make sure it's an exception. */
    if ((sym = lookup_id_global (node->identifier, SYM_EXN, stack)) == NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->identifier->symbol, _(unknown_sym_ref));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->identifier->symbol, _(unknown_sym_ref));
       exit(1);
    }
 
    /* Exceptions and types are in the same namespace. */
    if (sym->kind != SYM_EXN)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->identifier->symbol, _("Referenced symbol is a "
-                        "type instead of an exception."));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->identifier->symbol,
+                        _("Referenced symbol is a type instead of an exception."));
       exit(1);
    }
 
@@ -1011,10 +977,8 @@ static ty_t *check_exn_handler (absyn_exn_handler_t *node, tabstack_t *stack)
          ty_t *tmp = check_exn_lst (e, stack);
 
          if (!equal_types (node->ty, tmp))
-            TYPE_ERROR (cconfig.filename, e->lineno, e->column,
-                        _("Inconsistent types in exception handler list."),
-                        _("first exception handler type"),
-                        ty_to_str (node->ty),
+            TYPE_ERROR (cconfig.filename, e->lineno, e->column, _("Inconsistent types in exception handler list."),
+                        _("first exception handler type"), ty_to_str (node->ty),
                         _("this exception handler type"), ty_to_str (tmp));
       }
    }
@@ -1027,18 +991,13 @@ static ty_t *check_exn_handler (absyn_exn_handler_t *node, tabstack_t *stack)
    {
       if (node->handler_lst != NULL)
       {
-         node->default_handler->ty = check_exn_lst (node->default_handler,
-                                                    stack);
+         node->default_handler->ty = check_exn_lst (node->default_handler, stack);
 
          if (!equal_types (node->ty, node->default_handler->ty))
-            TYPE_ERROR (cconfig.filename, node->default_handler->lineno,
-                        node->default_handler->column, _("Default exception "
-                        "handler type does not match type of previous "
-                        "exception handlers."),
-                        _("first exception handler type"),
-                        ty_to_str (node->ty),
-                        _("default exception handler type"),
-                        ty_to_str (node->default_handler->ty));
+            TYPE_ERROR (cconfig.filename, node->default_handler->lineno, node->default_handler->column,
+                        _("Default exception handler type does not match type of previous exception handlers."),
+                        _("first exception handler type"), ty_to_str (node->ty),
+                        _("default exception handler type"), ty_to_str (node->default_handler->ty));
       }
       else
          node->ty = check_exn_lst (node->default_handler, stack);
@@ -1059,17 +1018,15 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
    {
       if ((sym = lookup_id_global (node->exn_id, SYM_EXN, stack)) == NULL)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                           node->exn_id->symbol, _(unknown_sym_ref));
+         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->exn_id->symbol, _(unknown_sym_ref));
          exit(1);
       }
 
       /* Exceptions and types are in the same namespace. */
       if (sym->kind != SYM_EXN)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                           node->exn_id->symbol, _("Referenced symbol is a "
-                           "type instead of an exception."));
+         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->exn_id->symbol,
+                           _("Referenced symbol is a type instead of an exception."));
          exit(1);
       }
 
@@ -1093,8 +1050,7 @@ static ty_t *check_exn_lst (absyn_exn_lst_t *node, tabstack_t *stack)
 
    if (symtab_add_entry (stack, new_sym) == -1)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->id,
-                        _(duplicate_sym));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->id, _(duplicate_sym));
       exit(1);
    }
 
@@ -1173,8 +1129,7 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
 
 #ifndef NEW_GRAMMAR
       default:
-         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                                  N_("New AST expr node type not handled.\n"));
+         MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__, N_("New AST expr node type not handled.\n"));
 #endif
    }
 
@@ -1186,12 +1141,10 @@ static ty_t *check_expr (absyn_expr_t *node, tabstack_t *stack)
       node->exn_handler->ty = check_exn_handler (node->exn_handler, stack);
 
       if (!equal_types (node->ty, node->exn_handler->ty))
-         TYPE_ERROR (cconfig.filename, node->exn_handler->lineno,
-                     node->exn_handler->column, _("Type of exception handler "
-                     "does not match type of expression."),
+         TYPE_ERROR (cconfig.filename, node->exn_handler->lineno, node->exn_handler->column,
+                     _("Type of exception handler does not match type of expression."),
                      _("expression type"), ty_to_str (node->ty),
-                     _("exception handler type"),
-                     ty_to_str (node->exn_handler->ty));
+                     _("exception handler type"), ty_to_str (node->exn_handler->ty));
 
       node->ty = node->exn_handler->ty;
    }
@@ -1219,8 +1172,7 @@ static ty_t *check_expr_lst (list_t *lst, tabstack_t *stack)
          node->ty = check_expr (node, stack);
 
          if (!equal_types (node->ty, expr_ty))
-            TYPE_ERROR (cconfig.filename, node->lineno, node->column,
-                        _("Inconsistent types in expression list."),
+            TYPE_ERROR (cconfig.filename, node->lineno, node->column, _("Inconsistent types in expression list."),
                         _("previous expression type"), ty_to_str (expr_ty),
                         _("this expression type"), ty_to_str (node->ty));
       }
@@ -1243,24 +1195,21 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
 
    if ((s = lookup_id_global (node->identifier, SYM_FUNCTION, stack)) == NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->identifier->symbol, _(unknown_sym_ref));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->identifier->symbol, _(unknown_sym_ref));
       exit(1);
    }
 
    /* Values and functions exist in the same namespace, so check what we got. */
    if (s->kind != SYM_FUNCTION)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->identifier->symbol, _("Referenced symbol is a "
-                        "value instead of a function."));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->identifier->symbol,
+                        _("Referenced symbol is a value instead of a function."));
       exit(1);
    }
 
    if (s->info.function == NULL)
       MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                               N_("Referenced symbol has no type information: "
-                                  "%ls"), node->identifier->symbol);
+                               N_("Referenced symbol has no type information: %ls"), node->identifier->symbol);
 
    /* Check that each argument's type matches against the corresponding formal
     * parameter's type.
@@ -1282,8 +1231,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
       else if (!(arg_lst != NULL && formal_lst != NULL))
       {
          ERROR_IN_FILE (cconfig.filename, node->lineno, node->column,
-                        _("Number of actual parameters does not match number "
-                          "of formals."));
+                        _("Number of actual parameters does not match number of formals."));
          exit(1);
       }
 
@@ -1299,8 +1247,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
 
       if (!equal_types (arg->ty, ele->ty))
          TYPE_ERROR (cconfig.filename, arg->lineno, arg->column,
-                     _("Type of actual parameter does not match type of "
-                       "formal parameter."),
+                     _("Type of actual parameter does not match type of formal parameter."),
                      _("actual parameter type"), ty_to_str (arg->ty),
                      _("formal parameter type"), ty_to_str (ele->ty));
 
@@ -1333,15 +1280,13 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
     */
    if ((fun_sym = lookup_id (node->symbol, SYM_FUNCTION, stack)) == NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol->symbol, _(unknown_sym_ref));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol->symbol, _(unknown_sym_ref));
       exit(1);
    }
 
    if (fun_sym->info.function == NULL)
       MITCHELL_INTERNAL_ERROR (cconfig.filename, __FILE__, __LINE__,
-                               N_("Referenced symbol has no type "
-                                  "information: %ls"), node->symbol->symbol);
+                               N_("Referenced symbol has no type information: %ls"), node->symbol->symbol);
 
    /* Add all the formal parameters to the inner scope of the function itself
     * since they don't make sense outside.  We constructed the symbol's
@@ -1367,9 +1312,8 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
       {
          absyn_id_lst_t *id_lst = (absyn_id_lst_t *) formals_ast->data;
 
-         BAD_SYMBOL_ERROR (cconfig.filename, id_lst->lineno, id_lst->column,
-                           id_lst->symbol->symbol, _("A formal parameter "
-                           "with this name already exists in the list."));
+         BAD_SYMBOL_ERROR (cconfig.filename, id_lst->lineno, id_lst->column, id_lst->symbol->symbol,
+                           _("A formal parameter with this name already exists in the list."));
          exit(1);
       }
 
@@ -1388,11 +1332,8 @@ static void check_fun_decl (absyn_fun_decl_t *node, tabstack_t *stack)
     * type was.
     */
    if (!equal_types (body_ty, fun_sym->info.function->retval))
-      TYPE_ERROR (cconfig.filename, node->lineno, node->column,
-                  _("Type of function body does not match declaration."),
-                  _("declared type"),
-                  ty_to_str (fun_sym->info.function->retval), _("body type"),
-                  ty_to_str (body_ty));
+      TYPE_ERROR (cconfig.filename, node->lineno, node->column, _("Type of function body does not match declaration."),
+                  _("declared type"), ty_to_str (fun_sym->info.function->retval), _("body type"), ty_to_str (body_ty));
 
    node->symtab = stack->symtab;
    stack = leave_scope (stack, node->symbol->symbol);
@@ -1408,17 +1349,15 @@ static ty_t *check_id (absyn_id_expr_t *node, tabstack_t *stack)
 
    if ((sym = lookup_id_global (node, SYM_VALUE, stack)) == NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol, _(unknown_sym_ref));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol, _(unknown_sym_ref));
       exit(1);
    }
 
    /* Values and functions exist in the same namespace, so check what we got. */
    if (sym->kind != SYM_VALUE)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol, _("Referenced symbol is a function "
-                        "instead of a value."));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol,
+                        _("Referenced symbol is a function instead of a value."));
       exit(1);
    }
 
@@ -1435,16 +1374,13 @@ static ty_t *check_if_expr (absyn_if_expr_t *node, tabstack_t *stack)
    node->else_expr->ty = check_expr (node->else_expr, stack);
 
    if (!is_ty_kind (node->test_expr->ty, TY_BOOLEAN))
-      TYPE_ERROR (cconfig.filename, node->test_expr->lineno,
-                  node->test_expr->column, _("if expression test must return "
-                  "a boolean type."), _("if expression type"),
-                  ty_to_str (node->test_expr->ty), _("expected type"),
-                  L"boolean");
+      TYPE_ERROR (cconfig.filename, node->test_expr->lineno, node->test_expr->column,
+                  _("if expression test must return a boolean type."), _("if expression type"),
+                  ty_to_str (node->test_expr->ty), _("expected type"), L"boolean");
 
    if (!equal_types (node->then_expr->ty, node->else_expr->ty))
-      TYPE_ERROR (cconfig.filename, node->else_expr->lineno,
-                  node->else_expr->column, _("then expression and else "
-                  "expression must have the same type."),
+      TYPE_ERROR (cconfig.filename, node->else_expr->lineno, node->else_expr->column,
+                  _("then expression and else expression must have the same type."),
                   _("then expression type"), ty_to_str (node->then_expr->ty),
                   _("else expression type"), ty_to_str (node->else_expr->ty));
 
@@ -1457,8 +1393,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
 
    if (node->symbol->sub != NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol->symbol,
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol->symbol,
                         _("Symbol may not contain a dot."));
       exit(1);
    }
@@ -1481,8 +1416,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
     */
    if (symtab_add_entry (stack, new_sym) == -1)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol->symbol, _(duplicate_sym));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol->symbol, _(duplicate_sym));
       exit(1);
    }
 
@@ -1492,8 +1426,7 @@ static void check_module_decl (absyn_module_decl_t *node, tabstack_t *stack)
    /* Print out the symbol tables, if we're supposed to. */
    if (cconfig.debug.dump_symtab)
    {
-      if (cconfig.debug.symtab_outfile == NULL ||
-          strcmp ("-", cconfig.debug.symtab_outfile) == 0)
+      if (cconfig.debug.symtab_outfile == NULL || strcmp ("-", cconfig.debug.symtab_outfile) == 0)
          symtab_dump (stdout, new_sym->info.stack, node->symbol->symbol);
       else
       {
@@ -1541,13 +1474,11 @@ static ty_t *check_record_assn (list_t *lst, tabstack_t *stack)
       new_ele->identifier = node->symbol->symbol;
       new_ele->ty = check_expr (node->expr, stack);
 
-      retval->elts = list_insert_unique (retval->elts, new_ele,
-                                         __ele_to_ele_cmp);
+      retval->elts = list_insert_unique (retval->elts, new_ele, __ele_to_ele_cmp);
       if (retval->elts == NULL)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                           node->symbol->symbol, _("A symbol with this "
-                           "name already exists in this record type."));
+         BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol->symbol,
+                           _("A symbol with this name already exists in this record type."));
          exit(1);
       }
    }
@@ -1575,8 +1506,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
          if ((sym = lookup_id_global (id, SYM_VALUE, stack)) == NULL &&
              (sym = lookup_id_global (id, SYM_EXN, stack)) == NULL)
          {
-            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                              id->symbol,
+            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, id->symbol,
                               _("Unknown record element referenced."));
             exit(1);
          }
@@ -1585,9 +1515,8 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
 
          if (!is_ty_kind (sym_ty, TY_RECORD) && !is_ty_kind (sym_ty, TY_EXN))
          {
-            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                              sym->name, _("Symbol may not be used as a "
-                              "record or exception."));
+            BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, sym->name,
+                              _("Symbol may not be used as a record or exception."));
             exit(1);
          }
 
@@ -1603,8 +1532,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
          if (!is_ty_kind (sym_ty, TY_RECORD))
          {
             BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                              node->rec->fun_call_expr->identifier->symbol,
-                              _("Referenced symbol is not a record."));
+                              node->rec->fun_call_expr->identifier->symbol, _("Referenced symbol is not a record."));
             exit(1);
          }
          break;
@@ -1626,8 +1554,7 @@ static ty_t *check_record_ref (absyn_record_ref_t *node, tabstack_t *stack)
 
       if (l == NULL)
       {
-         BAD_SYMBOL_ERROR (cconfig.filename, tmp->lineno, tmp->column,
-                           tmp->symbol,
+         BAD_SYMBOL_ERROR (cconfig.filename, tmp->lineno, tmp->column, tmp->symbol,
                            _("Unknown record element referenced."));
          exit(1);
       }
@@ -1655,8 +1582,8 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
 
    if (rhs == NULL)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        lhs->symbol, _("Type declaration has no definition."));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, lhs->symbol,
+                        _("Type declaration has no definition."));
       exit(1);
    }
 
@@ -1673,8 +1600,7 @@ static void check_ty_decl (absyn_ty_decl_t *node, tabstack_t *stack)
     */
    if (table_update_entry (stack->symtab, lhs->symbol, SYM_TYPE, new) != 1)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, lhs->lineno, lhs->column,
-                        lhs->symbol, _(duplicate_sym));
+      BAD_SYMBOL_ERROR (cconfig.filename, lhs->lineno, lhs->column, lhs->symbol, _(duplicate_sym));
       exit(1);
    }
 }
@@ -1699,9 +1625,8 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
 
       if (!equal_types (val_ty, expr_ty))
          TYPE_ERROR (cconfig.filename, node->lineno, node->column,
-                     _("Type of value initializer does not match declared "
-                       "type."), _("declared type"), ty_to_str (val_ty),
-                     _("initializer type"), ty_to_str (expr_ty));
+                     _("Type of value initializer does not match declared type."),
+                     _("declared type"), ty_to_str (val_ty), _("initializer type"), ty_to_str (expr_ty));
    }
    
    MALLOC (new_sym, sizeof (symbol_t));
@@ -1716,8 +1641,7 @@ static void check_val_decl (absyn_val_decl_t *node, tabstack_t *stack)
    
    if (symtab_add_entry (stack, new_sym) == -1)
    {
-      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column,
-                        node->symbol->symbol, _(duplicate_sym));
+      BAD_SYMBOL_ERROR (cconfig.filename, node->lineno, node->column, node->symbol->symbol, _(duplicate_sym));
       exit(1);
    }
 }
