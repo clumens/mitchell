@@ -2,7 +2,7 @@
  * list nodes do not need to be homogenous, as each node simply stores a
  * pointer to the data.
  *
- * $Id: list.h,v 1.4 2005/03/29 05:52:52 chris Exp $
+ * $Id: list.h,v 1.5 2005/08/19 01:15:20 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -45,6 +45,7 @@ typedef void (*trav_func_t)(void *);
 
 /* List manipulation functions. */
 list_t *list_append (list_t *lst, void *data);
+list_t *list_concat (list_t *lst_a, list_t *lst_b);
 list_t *list_find (list_t *lst, void *user_data, cmp_func_t cmp_func);
 void list_foreach (list_t *lst, trav_func_t trav_func);
 list_t *list_insert_unique (list_t *lst, void *user_data, cmp_func_t cmp_func);
@@ -54,8 +55,8 @@ list_t *list_prepend (list_t *lst, void *data);
 list_t *list_remove (list_t *lst, void *user_data, cmp_func_t cmp_func);
 list_t *list_remove_hd (list_t *lst);
 list_t *list_remove_tl (list_t *lst);
-list_t *list_tl (list_t *lst);
 list_t *list_reverse (list_t *lst);
+list_t *list_tl (list_t *lst);
 
 #ifdef __cplusplus
     }
