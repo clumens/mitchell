@@ -4,7 +4,6 @@
    - documentation aimed more at actual users
    - write a formal semantics
    - think about a better documentation format
-   - modify type checking rules for exception support
 - grammar:
    - allow empty lists (requires polymorphic type checking)
    - allow some sort of list pattern matching as a stop-gap for real

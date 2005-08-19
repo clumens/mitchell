@@ -5,7 +5,7 @@
  * any discrepancy between the rules and the explanation, the rules are
  * always correct.
  *
- * $Id: typing,v 1.7 2005/07/08 17:35:58 chris Exp $
+ * $Id: typing,v 1.8 2005/08/19 01:13:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,7 +33,11 @@ Typing Rules
 ⊢ string-constant : string     [string]
 ⊢ ⊥ : bottom     [bottom]
 
-A[I : T] ⊢ I : T     [id]  
+A[I : T] ⊢ I : T     [id]
+
+    A ⊢ E : T
+-----------------     [raise-expr]
+A ⊢ raise E : T ℰ
 
       ∀i . (A ⊢ Ei : T)
 ----------------------------     [list]
@@ -67,6 +71,19 @@ A ⊢ decl I1: T1, ..., In: Tn in E end : Te
 A ⊢ E1 : boolean ; A ⊢ E2 : T ; A ⊢ E3 : T
 ------------------------------------------     [if-expr]
        A ⊢ if E1 then E2 else E3 : T
+
+                      A ⊢ E : T
+             ∀i . (A[Ii : Ti] ⊢ Ehi : T)
+                 ∀i . (A ⊢ Ti : Te ℰ)
+----------------------------------------------------     [handle-expr-1]
+A ⊢ E handle T1 I1 → Eh1, ..., Tn In → Ehn end : T
+
+                            A ⊢ E : T
+                   ∀i . (A[Ii : Ti] ⊢ Ehi : T)
+                      ∀i . (A ⊢ Ti : Te ℰ)
+                           A ⊢ Ehm : T
+-----------------------------------------------------------------     [handle-expr-2]
+A ⊢ E handle T1 I1 → Eh1, ..., Tn In → Ehn, else Im → Ehm end : T
 
 A ⊢ Ip : ⊥ → Tb
 ---------------     [call-empty]
