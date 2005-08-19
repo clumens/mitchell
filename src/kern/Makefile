@@ -1,14 +1,16 @@
-# $Id: Makefile,v 1.34 2005/08/04 03:15:40 chris Exp $
+# $Id: Makefile,v 1.35 2005/08/19 01:14:34 chris Exp $
 
 include ../../Includes.mk
 
 CC = gcc
-override CFLAGS += -O2 -Wall -I../include -DPACKAGE=\"mitchell\" \
+override CFLAGS += -Wall -I../include -DPACKAGE=\"mitchell\" \
 	-DLOCALEDIR=\"$(LOCALEDIR)\" -fno-strict-aliasing
 override LDFLAGS += -lgc -ldl
 
 ifdef DEBUG
 	override CFLAGS += -g
+else
+	override CFLAGS += $(OPTFLAGS)
 endif
 
 OBJS = absyn_printer.o absyn_walk.o desugar.o desugar_case.o desugar_decls.o \
