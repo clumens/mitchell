@@ -2,7 +2,7 @@
  * Let's hope this goes better than my previous efforts at semantic analysis
  * have.
  *
- * $Id: semant.c,v 1.55 2005/08/10 01:40:11 chris Exp $
+ * $Id: semant.c,v 1.56 2005/08/22 23:03:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -772,6 +772,7 @@ static void process_fun_block (list_t *start, list_t *end, tabstack_t *stack)
       new_sym->label = fun_name->label;
       new_sym->info.function->retval = ast_to_ty (fun_decl->retval, stack);
       new_sym->info.function->formals = NULL;
+      new_sym->info.function->ast_node = (struct absyn_fun_decl_t *) fun_decl;
 
       /* Build an unsorted list of all the formal parameters.  Formals need to
        * be stored in the order seen so we can match them against the actual
@@ -1192,6 +1193,7 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
 {
    symbol_t *s;
    list_t *arg_lst, *formal_lst;
+   absyn_fun_decl_t *def_node;
 
    if ((s = lookup_id_global (node->identifier, SYM_FUNCTION, stack)) == NULL)
    {
@@ -1254,6 +1256,10 @@ static ty_t *check_fun_call (absyn_fun_call_t *node, tabstack_t *stack)
       arg_lst = arg_lst->next;
       formal_lst = formal_lst->next;
    }
+
+   /* Add this fun-call to the DU chain of the function declaration. */
+   def_node = s->info.function->ast_node;
+   def_node->uses = list_append (def_node->uses, node);
 
    /* Also, update the AST node to contain the label. */
    label_identifier (node->identifier, s->label);

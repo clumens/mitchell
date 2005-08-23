@@ -1,17 +1,17 @@
 /* Perform lambda lifting, which is the process of taking all functions and
  * raising them up to the same level.  This eliminates nested functions so
  * conversion to IR (and eventually machine code) may be performed.  One of the
- * major parts of lambda lifting is performing free variable analysis, where
+ * major parts of lambda lifting is performing free value analysis, where
  * all functions must be modified to accept additional parameters.  These
- * parameters are all unbound variables in the function.  In this way, the
- * function has all variables it needs regardless of enclosing scope and may
+ * parameters are all unbound values in the function.  In this way, the
+ * function has all values it needs regardless of enclosing scope and may
  * then be lifted.
  *
  * This is a good pass to come near the end.  It shouldn't come last since
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.7 2005/08/04 04:37:26 chris Exp $
+ * $Id: free_vals.c,v 1.8 2005/08/22 23:03:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,6 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <wchar.h>
 
 #include "absyn.h"
 #include "absyn_walk.h"
@@ -44,8 +45,11 @@
 #include "translate.h"
 
 static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
+static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data);
 static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data);
 
+static unsigned int pass = 0;
+static unsigned int changed;
 static FILE *out = NULL;
 
 /* Entry point for this pass. */
@@ -53,8 +57,28 @@ ast_t *lift_functions (absyn_funcs_t *funcs, ast_t *ast)
 {
    list_t *tmp;
 
-   for (tmp = ast; tmp != NULL; tmp = tmp->next)
-      tmp->data = funcs->visit_module_decl (funcs, tmp->data, NULL);
+   /* Free value analysis is an iterative process - after we have found the
+    * free values in one function and added them as parameters to all its
+    * calls, we might then have made those same values free in the caller.  So
+    * now we need to repeat the checks.
+    *
+    * Possible optimization - mark a fun-decl AST node if it has no calls and
+    * if so, bail on checking.
+    */
+   do {
+      changed = 0;
+
+      if (cconfig.debug.dump_free_vals)
+      {
+         fprintf (out, _("Free value analysis pass %d\n"), pass);
+         fprintf (out, "===========================\n");
+      }
+
+      for (tmp = ast; tmp != NULL; tmp = tmp->next)
+         tmp->data = funcs->visit_module_decl (funcs, tmp->data, NULL);
+
+      pass++;
+   } while (changed);
 
    return ast;
 }
@@ -64,6 +88,7 @@ absyn_funcs_t *init_lift_pass()
 {
    absyn_funcs_t *retval = init_default_funcs();
    retval->visit_expr = lift_visit_expr;
+   retval->visit_fun_call = lift_visit_fun_call;
    retval->visit_fun_decl = lift_visit_fun_decl;
 
    if (cconfig.debug.free_val_outfile == NULL || strcmp ("-", cconfig.debug.free_val_outfile) == 0)
@@ -85,7 +110,12 @@ absyn_funcs_t *init_lift_pass()
  * +================================================================+
  */
 
-static symtab_t *get_symtab (absyn_expr_t *node, backlink_t *parent)
+static int __id_to_str_cmp (void *lst_data, void *user_data)
+{
+    return wcscmp (((absyn_id_expr_t *) lst_data)->symbol, (wchar_t *) user_data);
+}
+
+static symtab_t *get_parent_symtab (backlink_t *parent)
 {
    switch (parent->kind) {
       case LINK_DECL_EXPR:
@@ -108,11 +138,16 @@ static symtab_t *get_symtab (absyn_expr_t *node, backlink_t *parent)
    return NULL;
 }
 
+static unsigned int is_free (symtab_t *symtab, mstring_t *name)
+{
+   return table_lookup_entry (symtab, name, SYM_VALUE) == NULL && table_lookup_entry (symtab, name, SYM_EXN) == NULL;
+}
+
 static void report_free (absyn_id_expr_t *node)
 {
    absyn_id_expr_t *tmp;
 
-   fprintf (out, "%d:%d: ", node->lineno, node->column);
+   fprintf (out, "  %d:%d: ", node->lineno, node->column);
 
    for (tmp = node; tmp != NULL; tmp = tmp->sub)
    {
@@ -121,8 +156,6 @@ static void report_free (absyn_id_expr_t *node)
       else
          fprintf (out, "%ls.", tmp->symbol);
    }
-
-   fprintf (out, "\n");
 }
 
 /* +================================================================+
@@ -164,18 +197,14 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
          if (node->identifier->kind == SYM_VALUE && wcsncmp(node->identifier->symbol, L"_.__", 4) != 0)
          {
             backlink_t *parent = find_lexical_parent (node->parent);
-            symtab_t *symtab = get_symtab (node, parent);
+            symtab_t *symtab = get_parent_symtab (parent);
 
-            /* Values that refer to another module are always free. */
+            /* Values from another module are a special case.  For now, we'll assume they are bound. */
             if (node->identifier->sub != NULL)
-            {
-               *user_data = list_append (*user_data, node->identifier);
                break;
-            }
 
             /* If the value is not found in the innermost symtab, it's free. */
-            if (table_lookup_entry (symtab, node->identifier->symbol, SYM_VALUE) == NULL &&
-                table_lookup_entry (symtab, node->identifier->symbol, SYM_EXN) == NULL)
+            if (is_free (symtab, node->identifier->symbol))
             {
                /* However, exception handlers are weird.  The exception value
                 * is placed into a new environment, but the handler itself does
@@ -185,10 +214,9 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
                if (parent->kind == LINK_EXN_LST)
                {
                   backlink_t *gparent = find_lexical_parent (((absyn_exn_lst_t *) parent->ptr)->parent);
-                  symtab_t *gsymtab = get_symtab(node, gparent);
+                  symtab_t *gsymtab = get_parent_symtab (gparent);
                      
-                  if (table_lookup_entry (gsymtab, node->identifier->symbol, SYM_VALUE) == NULL &&
-                      table_lookup_entry (gsymtab, node->identifier->symbol, SYM_EXN) == NULL)
+                  if (is_free (gsymtab, node->identifier->symbol))
                      *user_data = list_append (*user_data, node->identifier);
                }
                else
@@ -228,23 +256,88 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
    return node;
 }
 
+static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data)
+{
+   list_t *tmp;
+   backlink_t *parent = find_lexical_parent (node->parent);
+   symtab_t *symtab = get_parent_symtab (parent);
+
+   /* Handle all the actual parameters first. */
+   for (tmp = node->arg_lst; tmp != NULL; tmp = tmp->next)
+      tmp->data = funcs->visit_expr (funcs, tmp->data, user_data);
+
+   /* Now check each of the free values we need to pass to the function call to make sure they're
+    * bound in this scope.  If not, it means we'll have to pass them to the caller's caller as well.
+    * See comments in lift_visit_expr for explanation.
+    */
+   for (tmp = node->free_vals; tmp != NULL; tmp = tmp->next)
+   {
+      absyn_id_expr_t *tmp_id = tmp->data;
+
+      if (is_free (symtab, tmp_id->symbol))
+      {
+         if (parent->kind == LINK_EXN_LST)
+         {
+            backlink_t *gparent = find_lexical_parent (((absyn_exn_lst_t *) parent->ptr)->parent);
+            symtab_t *gsymtab = get_parent_symtab (gparent);
+
+            if (is_free (gsymtab, tmp_id->symbol))
+               *user_data = list_append (*user_data, node->identifier);
+         }
+         else
+            *user_data = list_append (*user_data, tmp_id);
+      }
+   }
+
+   return node;
+}
+
 static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data)
 {
-   list_t *free_values = NULL;
-   list_t *tmp;
+   list_t   *free_values = NULL;
+   list_t   *prev_free_values = NULL;
+   list_t   *tmp, *tmp2;
 
-   node->body = funcs->visit_decl_expr (funcs, node->body, (void **) (&free_values));
+   /* Save free_values list for calling function. */
+   if (user_data == NULL)
+      prev_free_values = NULL;
+   else
+      prev_free_values = *user_data;
 
-   if (free_values == NULL || cconfig.debug.dump_free_vals == 0)
-      return node;
+   node->body = funcs->visit_decl_expr (funcs, node->body, (void *) &free_values);
 
-   fprintf (out, _("Free values in function %ls:\n"), node->symbol->symbol);
+   if (cconfig.debug.dump_free_vals != 0)
+      fprintf (out, _("Free values in function %ls:"), node->symbol->symbol);
 
+   /* Iterate over list of free values. */
    for (tmp = free_values; tmp != NULL; tmp = tmp->next)
    {
-      absyn_id_expr_t *id = tmp->data;
-      report_free (id);
+      absyn_id_expr_t *val = tmp->data;
+
+      if (cconfig.debug.dump_free_vals != 0)
+         report_free (val);
+
+      /* Traverse list of callers of this function, appending the free values to the caller's list if it's not
+       * already on there.
+       */
+      for (tmp2 = node->uses; tmp2 != NULL; tmp2 = tmp2->next)
+      {
+         absyn_fun_call_t *caller = tmp2->data;
+         
+         if (list_find (caller->free_vals, val->symbol, __id_to_str_cmp) == NULL)
+         {
+            caller->free_vals = list_append (caller->free_vals, val);
+            changed = 1;
+         } 
+      }
    }
+
+   if (cconfig.debug.dump_free_vals != 0)
+      fprintf (out, "\n");
+
+   /* Restore caller's free_values list. */
+   if (user_data != NULL)
+      *user_data = prev_free_values;
    
    return node;
 }

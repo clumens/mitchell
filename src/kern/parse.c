@@ -9,7 +9,7 @@
  * in mitchell/docs/grammar, though that file is not really any more
  * descriptive than this one.
  *
- * $Id: parse.c,v 1.51 2005/08/10 01:40:11 chris Exp $
+ * $Id: parse.c,v 1.52 2005/08/22 23:03:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -751,6 +751,7 @@ static absyn_fun_decl_t *parse_fun_decl (backlink_t *parent)
    retval->column = last_tok->column;
    retval->parent = parent;
    retval->symtab = NULL;
+   retval->uses = NULL;
 
    bl = make_bl (LINK_FUN_DECL, retval);
 
@@ -1242,6 +1243,7 @@ static absyn_expr_t *parse_sym_ref (backlink_t *parent)
       fun_call->identifier = id;
       fun_call->identifier->parent = fun_bl;
       fun_call->arg_lst = parse_arg_lst (fun_bl);
+      fun_call->free_vals = NULL;
 
       if (in_set (tok, FIRST_SET[SET_RECORD_REF]))
       {

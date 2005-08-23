@@ -7,7 +7,7 @@
  * This is a good pass to come first.  At the very least, it needs to come
  * before decl-expr transformations since we will be making decl-exprs here.
  *
- * $Id: desugar_case.c,v 1.14 2005/08/04 03:21:02 chris Exp $
+ * $Id: desugar_case.c,v 1.15 2005/08/22 23:03:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -136,6 +136,7 @@ static absyn_expr_t *make_test_expr (absyn_val_decl_t *left, absyn_expr_t *right
    fun_call->parent = make_bl (LINK_EXPR, retval);
    fun_call->ty = left->ty;
    fun_call->identifier = id;
+   fun_call->free_vals = NULL;
 
    /* Now we have to make a reference to the val-decl so we can append it
     * to the list of function call arguments.  This val-decl is how we're

@@ -2,7 +2,7 @@
  * Finally, we get to begin the process of converting code into trees, and
  * that into lots more trees.
  *
- * $Id: absyn.h,v 1.35 2005/06/30 00:49:14 chris Exp $
+ * $Id: absyn.h,v 1.36 2005/08/22 23:03:04 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -33,11 +33,9 @@
     extern "C" {
 #endif
 
-typedef enum { LINK_BRANCH_LST, LINK_CASE_EXPR, LINK_DECL, LINK_EXN,
-               LINK_EXN_HANDLER, LINK_EXN_LST, LINK_DECL_EXPR, LINK_EXPR,
-               LINK_FUN_CALL, LINK_FUN_DECL, LINK_ID_EXPR, LINK_ID_LST,
-               LINK_IF_EXPR, LINK_MODULE_DECL, LINK_RAISE, LINK_RECORD_ASSN,
-               LINK_RECORD_REF, LINK_TY, LINK_TY_DECL,
+typedef enum { LINK_BRANCH_LST, LINK_CASE_EXPR, LINK_DECL, LINK_EXN, LINK_EXN_HANDLER, LINK_EXN_LST,
+               LINK_DECL_EXPR, LINK_EXPR, LINK_FUN_CALL, LINK_FUN_DECL, LINK_ID_EXPR, LINK_ID_LST, LINK_IF_EXPR,
+               LINK_MODULE_DECL, LINK_RAISE, LINK_RECORD_ASSN, LINK_RECORD_REF, LINK_TY, LINK_TY_DECL,
                LINK_VAL_DECL } link_type;
 
 /* A backlink from an AST node to its parent in the tree. */
@@ -51,9 +49,8 @@ typedef struct {
  * +================================================================+
  */
 
-typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL, ABSYN_EXN,
-               ABSYN_EXPR_LST, ABSYN_FUN_CALL, ABSYN_ID, ABSYN_IF,
-               ABSYN_INTEGER, ABSYN_RAISE, ABSYN_RECORD_ASSN, ABSYN_RECORD_REF,
+typedef enum { ABSYN_BOOLEAN, ABSYN_BOTTOM, ABSYN_CASE, ABSYN_DECL, ABSYN_EXN, ABSYN_EXPR_LST, ABSYN_FUN_CALL,
+               ABSYN_ID, ABSYN_IF, ABSYN_INTEGER, ABSYN_RAISE, ABSYN_RECORD_ASSN, ABSYN_RECORD_REF,
                ABSYN_STRING } expr_type;
 
 typedef struct absyn_id_expr_t {
@@ -124,7 +121,8 @@ typedef struct {
    ty_t *ty;
 
    absyn_id_expr_t *identifier;
-   list_t *arg_lst;                       /* list of absyn_expr_t */
+   list_t *arg_lst;                       /* list of absyn_expr_t - actual parameters */
+   list_t *free_vals;                     /* list of absyn_id_expr_t - free values to pass to function */
 } absyn_fun_call_t;
 
 typedef struct {
@@ -202,8 +200,7 @@ typedef struct absyn_id_lst_t {
 typedef struct absyn_ty_t {
    unsigned int lineno, column;
    backlink_t *parent;
-   enum { ABSYN_TY_BOTTOM, ABSYN_TY_EXN, ABSYN_TY_ID, ABSYN_TY_LIST,
-          ABSYN_TY_RECORD } kind;
+   enum { ABSYN_TY_BOTTOM, ABSYN_TY_EXN, ABSYN_TY_ID, ABSYN_TY_LIST, ABSYN_TY_RECORD } kind;
 
    union {
       absyn_id_expr_t   *identifier;
@@ -218,8 +215,7 @@ typedef struct absyn_ty_t {
  * +================================================================+
  */
 
-typedef enum { ABSYN_FUN_DECL, ABSYN_MODULE_DECL, ABSYN_TY_DECL,
-               ABSYN_VAL_DECL } decl_type;
+typedef enum { ABSYN_FUN_DECL, ABSYN_MODULE_DECL, ABSYN_TY_DECL, ABSYN_VAL_DECL } decl_type;
 
 typedef struct {
    unsigned int lineno, column;
@@ -228,6 +224,7 @@ typedef struct {
    absyn_id_expr_t *symbol;
    absyn_ty_t *retval;
    list_t *formals;                       /* list of absyn_id_lst_t */
+   list_t *uses;                          /* list of absyn_fun_call_t - all calls of this function */
    absyn_decl_expr_t *body;
 
    symtab_t *symtab;                      /* symtab at end of type checking */

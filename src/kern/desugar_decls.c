@@ -7,7 +7,7 @@
  * lambda lifting since we count on that to sort out the arguments to the
  * functions generated in promotion.
  *
- * $Id: desugar_decls.c,v 1.16 2005/08/04 03:21:02 chris Exp $
+ * $Id: desugar_decls.c,v 1.17 2005/08/22 23:03:06 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -76,8 +76,8 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
 
    MALLOC (retval, sizeof(absyn_fun_decl_t));
 
-   /* First create the shell of the new fun-decl, which will hold an expr
-    * inside it.
+   /* First create the shell of the new fun-decl, which will hold an expr inside it.  We don't need
+    * to worry about function parameters since free value analysis will take care of that.
     */
    retval->lineno = in->lineno;
    retval->column = in->column;
@@ -85,25 +85,23 @@ static absyn_fun_decl_t *decl_expr_to_fun_decl (absyn_decl_expr_t *in)
    retval->symbol = str_to_id_expr (make_unique_str (L"__decl_expr"), in->lineno, in->column);
    retval->symbol->kind = SYM_FUNCTION;
    retval->symbol->parent = make_bl (LINK_FUN_DECL, retval);
-   retval->formals = NULL;             /* will be fixed by lambda lifting */
+   retval->formals = NULL;
+   retval->uses = NULL;
 
-   /* Create a new symbol table for the new function.  We won't be doing
-    * any type checking with this table, but it'll be handy in free variable
-    * analysis later.
-    */
+   /* Create a new symbol table for the new function for free value analysis purposes. */
    retval->symtab = symtab_new();
 
-   /* Now link in the decl-expr as the function's body, making sure to reparent
-    * it.
-    */
+   /* Now link in the decl-expr as the function's body, making sure to reparent it. */
    retval->body = in;
    in->parent = make_bl (LINK_FUN_DECL, retval);
 
    return retval;
 }
 
-/* Build a function call expression that can replace a promoted decl-expr. */
-static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
+/* Build a function call expression that can replace a promoted decl-expr.  Maintain DU chain of called
+ * function as a side-effect.
+ */
+static absyn_expr_t *make_fun_call_expr (absyn_fun_decl_t *in, backlink_t *p)
 {
    absyn_expr_t *retval;
 
@@ -119,10 +117,13 @@ static absyn_expr_t *make_fun_call_expr (absyn_id_expr_t *in, backlink_t *p)
 
    retval->fun_call_expr->lineno = in->lineno;
    retval->fun_call_expr->column = in->column;
-   retval->fun_call_expr->parent = make_bl (LINK_FUN_CALL, retval->fun_call_expr);
+   retval->fun_call_expr->parent = make_bl (LINK_EXPR, retval);
    retval->fun_call_expr->ty = NULL;
-   retval->fun_call_expr->identifier = in;
+   retval->fun_call_expr->identifier = in->symbol;
    retval->fun_call_expr->arg_lst = NULL;
+   retval->fun_call_expr->free_vals = NULL;
+
+   in->uses = list_append (in->uses, retval->fun_call_expr);
 
    return retval;
 }
@@ -188,11 +189,7 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
          absyn_decl_expr_t *decl_expr = funcs->visit_decl_expr (funcs, node->decl_expr, user_data);
          backlink_t *parent = find_lexical_parent (node->parent);
 
-         /* Create a new function that holds the decl-expr as its body, then
-          * make a new decl for that function.  This decl needs to get added
-          * to the proper place in the AST and also into a symbol table for
-          * free value analysis.
-          */
+         /* Create a new function that holds the decl-expr as its body, then make a new decl for that function. */
          absyn_fun_decl_t *new_fun = decl_expr_to_fun_decl (decl_expr);
 
          MALLOC(decl, sizeof(absyn_decl_t));
@@ -202,7 +199,7 @@ static absyn_expr_t *decl_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
          decl->fun_decl = new_fun;
 
          new_fun->parent = place_new_decl (parent, decl);
-         return make_fun_call_expr (new_fun->symbol, make_bl (LINK_DECL, decl));
+         return make_fun_call_expr (new_fun, make_bl (LINK_DECL, decl));
       }
 
       case ABSYN_EXN:
