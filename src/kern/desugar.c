@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.15 2005/07/23 18:12:43 chris Exp $
+ * $Id: desugar.c,v 1.16 2005/08/22 23:26:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -77,8 +77,8 @@ ast_t *desugar_ast (ast_t *ast)
    if (cconfig.last_phase == LAST_DESUGAR_DECL)
       exit(0);
 
-   walk_funcs = init_lift_pass();
-   ast = lift_functions (walk_funcs, ast);
+   walk_funcs = init_free_vals_pass();
+   ast = free_value_analysis (walk_funcs, ast);
 
    if (cconfig.last_phase == LAST_DESUGAR_LIFT)
       exit(0);

@@ -1,4 +1,4 @@
-# $Id: Makefile,v 1.35 2005/08/19 01:14:34 chris Exp $
+# $Id: Makefile,v 1.36 2005/08/22 23:26:40 chris Exp $
 
 include ../../Includes.mk
 
@@ -14,7 +14,7 @@ else
 endif
 
 OBJS = absyn_printer.o absyn_walk.o desugar.o desugar_case.o desugar_decls.o \
-	error.o lift.o list.o main.o parse.o semant.o str.o symtab.o \
+	error.o free_vals.o list.o main.o parse.o semant.o str.o symtab.o \
 	symtab_printer.o tokenize.o
 
 all: mitchell
@@ -54,7 +54,7 @@ desugar_decls.o: desugar_decls.c \
 error.o: error.c \
 	../include/config.h ../include/error.h ../include/translate.h
 
-lift.o: lift.c \
+free_vals.o: free_vals.c \
 	../include/absyn.h ../include/desugar.h ../include/error.h \
 	../include/list.h ../include/translate.h
 

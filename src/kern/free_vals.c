@@ -1,17 +1,21 @@
-/* Perform lambda lifting, which is the process of taking all functions and
- * raising them up to the same level.  This eliminates nested functions so
- * conversion to IR (and eventually machine code) may be performed.  One of the
- * major parts of lambda lifting is performing free value analysis, where
- * all functions must be modified to accept additional parameters.  These
- * parameters are all unbound values in the function.  In this way, the
- * function has all values it needs regardless of enclosing scope and may
- * then be lifted.
+/* Perform free value analysis, which is an iterative process where values
+ * that are not bound in a function they are used in are passed as additional
+ * parameters to that function.  This requires modifying the AST for the
+ * callers.  After this process, all the values in the function are either
+ * defined or passed in as parameters and the function itself may be lifted
+ * out of whatever scope contains it to the module-level.
+ *
+ * One unresolved question is what to do about references to values defined
+ * within another module.  They can't really be passed as parameters because
+ * that will end up with gigantic numbers of parameters to top level functions
+ * (possibly - am I right on this?) but it seems like they really should be
+ * found since they are technically unbound.
  *
  * This is a good pass to come near the end.  It shouldn't come last since
  * that's where we may perform any cleanups required by the rest of the
  * desugarings, but could come immediately before that pass.
  * 
- * $Id: free_vals.c,v 1.8 2005/08/22 23:03:06 chris Exp $
+ * $Id: free_vals.c,v 1.9 2005/08/22 23:26:40 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -44,16 +48,16 @@
 #include "memory.h"
 #include "translate.h"
 
-static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
-static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data);
-static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data);
+static absyn_expr_t *free_vals_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data);
+static absyn_fun_call_t *free_vals_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data);
+static absyn_fun_decl_t *free_vals_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data);
 
 static unsigned int pass = 0;
 static unsigned int changed;
 static FILE *out = NULL;
 
 /* Entry point for this pass. */
-ast_t *lift_functions (absyn_funcs_t *funcs, ast_t *ast)
+ast_t *free_value_analysis (absyn_funcs_t *funcs, ast_t *ast)
 {
    list_t *tmp;
 
@@ -84,12 +88,12 @@ ast_t *lift_functions (absyn_funcs_t *funcs, ast_t *ast)
 }
 
 /* Initialization for this pass. */
-absyn_funcs_t *init_lift_pass()
+absyn_funcs_t *init_free_vals_pass()
 {
    absyn_funcs_t *retval = init_default_funcs();
-   retval->visit_expr = lift_visit_expr;
-   retval->visit_fun_call = lift_visit_fun_call;
-   retval->visit_fun_decl = lift_visit_fun_decl;
+   retval->visit_expr = free_vals_visit_expr;
+   retval->visit_fun_call = free_vals_visit_fun_call;
+   retval->visit_fun_decl = free_vals_visit_fun_decl;
 
    if (cconfig.debug.free_val_outfile == NULL || strcmp ("-", cconfig.debug.free_val_outfile) == 0)
       out = stdout;
@@ -163,7 +167,7 @@ static void report_free (absyn_id_expr_t *node)
  * +================================================================+
  */
 
-static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data)
+static absyn_expr_t *free_vals_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, void **user_data)
 {
    switch (node->kind) {
       case ABSYN_BOOLEAN:
@@ -256,7 +260,7 @@ static absyn_expr_t *lift_visit_expr (absyn_funcs_t *funcs, absyn_expr_t *node, 
    return node;
 }
 
-static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data)
+static absyn_fun_call_t *free_vals_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_call_t *node, void **user_data)
 {
    list_t *tmp;
    backlink_t *parent = find_lexical_parent (node->parent);
@@ -268,7 +272,7 @@ static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_ca
 
    /* Now check each of the free values we need to pass to the function call to make sure they're
     * bound in this scope.  If not, it means we'll have to pass them to the caller's caller as well.
-    * See comments in lift_visit_expr for explanation.
+    * See comments in free_vals_visit_expr for explanation.
     */
    for (tmp = node->free_vals; tmp != NULL; tmp = tmp->next)
    {
@@ -292,7 +296,7 @@ static absyn_fun_call_t *lift_visit_fun_call (absyn_funcs_t *funcs, absyn_fun_ca
    return node;
 }
 
-static absyn_fun_decl_t *lift_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data)
+static absyn_fun_decl_t *free_vals_visit_fun_decl (absyn_funcs_t *funcs, absyn_fun_decl_t *node, void **user_data)
 {
    list_t   *free_values = NULL;
    list_t   *prev_free_values = NULL;
