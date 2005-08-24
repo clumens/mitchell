@@ -1,7 +1,7 @@
 /* Error message formatting macros so all the messages at least look a little
  * bit like each other.  Some consistency is good.
  *
- * $Id: error.c,v 1.5 2005/08/10 01:40:11 chris Exp $
+ * $Id: error.c,v 1.6 2005/08/23 23:28:39 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -42,6 +42,7 @@ static void WARNINGS_AS_ERRORS()
 {
    if (cconfig.warnings_are_errors)
    {
+      fflush(stdout);
       fprintf (stderr, _("Handling warnings as errors.  Exiting.\n"));
       exit(1);
    }
@@ -52,17 +53,20 @@ static void WARNINGS_AS_ERRORS()
  */
 void BAD_SYMBOL_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *sym, char *msg)
 {
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, "\n\t%ls: %s\n", sym, msg);
 }
 
 void COULD_NOT_READ_ERROR (char *file)
 {
+   fflush(stdout);
    fprintf (stderr, _("%s Error: Could not open file for reading.\n"), file);
 }
 
 void COULD_NOT_WRITE_ERROR (char *file)
 {
+   fflush(stdout);
    fprintf (stderr, _("%s Error: Could not open file for writing.\n"), file);
 }
 
@@ -70,6 +74,7 @@ void ERROR (const char *format, ...)
 {
    va_list ap;
    
+   fflush(stdout);
    fprintf (stderr, _("Error: "));
 
    va_start (ap, format);
@@ -81,12 +86,14 @@ void ERROR (const char *format, ...)
 
 void ERROR_IN_FILE (char *file, unsigned int line, unsigned int column, char *msg)
 {
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, "%s\n", msg);
 }
 
 void FCLOSE_ERROR (char *file)
 {
+   fflush(stdout);
    fprintf (stderr, _("%s Error: Could not close file.\n"), file);
 }
 
@@ -94,6 +101,7 @@ void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line, cons
 {
    va_list ap;
    
+   fflush(stdout);
    fprintf (stderr, _("%s Mitchell internal compiler error: %s:%d: "), file, srcfile, line);
 
    va_start (ap, format);
@@ -105,6 +113,7 @@ void MITCHELL_INTERNAL_ERROR (char *file, char *srcfile, unsigned int line, cons
 
 void NONEXHAUSTIVE_MATCH_ERROR (char *file, unsigned int line, unsigned int column)
 {
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "
                       "else branch is recommended to avoid runtime errors.\n"));
@@ -114,6 +123,7 @@ void PARSE_ERROR (char *file, unsigned int line, unsigned int column, const char
 {
    va_list ap;
    
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, _("Parse error on input file.\n\t"));
 
@@ -126,6 +136,7 @@ void PARSE_ERROR (char *file, unsigned int line, unsigned int column, const char
 
 void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column, wchar_t *ty)
 {
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, _("Type check error: The following symbol is in an "
                       "infinite loop of type definitions: %ls\n"), ty);
@@ -135,6 +146,7 @@ void TYPE_LOOP_ERROR (char *file, unsigned int line, unsigned int column, wchar_
 void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg, char *ty1_msg, wchar_t *ty1,
                  char *ty2_msg, wchar_t *ty2)
 {
+   fflush(stdout);
    _error (file, line, column);
    fprintf (stderr, _("Type check error: %s\n\t%s: %ls\n\t%s: %ls\n"), msg, ty1_msg, ty1, ty2_msg, ty2);
    exit(1);
@@ -143,6 +155,7 @@ void TYPE_ERROR (char *file, unsigned int line, unsigned int column, char *msg, 
 /* Warnings, which do not stop compilation (unless you want them to). */
 void NONEXHAUSTIVE_MATCH_WARNING (char *file, unsigned int line, unsigned int column)
 {
+   fflush(stdout);
    _warning (file, line, column);
    fprintf (stderr, _("Non-exhaustive match in case expression.  Adding an "
                       "else branch is recommended to avoid runtime errors.\n"));
