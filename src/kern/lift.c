@@ -3,11 +3,11 @@
  * machine languages can represent and what our IR will eventually be.  This pass must come after free value
  * analysis and after all other passes that create function nodes.  Last is a good place for it.
  * 
- * $Id: lift.c,v 1.1 2006/01/11 22:02:36 chris Exp $
+ * $Id: lift.c,v 1.2 2006/01/12 04:32:58 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
- * Copyright (C) 2004 Chris Lumens
+ * Copyright (C) 2006 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -103,11 +103,11 @@ static list_t *lift_visit_decl_lst (absyn_funcs_t *funcs, list_t *lst, void **us
 
                /* Remove the fun-decl node from the decl-lst now that we've added it to the module's list. */
                tmp = tmp->next;
-               fprintf (stderr, "list length before: %d\n", list_length(lst));
                lst = list_remove (lst, decl->fun_decl->symbol->symbol, __decl_to_str_cmp);
-               fprintf (stderr, "list length after: %d\n", list_length(lst));
                continue;
             }
+
+            break;
          }
 
          case ABSYN_MODULE_DECL:
