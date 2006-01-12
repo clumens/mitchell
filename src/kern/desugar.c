@@ -26,7 +26,7 @@
  *         list to function arguments
  *    - lift all functions to module's top-level scope
  *
- * $Id: desugar.c,v 1.16 2005/08/22 23:26:40 chris Exp $
+ * $Id: desugar.c,v 1.17 2006/01/11 22:02:35 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -59,26 +59,25 @@
 /* Entry point into the desugaring passes. */
 ast_t *desugar_ast (ast_t *ast)
 {
-   absyn_funcs_t *walk_funcs;
-
-   walk_funcs = init_case_pass();
-   ast = desugar_case_exprs (walk_funcs, ast);
+   ast = desugar_case_exprs (init_case_pass(), ast);
    if (cconfig.debug.dump_absyn)
       print_absyn (ast, &cconfig, _("case-removed abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_DESUGAR_CASE)
       exit(0);
    
-   walk_funcs = init_decl_pass();
-   ast = desugar_decl_exprs (walk_funcs, ast);
+   ast = desugar_decl_exprs (init_decl_pass(), ast);
    if (cconfig.debug.dump_absyn)
       print_absyn (ast, &cconfig, _("decl-promoted abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_DESUGAR_DECL)
       exit(0);
 
-   walk_funcs = init_free_vals_pass();
-   ast = free_value_analysis (walk_funcs, ast);
+   ast = free_value_analysis (init_free_vals_pass(), ast);
+
+   ast = desugar_lift_functions (init_lift_pass(), ast);
+   if (cconfig.debug.dump_absyn)
+      print_absyn (ast, &cconfig, _("lambda-lifted abstract syntax tree"));
 
    if (cconfig.last_phase == LAST_DESUGAR_LIFT)
       exit(0);
