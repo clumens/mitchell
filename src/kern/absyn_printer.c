@@ -1,7 +1,7 @@
 /* Pretty printer for the abstract syntax tree.  Please note that beauty is
  * in the eye of the beholder when examining the output.
  *
- * $Id: absyn_printer.c,v 1.40 2005/08/24 01:54:14 chris Exp $
+ * $Id: absyn_printer.c,v 1.41 2006/01/11 23:14:57 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
@@ -423,9 +423,13 @@ static void print_id_expr_t (absyn_id_expr_t *node, unsigned int il)
    fprintf (out, "\n%*sid_expr_t(%p) = {", INDENT(il), "", node);
    if (node->parent != NULL)
       fprintf (out, "\n%*sparent = %s(%p)", INDENT(il+1), "", link_map[node->parent->kind], node->parent->ptr);
+
    fprintf (out, "\n%*s(symbol, label) = (%ls, %ls)", INDENT(il+1), "", node->symbol, node->label);
+
    if (node->sub != NULL)
       print_id_expr_t (node->sub, il+1);
+
+   fprintf (out, "\n%*s}", INDENT(il), "");
 }
 
 static void print_id_lst_t (list_t *lst, unsigned int il)
