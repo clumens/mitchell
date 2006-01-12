@@ -1,11 +1,11 @@
 /* The main file of the mitchell kernel, which controls the entire
  * compilation process.
  *
- * $Id: main.c,v 1.40 2005/08/04 04:37:26 chris Exp $
+ * $Id: main.c,v 1.41 2006/01/12 04:36:43 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
- * Copyright (C) 2004 Chris Lumens
+ * Copyright (C) 2006 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -117,7 +117,7 @@ static void help (const char *progname)
 
 static void version (const char *progname)
 {
-   printf (_("mitchell version %s\n© 2004-2005 Chris Lumens\n"), MITCHELL_VERSION);
+   printf (_("mitchell version %s\n© 2004-2006 Chris Lumens\n"), MITCHELL_VERSION);
    exit (0);
 }
 

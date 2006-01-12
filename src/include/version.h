@@ -1,10 +1,10 @@
 /* Compiler version information.
  *
- * $Id: version.h,v 1.2 2005/01/22 02:27:58 chris Exp $
+ * $Id: version.h,v 1.3 2006/01/12 04:36:42 chris Exp $
  */
 
 /* mitchell - the bootstrapping compiler
- * Copyright (C) 2004 Chris Lumens
+ * Copyright (C) 2006 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -22,7 +22,7 @@
 #ifndef _VERSION_H
 #define _VERSION_H 1
 
-#define MITCHELL_VERSION   "Preview 4"
+#define MITCHELL_VERSION   "Preview 5"
 
 #endif
 
