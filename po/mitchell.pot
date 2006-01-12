@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2005-08-04 00:37-0400\n"
+"POT-Creation-Date: 2006-01-11 23:37-0500\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,43 +16,47 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: ../src/include/memory.h:35 ../src/include/memory.h:42
+#: ../src/include/memory.h:34 ../src/include/memory.h:40
 msgid "Error allocating memory.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:186
+#: ../src/kern/absyn_printer.c:183
 msgid "New AST decl node type not handled.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:366 ../src/kern/absyn_walk.c:184
-#: ../src/kern/desugar_case.c:371 ../src/kern/desugar_decls.c:241
-#: ../src/kern/lift.c:222 ../src/kern/semant.c:1177
+#: ../src/kern/absyn_printer.c:359 ../src/kern/absyn_walk.c:184
+#: ../src/kern/desugar_case.c:372 ../src/kern/desugar_decls.c:238
+#: ../src/kern/free_vals.c:254 ../src/kern/semant.c:1133
 msgid "New AST expr node type not handled.\n"
 msgstr ""
 
-#: ../src/kern/absyn_printer.c:581 ../src/kern/absyn_walk.c:100
-#: ../src/kern/semant.c:248 ../src/kern/semant.c:563 ../src/kern/semant.c:612
-#: ../src/kern/semant.c:944
+#: ../src/kern/absyn_printer.c:576 ../src/kern/absyn_walk.c:100
+#: ../src/kern/lift.c:126 ../src/kern/semant.c:245 ../src/kern/semant.c:551
+#: ../src/kern/semant.c:599 ../src/kern/semant.c:914
 msgid "New AST type node type not handled.\n"
 msgstr ""
 
-#: ../src/kern/desugar.c:67
+#: ../src/kern/desugar.c:64
 msgid "case-removed abstract syntax tree"
 msgstr ""
 
-#: ../src/kern/desugar.c:75
+#: ../src/kern/desugar.c:71
 msgid "decl-promoted abstract syntax tree"
 msgstr ""
 
-#: ../src/kern/desugar.c:164
+#: ../src/kern/desugar.c:80
+msgid "lambda-lifted abstract syntax tree"
+msgstr ""
+
+#: ../src/kern/desugar.c:163
 msgid "New backlink type not handled.\n"
 msgstr ""
 
-#: ../src/kern/desugar_case.c:195
+#: ../src/kern/desugar_case.c:196
 msgid "New type not handled by unalias.\n"
 msgstr ""
 
-#: ../src/kern/desugar_decls.c:164
+#: ../src/kern/desugar_decls.c:165
 msgid "Invalid parent for decl.\n"
 msgstr ""
 
@@ -66,54 +70,54 @@ msgstr ""
 msgid "%s:%d.%d Warning: "
 msgstr ""
 
-#: ../src/kern/error.c:45
+#: ../src/kern/error.c:46
 #, c-format
 msgid "Handling warnings as errors.  Exiting.\n"
 msgstr ""
 
-#: ../src/kern/error.c:62
+#: ../src/kern/error.c:64
 #, c-format
 msgid "%s Error: Could not open file for reading.\n"
 msgstr ""
 
-#: ../src/kern/error.c:67
+#: ../src/kern/error.c:70
 #, c-format
 msgid "%s Error: Could not open file for writing.\n"
 msgstr ""
 
-#: ../src/kern/error.c:74
+#: ../src/kern/error.c:78
 #, c-format
 msgid "Error: "
 msgstr ""
 
-#: ../src/kern/error.c:92
+#: ../src/kern/error.c:97
 #, c-format
 msgid "%s Error: Could not close file.\n"
 msgstr ""
 
-#: ../src/kern/error.c:100
+#: ../src/kern/error.c:105
 #, c-format
 msgid "%s Mitchell internal compiler error: %s:%d: "
 msgstr ""
 
-#: ../src/kern/error.c:114 ../src/kern/error.c:156
+#: ../src/kern/error.c:118 ../src/kern/error.c:160
 #, c-format
 msgid "Non-exhaustive match in case expression.  Adding an else branch is recommended to avoid runtime errors.\n"
 msgstr ""
 
-#: ../src/kern/error.c:124
+#: ../src/kern/error.c:128
 #, c-format
 msgid ""
 "Parse error on input file.\n"
 "\t"
 msgstr ""
 
-#: ../src/kern/error.c:137
+#: ../src/kern/error.c:141
 #, c-format
 msgid "Type check error: The following symbol is in an infinite loop of type definitions: %ls\n"
 msgstr ""
 
-#: ../src/kern/error.c:146
+#: ../src/kern/error.c:151
 #, c-format
 msgid ""
 "Type check error: %s\n"
@@ -121,13 +125,18 @@ msgid ""
 "\t%s: %ls\n"
 msgstr ""
 
-#: ../src/kern/lift.c:105
+#: ../src/kern/free_vals.c:77
+#, c-format
+msgid "Free value analysis pass %d\n"
+msgstr ""
+
+#: ../src/kern/free_vals.c:139
 msgid "Node's parent does not contain a symbol table.\n"
 msgstr ""
 
-#: ../src/kern/lift.c:241
+#: ../src/kern/free_vals.c:314
 #, c-format
-msgid "Free values in function %ls:\n"
+msgid "Free values in function %ls:"
 msgstr ""
 
 #: ../src/kern/main.c:82
@@ -188,7 +197,7 @@ msgstr ""
 #, c-format
 msgid ""
 "mitchell version %s\n"
-"© 2004-2005 Chris Lumens\n"
+"© 2004-2006 Chris Lumens\n"
 msgstr ""
 
 #: ../src/kern/main.c:150
@@ -235,16 +244,16 @@ msgstr ""
 msgid "leaving %s\n"
 msgstr ""
 
-#: ../src/kern/parse.c:258
+#: ../src/kern/parse.c:241
 #, c-format
 msgid "Expected token from set %ls, but got { %ls } instead.\n"
 msgstr ""
 
-#: ../src/kern/parse.c:274 ../src/kern/parse.c:287
+#: ../src/kern/parse.c:255 ../src/kern/parse.c:267
 msgid "Premature end of input file.\n"
 msgstr ""
 
-#: ../src/kern/parse.c:279
+#: ../src/kern/parse.c:260
 #, c-format
 msgid "  ate %ls\n"
 msgstr ""
@@ -257,212 +266,212 @@ msgstr ""
 msgid "A symbol with this name already exists in this scope."
 msgstr ""
 
-#: ../src/kern/semant.c:551
+#: ../src/kern/semant.c:541
 msgid "Record definition already contains a symbol with this name."
 msgstr ""
 
-#: ../src/kern/semant.c:653
+#: ../src/kern/semant.c:638
 msgid "Type of test expression is not a basic type."
 msgstr ""
 
-#: ../src/kern/semant.c:654
+#: ../src/kern/semant.c:639
 msgid "test expresion type"
 msgstr ""
 
-#: ../src/kern/semant.c:655 ../src/kern/semant.c:1441
+#: ../src/kern/semant.c:640 ../src/kern/semant.c:1385
 msgid "expected type"
 msgstr ""
 
-#: ../src/kern/semant.c:666
+#: ../src/kern/semant.c:651
 msgid "Branch test must have the same type as the test expression."
 msgstr ""
 
-#: ../src/kern/semant.c:668
+#: ../src/kern/semant.c:652
 msgid "branch test type"
 msgstr ""
 
-#: ../src/kern/semant.c:669
+#: ../src/kern/semant.c:653
 msgid "test expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:683
+#: ../src/kern/semant.c:667
 msgid "Inconsistent types in case branch expressions."
 msgstr ""
 
-#: ../src/kern/semant.c:684 ../src/kern/semant.c:1224
+#: ../src/kern/semant.c:668 ../src/kern/semant.c:1177
 msgid "previous expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:685 ../src/kern/semant.c:1225
+#: ../src/kern/semant.c:669 ../src/kern/semant.c:1178
 msgid "this expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:712
+#: ../src/kern/semant.c:695
 msgid "Default expression type does not match type of branch expressions."
 msgstr ""
 
-#: ../src/kern/semant.c:714
+#: ../src/kern/semant.c:696
 msgid "branch expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:715
+#: ../src/kern/semant.c:697
 msgid "default expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:854
+#: ../src/kern/semant.c:830
 msgid "Type identifiers may not override symbols in the global scope."
 msgstr ""
 
-#: ../src/kern/semant.c:968 ../src/kern/semant.c:1071
+#: ../src/kern/semant.c:936 ../src/kern/semant.c:1030
 msgid "Referenced symbol is a type instead of an exception."
 msgstr ""
 
-#: ../src/kern/semant.c:987
+#: ../src/kern/semant.c:954
 msgid "Type of stated exception does not match list of assignments."
 msgstr ""
 
-#: ../src/kern/semant.c:989
+#: ../src/kern/semant.c:956
 msgid "exception type"
 msgstr ""
 
-#: ../src/kern/semant.c:990
+#: ../src/kern/semant.c:957
 msgid "assignment list type"
 msgstr ""
 
-#: ../src/kern/semant.c:1015
+#: ../src/kern/semant.c:981
 msgid "Inconsistent types in exception handler list."
 msgstr ""
 
-#: ../src/kern/semant.c:1016 ../src/kern/semant.c:1038
+#: ../src/kern/semant.c:982 ../src/kern/semant.c:1000
 msgid "first exception handler type"
 msgstr ""
 
-#: ../src/kern/semant.c:1018
+#: ../src/kern/semant.c:983
 msgid "this exception handler type"
 msgstr ""
 
-#: ../src/kern/semant.c:1035
+#: ../src/kern/semant.c:999
 msgid "Default exception handler type does not match type of previous exception handlers."
 msgstr ""
 
-#: ../src/kern/semant.c:1040
+#: ../src/kern/semant.c:1001
 msgid "default exception handler type"
 msgstr ""
 
-#: ../src/kern/semant.c:1190
+#: ../src/kern/semant.c:1146
 msgid "Type of exception handler does not match type of expression."
 msgstr ""
 
-#: ../src/kern/semant.c:1192
+#: ../src/kern/semant.c:1147
 msgid "expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:1193
+#: ../src/kern/semant.c:1148
 msgid "exception handler type"
 msgstr ""
 
-#: ../src/kern/semant.c:1223
+#: ../src/kern/semant.c:1176
 msgid "Inconsistent types in expression list."
 msgstr ""
 
-#: ../src/kern/semant.c:1255
+#: ../src/kern/semant.c:1208
 msgid "Referenced symbol is a value instead of a function."
 msgstr ""
 
-#: ../src/kern/semant.c:1262 ../src/kern/semant.c:1343
+#: ../src/kern/semant.c:1214 ../src/kern/semant.c:1295
 #, c-format
 msgid "Referenced symbol has no type information: %ls"
 msgstr ""
 
-#: ../src/kern/semant.c:1285
+#: ../src/kern/semant.c:1236
 msgid "Number of actual parameters does not match number of formals."
 msgstr ""
 
-#: ../src/kern/semant.c:1302
+#: ../src/kern/semant.c:1252
 msgid "Type of actual parameter does not match type of formal parameter."
 msgstr ""
 
-#: ../src/kern/semant.c:1304
+#: ../src/kern/semant.c:1253
 msgid "actual parameter type"
 msgstr ""
 
-#: ../src/kern/semant.c:1305
+#: ../src/kern/semant.c:1254
 msgid "formal parameter type"
 msgstr ""
 
-#: ../src/kern/semant.c:1371
+#: ../src/kern/semant.c:1322
 msgid "A formal parameter with this name already exists in the list."
 msgstr ""
 
-#: ../src/kern/semant.c:1392
+#: ../src/kern/semant.c:1341
 msgid "Type of function body does not match declaration."
 msgstr ""
 
-#: ../src/kern/semant.c:1393 ../src/kern/semant.c:1703
+#: ../src/kern/semant.c:1342 ../src/kern/semant.c:1635
 msgid "declared type"
 msgstr ""
 
-#: ../src/kern/semant.c:1394
+#: ../src/kern/semant.c:1342
 msgid "body type"
 msgstr ""
 
-#: ../src/kern/semant.c:1420
+#: ../src/kern/semant.c:1366
 msgid "Referenced symbol is a function instead of a value."
 msgstr ""
 
-#: ../src/kern/semant.c:1439
+#: ../src/kern/semant.c:1384
 msgid "if expression test must return a boolean type."
 msgstr ""
 
-#: ../src/kern/semant.c:1440
+#: ../src/kern/semant.c:1384
 msgid "if expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:1446
+#: ../src/kern/semant.c:1389
 msgid "then expression and else expression must have the same type."
 msgstr ""
 
-#: ../src/kern/semant.c:1448
+#: ../src/kern/semant.c:1390
 msgid "then expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:1449
+#: ../src/kern/semant.c:1391
 msgid "else expression type"
 msgstr ""
 
-#: ../src/kern/semant.c:1462
+#: ../src/kern/semant.c:1403
 msgid "Symbol may not contain a dot."
 msgstr ""
 
-#: ../src/kern/semant.c:1549
+#: ../src/kern/semant.c:1487
 msgid "A symbol with this name already exists in this record type."
 msgstr ""
 
-#: ../src/kern/semant.c:1580 ../src/kern/semant.c:1631
+#: ../src/kern/semant.c:1516 ../src/kern/semant.c:1564
 msgid "Unknown record element referenced."
 msgstr ""
 
-#: ../src/kern/semant.c:1589
+#: ../src/kern/semant.c:1525
 msgid "Symbol may not be used as a record or exception."
 msgstr ""
 
-#: ../src/kern/semant.c:1607
+#: ../src/kern/semant.c:1541
 msgid "Referenced symbol is not a record."
 msgstr ""
 
-#: ../src/kern/semant.c:1659
+#: ../src/kern/semant.c:1592
 msgid "Type declaration has no definition."
 msgstr ""
 
-#: ../src/kern/semant.c:1702
+#: ../src/kern/semant.c:1634
 msgid "Type of value initializer does not match declared type."
 msgstr ""
 
-#: ../src/kern/semant.c:1704
+#: ../src/kern/semant.c:1635
 msgid "initializer type"
 msgstr ""
 
-#: ../src/kern/symtab.c:140 ../src/kern/symtab.c:183 ../src/kern/symtab.c:266
+#: ../src/kern/symtab.c:138 ../src/kern/symtab.c:180 ../src/kern/symtab.c:257
 #, c-format
 msgid "Symbol has type of SYM_NONE: %ls\n"
 msgstr ""
@@ -477,34 +486,34 @@ msgstr ""
 msgid "Leaving module: %ls\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:88 ../src/kern/tokenize.c:111
+#: ../src/kern/tokenize.c:86 ../src/kern/tokenize.c:109
 msgid ""
 "Unable to read character.  Please check that $LANG is set to a UTF-8 aware\n"
 "\tlocale and that mitchell was compiled with gcc-3.4 or more recent.\n"
 "\tExiting."
 msgstr ""
 
-#: ../src/kern/tokenize.c:204
+#: ../src/kern/tokenize.c:202
 msgid "Premature end of file while reading string.\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:228
+#: ../src/kern/tokenize.c:224
 msgid "Premature end of file while reading unicode character escape sequence.\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:237 ../src/kern/tokenize.c:246
+#: ../src/kern/tokenize.c:230 ../src/kern/tokenize.c:238
 msgid "Invalid unicode character escape sequence.\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:260
+#: ../src/kern/tokenize.c:252
 msgid "Premature end of file while reading string whitespace escape sequence.\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:268
+#: ../src/kern/tokenize.c:259
 msgid "String whitespace escape sequences must end with '\\'.\n"
 msgstr ""
 
-#: ../src/kern/tokenize.c:461
+#: ../src/kern/tokenize.c:450
 #, c-format
 msgid "Could not perform numeric conversion on string: %ls\n"
 msgstr ""
