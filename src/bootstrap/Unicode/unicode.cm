@@ -1,0 +1,43 @@
+Group is
+   Chars/charClasses.sml
+   Chars/charVecDict.sml
+   Chars/dataDict.sml
+   Chars/uniChar.sml
+   Chars/uniClasses.sml
+   Chars/uniRanges.sml
+
+   Decode/decode.sml
+   Decode/decodeError.sml
+   Decode/decodeFile.sml
+   Decode/decodeMisc.sml
+   Decode/decodeUcs2.sml
+   Decode/decodeUcs4.sml
+   Decode/decodeUtf16.sml
+   Decode/decodeUtf8.sml
+   Decode/decodeUtil.sml
+
+   SymDict/dict.sml
+   SymDict/intDict.sml
+   SymDict/intListDict.sml
+   SymDict/intSetDict.sml
+   SymDict/key.sml
+   SymDict/stringDict.sml
+   SymDict/symbolTable.sml
+
+   Uri/uri.sml
+   Uri/uriDecode.sml
+   Uri/uriDict.sml
+   Uri/uriEncode.sml
+
+   Util/encoding.sml
+   Util/intSets.sml
+   Util/utilCompare.sml
+   Util/utilError.sml
+   Util/utilHash.sml
+   Util/utilInt.sml
+   Util/utilList.sml
+   Util/utilString.sml
+ 
+   config.sml
+
+   $/basis.cm
