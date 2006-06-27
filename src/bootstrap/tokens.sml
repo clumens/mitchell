@@ -12,7 +12,6 @@ struct
                    | Case of int * int
                    | Colon of int * int
                    | Comma of int * int
-                   | Comment of int * int
                    | Dblquote of int * int
                    | Decl of int * int
                    | Dot of int * int
