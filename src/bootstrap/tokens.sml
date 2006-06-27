@@ -169,7 +169,7 @@ struct
           | _     => readString (Vector.concat [str, #[ch]], file')
       end
 
-      val (ch, file') = readChar file
+      val (ch, file') = readChar (skipWhitespace file)
    in
       (* Having to use the numbers for these characters is unfortunate, but welcome
        * to Unicode in SML land.
