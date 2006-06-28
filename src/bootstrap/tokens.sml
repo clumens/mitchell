@@ -1,7 +1,5 @@
 structure Tokens =
 struct
-   exception UnknownToken of UniChar.Char
-
    (* All the types of valid Mitchell tokens.  The first two ints are the
     * lineno and column where the token occurs (or starts, in the case of really
     * long things).  Any additional parameters are easy to figure out.
@@ -49,12 +47,14 @@ struct
                    0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133, 0wx2190,
                    0wx2192, 0wx22a5]
 
-   (* raises: UnknownToken for any invalid tokens
-    * returns: Tokens.token * DecFile
-    *)
+   (* Fetch the next token from the input file, returning a token * DecFile *)
    fun nextToken file = let
       fun isReserved ch =
          List.exists (fn ele => UniChar.compareChar (ele, ch) = EQUAL) reserved
+
+      fun nextLine () = ( lineno := !lineno + 1 ; column := 0 ; () )
+      fun nextCol () = ( column := !column + 1 ; () )
+      fun prevCol () = ( column := !column - 1 ; () )
 
       (* raises: DecEof if eof is seen
        *         DecError for miscellaneous decoding errors
@@ -63,8 +63,8 @@ struct
       fun readChar file = let
          val (ch, file') = Decode.decGetChar file
       in
-         if ch = 0wxa then ( lineno := !lineno + 1 ; column := 0 ; (ch, file') )
-         else ( column := !column + 1 ; (ch, file') )
+         if ch = 0wxa then ( nextLine () ; (ch, file') )
+         else ( nextCol () ; (ch, file') )
       end
 
       (* Skip through the rest of the line until we hit a newline.  If EOF is
@@ -81,7 +81,7 @@ struct
          val (ch, file') = readChar file
       in
          if UniClasses.isS ch then skipWhitespace file'
-         else file
+         else ( prevCol () ; file )
       end
 
       (* Read a block of characters out of the file into a vector.  The end of
@@ -92,7 +92,7 @@ struct
       fun readWord (lst, file, isMember) = let
          val (ch, file') = readChar file
       in
-         if not (isMember ch) then ( column := !column - 1 ; (rev lst, file) )
+         if not (isMember ch) then ( prevCol () ; (rev lst, file) )
          else readWord (ch::lst, file', isMember)
       end
 
@@ -128,8 +128,12 @@ struct
       fun readString (str, file) = let
          (* Converts the string sequence \uXXXX into a single unicode character. *)
          fun readEscapedUnicode (lst, file) = let
+            (* Convert a four-element list into an integer, making sure that
+             * elements are valid hex digits first.
+             *)
             fun list2Int lst =
-               StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
+               if List.exists UniClasses.isHex lst then raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
+               else StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
          in
             if List.length lst = 4 then
                case list2Int (rev lst) of
