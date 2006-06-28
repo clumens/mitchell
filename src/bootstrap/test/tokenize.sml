@@ -15,7 +15,7 @@ fun printToken tok =
     | Tokens.Bottom(_, _)        => print "BOTTOM\n"
     | Tokens.Case(_, _)          => print "CASE\n"
     | Tokens.Colon(_, _)         => print "COLON\n"
-    | Tokens.Comma(_, _)         => print "\n"
+    | Tokens.Comma(_, _)         => print "COMMA\n"
     | Tokens.Dblquote(_, _)      => print "DBLQUOTE\n"
     | Tokens.Decl(_, _)          => print "DECL\n"
     | Tokens.Dot(_, _)           => print "DOT\n"
@@ -40,7 +40,7 @@ fun printToken tok =
     | Tokens.RBrace(_, _)        => print "RBRACE\n"
     | Tokens.RBrack(_, _)        => print "RBRACK\n"
     | Tokens.RParen(_, _)        => print "RPAREN\n"
-    | Tokens.String(_, _, v)     => print "STRING()\n"
+    | Tokens.String(_, _, v)     => print ("STRING(" ^ UniChar.Vector2String v ^ ")\n")
     | Tokens.Then(_, _)          => print "THEN\n"
     | Tokens.Type(_, _)          => print "TYPE\n"
     | Tokens.Val(_, _)           => print "VAL\n"
@@ -50,7 +50,7 @@ fun readFile filename = let
       val (tok, file') = Tokens.nextToken file
    in
       case tok of
-         Tokens.EndOfFile(_, _) => OS.Process.exit 0
+         Tokens.EndOfFile(_, _) => ()
        | _  => ( printToken tok ; doRead file' )
    end
 in
