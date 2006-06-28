@@ -2,9 +2,9 @@ structure Tokens =
 struct
    exception UnknownToken of UniChar.Char
 
-   (* All the types of valid Mitchell tokens.  The first two ints are the lineno and column
-    * where the token occurs (or starts, in the case of really long things).  Any additional
-    * parameters are easy to figure out.
+   (* All the types of valid Mitchell tokens.  The first two ints are the
+    * lineno and column where the token occurs (or starts, in the case of really
+    * long things).  Any additional parameters are easy to figure out.
     *)
    datatype tokens = Assign of int * int
                    | Boolean of int * int * bool
@@ -41,6 +41,7 @@ struct
                    | Type of int * int
                    | Val of int * int
 
+   (* The current position in the input file. *)
    val lineno = ref 1
    val column = ref 0
 
@@ -48,24 +49,24 @@ struct
                     0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133, 0wx2190,
                     0wx2192, 0wx22a5]
 
-   fun isReserved ch =
-      Vector.exists (fn ele => UniChar.compareChar (ele, ch) = EQUAL) reserved
-
-   (* raises: DecEof if eof is seen
-    *         DecError for miscellaneous decoding errors
-    * returns: UniChar.Char * DecFile
-    *)
-   fun readChar file = let
-      val (ch, file') = Decode.decGetChar file
-   in
-      if ch = 0wxa then ( lineno := !lineno + 1 ; column := 0 ; (ch, file') )
-      else ( column := !column + 1 ; (ch, file') )
-   end
-
    (* raises: UnknownToken for any invalid tokens
     * returns: Tokens.token * DecFile
     *)
    fun nextToken file = let
+      fun isReserved ch =
+         Vector.exists (fn ele => UniChar.compareChar (ele, ch) = EQUAL) reserved
+
+      (* raises: DecEof if eof is seen
+       *         DecError for miscellaneous decoding errors
+       * returns: UniChar.Char * DecFile
+       *)
+      fun readChar file = let
+         val (ch, file') = Decode.decGetChar file
+      in
+         if ch = 0wxa then ( lineno := !lineno + 1 ; column := 0 ; (ch, file') )
+         else ( column := !column + 1 ; (ch, file') )
+      end
+
       (* Skip through the rest of the line until we hit a newline.  If EOF is
        * reached, the exn will be propagated back up and handled by nextToken.
        *)
@@ -83,9 +84,10 @@ struct
          else file
       end
 
-      (* Read a block of characters out of the file into a vector.  The end of the block (or
-       * word - no, not the numeric type) is determined by the isMember function.  If EOF is
-       * reached, the exn will be propagated back up and handled by nextToken.
+      (* Read a block of characters out of the file into a vector.  The end of
+       * the block (or word - no, not the numeric type) is determined by the
+       * isMember function.  If EOF is reached, the exn will be propagated back
+       * up and handled by nextToken.
        *)
       fun readWord (vec, file, isMember) = let
          val (ch, file') = readChar file
@@ -94,9 +96,9 @@ struct
          else readWord (Vector.concat [vec, #[ch]], file', isMember)
       end
 
-      (* Figure out what kind of word we've read.  The easy way is to convert it into a string
-       * and see if it matches any of our reserved words.  If not, must be some crazy new
-       * user-defined identifier.
+      (* Figure out what kind of word we've read.  The easy way is to convert
+       * it into a string and see if it matches any of our reserved words.  If
+       * not, must be some crazy new user-defined identifier.
        *)
       fun handleWord vec =
          case UniChar.Vector2String vec of
@@ -119,9 +121,9 @@ struct
              SOME i => i
            | NONE   => raise Error.ParseError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
 
-      (* Tokenizing strings is the hardest part of this whole process because of the escape
-       * sequences, multiple lines, etc.  Too bad they can't be as simple as they were originally
-       * designed to be.
+      (* Tokenizing strings is the hardest part of this whole process because
+       * of the escape sequences, multiple lines, etc.  Too bad they can't be
+       * as simple as they were originally designed to be.
        *)
       fun readString (str, file) = let
          (* Converts the string sequence \uXXXX into a single unicode character. *)
@@ -160,8 +162,9 @@ struct
                         val (ch', file'') = readChar file' handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file in string escape sequence")
                         val (unescaped, file''') = convertEscaped (ch', file'')
                      in
-                        (* If there was a line continuation embedded in the string, unescaped is 0
-                         * and we should skip appending the null byte.
+                        (* If there was a line continuation embedded in the
+                         * string, unescaped is 0 and we should skip appending
+                         * the null byte.
                          *)
                         if unescaped = 0wx0 then readString (str, file''')
                         else readString (Vector.concat [str, #[unescaped]], file''')
@@ -171,8 +174,8 @@ struct
 
       val (ch, file') = readChar (skipWhitespace file)
    in
-      (* Having to use the numbers for these characters is unfortunate, but welcome
-       * to Unicode in SML land.
+      (* Having to use the numbers for these characters is unfortunate, but
+       * welcome to Unicode in SML land.
        *)
       case ch of
          0wx2190 => (Assign(!lineno, !column), file')
