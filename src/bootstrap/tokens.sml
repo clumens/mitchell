@@ -154,7 +154,7 @@ struct
              | 0wx75 => readEscapedUnicode (#[], file)   (* \uXXXX *)
              | _     => (ch, file)
 
-         val (ch, file') = readChar (skipWhitespace file)
+         val (ch, file') = readChar file
       in
          case ch of
             0wx22 => (str, file')      (* " *)
@@ -193,7 +193,7 @@ struct
        | 0wx2130 => (Exn(!lineno, !column), file')
        | 0wx0192 => (Function(!lineno, !column), file')
        | (0wx30|0wx31|0wx32|0wx33|0wx34|0wx35|0wx36|0wx37|0wx38|0wx39) => let
-                       val (str, file'') = readWord (#[], file', fn ch => UniClasses.isDec ch)
+                       val (str, file'') = readWord (#[ch], file', fn ch => UniClasses.isDec ch)
                     in
                        (Integer(!lineno, !column, handleInteger str), file'')
                     end
@@ -209,7 +209,7 @@ struct
        | 0wx03c4 => (Type(!lineno, !column), file')
        | 0wx028b => (Val(!lineno, !column), file')
        | _       => let
-                       val (str, file'') = readWord (#[], file', fn ch => not (UniClasses.isS ch) andalso not (isReserved ch))
+                       val (str, file'') = readWord (#[ch], file', fn ch => not (UniClasses.isS ch) andalso not (isReserved ch))
                     in
                        (handleWord str, file'')
                     end
