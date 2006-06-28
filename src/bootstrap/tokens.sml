@@ -1,8 +1,8 @@
 structure Tokens =
 struct
    (* All the types of valid Mitchell tokens.  The first two ints are the
-    * lineno and column where the token occurs (or starts, in the case of really
-    * long things).  Any additional parameters are easy to figure out.
+    * lineno and column where the token occurs (or starts, in the case of
+    * really long things).  Any additional parameters are easy to figure out.
     *)
    datatype tokens = Assign of int * int
                    | Boolean of int * int * bool
@@ -100,26 +100,24 @@ struct
        * it into a string and see if it matches any of our reserved words.  If
        * not, must be some crazy new user-defined identifier.
        *)
-      fun handleWord lst =
+      fun handleWord (lst, lineno, column) =
          case UniChar.Data2String lst of
-            "case"   => Case(!lineno, !column)
-          | "decl"   => Decl(!lineno, !column)
-          | "else"   => Else(!lineno, !column)
-          | "end"    => End(!lineno, !column)
-          | "f"      => Boolean(!lineno, !column, false)
-          | "handle" => Handle(!lineno, !column)
-          | "if"     => If(!lineno, !column)
-          | "in"     => In(!lineno, !column)
-          | "list"   => List(!lineno, !column)
-          | "raise"  => Raise(!lineno, !column)
-          | "t"      => Boolean(!lineno, !column, true)
-          | "then"   => Then(!lineno, !column)
-          | _        => Identifier(!lineno, !column, lst)
+            "case"   => Case(lineno, column)
+          | "decl"   => Decl(lineno, column)
+          | "else"   => Else(lineno, column)
+          | "end"    => End(lineno, column)
+          | "f"      => Boolean(lineno, column, false)
+          | "handle" => Handle(lineno, column)
+          | "if"     => If(lineno, column)
+          | "in"     => In(lineno, column)
+          | "list"   => List(lineno, column)
+          | "raise"  => Raise(lineno, column)
+          | "t"      => Boolean(lineno, column, true)
+          | "then"   => Then(lineno, column)
+          | _        => Identifier(lineno, column, lst)
 
       fun handleInteger lst =
-         case Int.fromString (UniChar.Data2String lst) of
-             SOME i => i
-           | NONE   => raise Error.ParseError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
+         Option.valOf (Int.fromString (UniChar.Data2String lst)) handle Option => raise Error.ParseError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
 
       (* Tokenizing strings is the hardest part of this whole process because
        * of the escape sequences, multiple lines, etc.  Too bad they can't be
@@ -132,19 +130,18 @@ struct
              * elements are valid hex digits first.
              *)
             fun list2Int lst =
-               if List.exists UniClasses.isHex lst then raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
+               if List.exists UniClasses.isHex lst thenraise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
                else StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
          in
             if List.length lst = 4 then
                case list2Int (rev lst) of
                   SOME i => (Word.fromInt i, file)
                 | NONE   => raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
-            else
-               let
-                  val (ch, file') = readChar file handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file while reading escaped Unicode character sequence.")
-               in
-                  readEscapedUnicode (ch::lst, file')
-               end
+            else let
+               val (ch, file') = readChar file handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file while reading escaped Unicode character sequence.")
+            in
+               readEscapedUnicode (ch::lst, file')
+            end
          end
 
          (* Convert escaped characters. *)
@@ -201,9 +198,10 @@ struct
        | 0wx2130 => (Exn(!lineno, !column), file')
        | 0wx0192 => (Function(!lineno, !column), file')
        | (0wx30|0wx31|0wx32|0wx33|0wx34|0wx35|0wx36|0wx37|0wx38|0wx39) => let
+                       val (startLine, startCol) = (!lineno, !column)
                        val (str, file'') = readWord ([ch], file', fn ch => UniClasses.isDec ch)
                     in
-                       (Integer(!lineno, !column, handleInteger str), file'')
+                       (Integer(startLine, startCol, handleInteger str), file'')
                     end
        | 0wx7b   => (LBrace(!lineno, !column), file')
        | 0wx5b   => (LBrack(!lineno, !column), file')
@@ -217,9 +215,11 @@ struct
        | 0wx03c4 => (Type(!lineno, !column), file')
        | 0wx028b => (Val(!lineno, !column), file')
        | _       => let
-                       val (str, file'') = readWord ([ch], file', fn ch => not (UniClasses.isS ch) andalso not (isReserved ch))
+                       val f = fn ch => not (UniClasses.isS ch) andalso not (isReserved ch)
+                       val (startLine, startCol) = (!lineno, !column)
+                       val (str, file'') = readWord ([ch], file', f)
                     in
-                       (handleWord str, file'')
+                       (handleWord (str, startLine, startCol), file'')
                     end
    end handle DecEof => (EndOfFile(!lineno, !column), file)
 end
