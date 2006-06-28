@@ -3,10 +3,10 @@
  *
  * Usage: readFile <filename>
  *)
-CM.make("../sources.cm");
+CM.make ("../sources.cm");
 
 fun openFile filename =
-   Decode.decOpenUni(SOME(Uri.String2Uri(filename)), Encoding.UTF8)
+   Decode.decOpenUni (SOME(Uri.String2Uri filename), Encoding.UTF8)
 
 fun printToken tok =
    case tok of
