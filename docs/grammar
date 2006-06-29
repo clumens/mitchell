@@ -24,17 +24,16 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* Program-level {{{ */
+/* Program-level */
 start ::= module-decl-lst
 
 module-decl ::= MODULE IDENTIFIER ASSIGN DECL top-decl-lst END
 
 module-decl-lst ::= module-decl
                   | module-decl module-decl-lst
-/* }}} */
 
 
-/* Expressions {{{ */
+/* Expressions */
 expr ::= LPAREN naked-expr RPAREN
        | LPAREN naked-expr RPAREN exn-handler
        | naked-expr
@@ -73,10 +72,9 @@ exn-lst ::= id IDENTIFIER MAPSTO expr
           | ELSE IDENTIFIER MAPSTO expr
 
 exn-handler ::= HANDLE exn-lst END
-/* }}} */
 
 
-/* Declarations {{{ */
+/* Declarations */
 decl ::= ty-decl
        | val-decl
        | fun-decl
@@ -91,27 +89,25 @@ top-decl-lst ::= top-decl top-decl-lst
                | top-decl
 
 decl-expr ::= DECL decl-lst IN expr END
-/* }}} */
 
 
-/* Types {{{ */
+/* Types */
 ty-decl ::= TYPE IDENTIFIER ASSIGN ty
 
 ty ::= BOTTOM
-     | EXN LBRACE id-lst RBRACE
+     | EXN LBRACE typed-name-lst RBRACE
      | LIST ty
-     | LBRACE id-lst RBRACE
+     | LBRACE typed-name-lst RBRACE
      | id
 
-id-lst ::= IDENTIFIER COLON ty
-         | IDENTIFIER COLON ty COMMA id-lst
+typed-name-lst ::= IDENTIFIER COLON ty
+                 | IDENTIFIER COLON ty COMMA typed-name-lst
 
 record-assn-lst ::= IDENTIFIER ASSIGN expr
                   | IDENTIFIER ASSIGN expr COMMA record-assn-lst
-/* }}} */
 
 
-/* Values {{{ */
+/* Values */
 val-decl ::= VAL IDENTIFIER COLON ty ASSIGN expr
            | VAL IDENTIFIER ASSIGN expr
 
@@ -120,12 +116,14 @@ id ::= IDENTIFIER
 
 record-ref ::= PIPE IDENTIFIER
              | PIPE IDENTIFIER record-ref
-/* }}} */
 
 
-/* Functions {{{ */
-fun-decl ::= FUNCTION IDENTIFIER COLON ty LPAREN id-lst RPAREN ASSIGN expr
-           | FUNCTION IDENTIFIER COLON ty LPAREN RPAREN ASSIGN expr
+/* Functions */
+fun-decl ::= FUNCTION IDENTIFIER COLON ty formals-lst ASSIGN expr
+           | FUNCTION IDENTIFIER formals-lst ASSIGN expr
+
+formals-lst ::= LPAREN RPAREN
+              | LPAREN typed-name-lst RPAREN
 
 arg-lst ::= LPAREN RPAREN
           | LPAREN expr-lst RPAREN
@@ -135,10 +133,9 @@ sym-ref ::= id
           | id arg-lst
           | id arg-lst record-ref
           | id LBRACE record-assn-lst RBRACE
-/* }}} */
 
 
-/* Terminals {{{ */
+/* Terminals */
 ASSIGN ::= ←
 
 BOOLEAN ::= t
@@ -201,4 +198,3 @@ THEN ::= then
 TYPE ::= τ
 
 VAL ::= ʋ
-/* }}} */
