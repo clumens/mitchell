@@ -130,7 +130,7 @@ struct
              * elements are valid hex digits first.
              *)
             fun list2Int lst =
-               if List.exists UniClasses.isHex lst thenraise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
+               if List.exists UniClasses.isHex lst then raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
                else StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
          in
             if List.length lst = 4 then
