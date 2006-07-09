@@ -1,6 +1,9 @@
 Group is
+   absyn.sml
    error.sml
+   symbol.sml
    tokens.sml
+   types.sml
 
    Unicode/unicode.cm
 

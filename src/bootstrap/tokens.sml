@@ -1,3 +1,10 @@
+(* This structure defines the tokenizing portion of the mitchell compiler.
+ * The entry point into this structure is nextToken, which takes a file object
+ * and returns the next token read from the input file in the form of a
+ * tokens object.  This structure should really only ever be needed by the
+ * parser, though it's possible other structures may need to use the tokens
+ * datatype.
+ *)
 structure Tokens =
 struct
    (* All the types of valid Mitchell tokens.  The first two ints are the
