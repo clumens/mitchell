@@ -5,7 +5,7 @@
                              by Chris Lumens
 
 
-<CONTENTS GO HERE>
+<TABLE OF CONTENTS GO HERE>
 
 
 1. Introduction
@@ -29,8 +29,9 @@ introduction to the Mitchell programming language.
 Mitchell has a few types.  The most basic types are boolean, integer,
 string, and ⊥.  These types may be thought of as atomic - they don't break
 down into anything more simple.  Mitchell also defines three more
-complicated types:  lists, records, and exceptions.  In addition, modules
-may define their own types.
+complicated types:  lists, records, and exceptions.  Finally, mitchell
+allows module to define their own types as aliases to preexisting types
+or using unions.
 
 Mitchell is strictly type checked.  That is, there is no implicit
 conversion from one type to another based on context.  All expressions
@@ -133,6 +134,9 @@ provided by the | operator.
 
 2.7. exception
 --------------
+
+2.8. union
+----------
 
 
 3. Expressions

@@ -14,10 +14,11 @@ structure Types = struct
    datatype Type = ALIAS of Symbol.symbol * Finite
                  | ANY of Finite
                  | BOOLEAN
-                 | BOTTOM of Finite
+                 | BOTTOM
                  | EXN of (Symbol.symbol * Type) list * Finite
                  | INTEGER
                  | LIST of Type * Finite
                  | RECORD of (Symbol.symbol * Type) list * Finite
                  | STRING
+                 | UNION of (Symbol.symbol * Type option) list * Finite
 end

@@ -44,6 +44,7 @@ struct
                    | String of int * int * UniChar.Data
                    | Then of int * int
                    | Type of int * int
+                   | Union of int * int
                    | Val of int * int
 
    (* The current position in the input file. *)
@@ -52,7 +53,7 @@ struct
 
    val reserved = [0wx22, 0wx23, 0wx28, 0wx29, 0wx2c, 0wx2e, 0wx3a, 0wx5b, 0wx5d, 0wx7b,
                    0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133, 0wx2190,
-                   0wx2192, 0wx22a5]
+                   0wx2192, 0wx222a, 0wx22a5]
 
    (* Fetch the next token from the input file, returning a token * DecFile *)
    fun nextToken file = let
@@ -220,6 +221,7 @@ struct
        | 0wx5d   => (RBrack(!lineno, !column), file')
        | 0wx29   => (RParen(!lineno, !column), file')
        | 0wx03c4 => (Type(!lineno, !column), file')
+       | 0wx222a => (Union(!lineno, !column), file')
        | 0wx028b => (Val(!lineno, !column), file')
        | _       => let
                        val f = fn ch => not (UniClasses.isS ch) andalso not (isReserved ch)

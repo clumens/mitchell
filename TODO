@@ -1,20 +1,17 @@
-- desugar:
-   - create AST node building functions to simplify passes (?)
 - documentation:
    - documentation aimed more at actual users
    - write a formal semantics
    - think about a better documentation format
+   - type checking rules for unions
 - grammar:
-   - allow empty lists (requires polymorphic type checking)
+   - think about typing for empty lists
    - allow some sort of list pattern matching as a stop-gap for real
      pattern matching throughout
-   - tagged discriminated union support
 - misc:
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis (preview-5)
    - proposal for C interface module
    - outline contents for runtime library
-   - beef up list code
 - output:
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:

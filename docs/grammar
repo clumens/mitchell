@@ -34,35 +34,36 @@ module-decl-lst ::= module-decl
 
 
 /* Expressions */
-expr ::= LPAREN naked-expr RPAREN
-       | LPAREN naked-expr RPAREN exn-handler
-       | naked-expr
-       | naked-expr exn-handler
+expr ::= LPAREN base-expr RPAREN
+       | LPAREN base-expr RPAREN HANDLE exn-lst END
+       | base-expr
+       | base-expr HANDLE exn-lst END
 
-naked-expr ::= LBRACK expr-lst RBRACK
-             | LBRACE record-assn-lst RBRACE
-             | case-expr
-             | decl-expr
-             | if-expr
-             | sym-ref
-             | RAISE expr
-             | INTEGER
-             | STRING
-             | BOOLEAN
-             | BOTTOM
+base-expr ::= LBRACE record-assn-lst RBRACE
+            | list-expr
+            | CASE expr IN branch-lst END
+            | DECL decl-lst IN expr END
+            | IF expr THEN expr ELSE expr
+            | sym-ref
+            | RAISE expr
+            | INTEGER
+            | STRING
+            | BOOLEAN
+            | BOTTOM
 
-branch-expr ::= id
-              | INTEGER
-              | STRING
-              | BOOLEAN
+list-expr ::= LBRACK RBRACK
+            | LBRACK expr-lst RBRACK
 
 branch-lst ::= branch-expr MAPSTO expr
              | branch-expr MAPSTO expr COMMA branch-lst
              | ELSE MAPSTO expr
 
-case-expr ::= CASE expr IN branch-lst END
-
-if-expr ::= IF expr THEN expr ELSE expr
+branch-expr ::= id
+              | id LPAREN RPAREN
+              | id LPAREN name-lst RPAREN
+              | INTEGER
+              | STRING
+              | BOOLEAN
 
 expr-lst ::= expr COMMA expr-lst
            | expr
@@ -70,8 +71,6 @@ expr-lst ::= expr COMMA expr-lst
 exn-lst ::= id IDENTIFIER MAPSTO expr
           | id IDENTIFIER MAPSTO expr COMMA exn-lst
           | ELSE IDENTIFIER MAPSTO expr
-
-exn-handler ::= HANDLE exn-lst END
 
 
 /* Declarations */
@@ -88,20 +87,27 @@ top-decl ::= decl
 top-decl-lst ::= top-decl top-decl-lst
                | top-decl
 
-decl-expr ::= DECL decl-lst IN expr END
-
 
 /* Types */
 ty-decl ::= TYPE IDENTIFIER ASSIGN ty
 
 ty ::= BOTTOM
-     | EXN LBRACE typed-name-lst RBRACE
      | LIST ty
+     | EXN LBRACE typed-name-lst RBRACE
+     | UNION LBRACE tycon-lst RBRACE
      | LBRACE typed-name-lst RBRACE
      | id
 
+tycon-lst ::= IDENTIFIER COLON ty
+            | IDENTIFIER COLON ty COMMA tycon-lst
+            | IDENTIFIER
+            | IDENTIFIER COMMA tycon-lst
+
 typed-name-lst ::= IDENTIFIER COLON ty
                  | IDENTIFIER COLON ty COMMA typed-name-lst
+
+name-lst ::= IDENTIFIER
+           | IDENTIFIER COMMA name-lst
 
 record-assn-lst ::= IDENTIFIER ASSIGN expr
                   | IDENTIFIER ASSIGN expr COMMA record-assn-lst
@@ -129,9 +135,8 @@ arg-lst ::= LPAREN RPAREN
           | LPAREN expr-lst RPAREN
 
 sym-ref ::= id
-          | id record-ref
           | id arg-lst
-          | id arg-lst record-ref
+          | sym-ref record-ref
           | id LBRACE record-assn-lst RBRACE
 
 
@@ -196,5 +201,7 @@ STRING ::= ".*"
 THEN ::= then
 
 TYPE ::= τ
+
+UNION ::= ∪
 
 VAL ::= ʋ

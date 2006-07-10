@@ -43,6 +43,7 @@ fun printToken tok =
     | Tokens.String(_, _, v)     => print ("STRING(" ^ UniChar.Data2String v ^ ")\n")
     | Tokens.Then(_, _)          => print "THEN\n"
     | Tokens.Type(_, _)          => print "TYPE\n"
+    | Tokens.Union(_,_)          => print "UNION\n"
     | Tokens.Val(_, _)           => print "VAL\n"
 
 fun readFile filename = let
