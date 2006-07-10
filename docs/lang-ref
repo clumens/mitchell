@@ -134,6 +134,30 @@ provided by the | operator.
 
 2.7. exception
 --------------
+Exceptions provide a convenient way for handling errors in program
+execution.  They provide a mechanism for attaching arbitrary values to an
+error condition, handling this condition wherever the programmer wants,
+and allowing program execution to continue on without too much
+difficulty.  This is much more flexible than the common return value
+or errno values seen in languages like C, though it does comes with a
+certain amount of complexity.
+
+Exceptions are a special type in Mitchell, though they look syntactically
+just like a record.  Exception types hold several named values of already
+defined types.  The names must be unique within a single exception type,
+and the order names are listed in does not matter.  Once an exception
+type is declared, new values of this type may be created in the normal
+manner.  Exception values are then just like regular values - they may be
+created, passed as function parameters, and returned from expressions.
+It is not until an exception value is raised that anything special
+happens.
+
+Raised exceptions must be handled at some point in program execution.  If
+the programmer does not specify a valid exception handler, the exception
+will be handled at the top level by the runtime environment, immediately
+halting execution.
+
+Exception values may be manipulated with the Exception module.
 
 2.8. union
 ----------
@@ -221,12 +245,52 @@ of the entire expression.
 
 3.5. raise Expressions
 ----------------------
+raise-expr ::= RAISE expr
+
+The raise expression causes an exception to be raised immediately.  The
+form of this expression is unusually flexible in that it raises the
+result of any expression.  Of course, the expression must evaluate to a
+value of an exception type.
+
+When an exception is raised, program execution immediately changes.
+Instead of following the normal course of execution, the exception begins
+propagating up from the raise expression to the top level.  At each point
+along the way, a check is performed for an exception handler.  If an
+exception handler is found that can handle exceptions of the type raised,
+the handler is run and execution continues on from that point.
+Otherwise, the exception is propagated up to the next caller in the
+execution stack.  If the exception reaches the top without being handled,
+a runtime error occurs and execution halts.
 
 3.6. Literal Expressions
 ------------------------
 
 3.7. Exception Handlers
 -----------------------
+handle-expr ::= HANDLE exn-lst END
+
+exn-lst ::= id IDENTIFIER MAPSTO expr
+          | id IDENTIFIER MAPSTO expr COMMA exn-lst
+          | ELSE IDENTIFIER MAPSTO expr
+
+Exception handlers may be specified immediately after any valid
+expression.  These constructs may handle any kind of exception, given by
+name as the id.  Several handlers may be specified in a comma separated
+list, as well as a default handler.  This is similar in style to the case
+expression.
+
+When an exception reaches a handle expression, each id in the list is
+checked to see if it matches the type of the exception raised.  If so,
+the matching expression is executed.  If no handler matches but a default
+is given, the default expression is executed.  In any of these cases,
+program execution continues with the next expression after the exception
+handlers.  If there is no default, the exception propagates up to the
+next caller in the call stack.
+
+The types of all handling expressions must be the same, even though the
+types of the exceptions will not be.  In addition, each handling
+expression must have the same type as the expression it follow, as the
+value returned by the handler will become the value of the expression.
 
 
 4. Declarations
