@@ -65,8 +65,8 @@ branch-expr ::= id
               | STRING
               | BOOLEAN
 
-expr-lst ::= expr COMMA expr-lst
-           | expr
+expr-lst ::= expr
+           | expr COMMA expr-lst
 
 exn-lst ::= id IDENTIFIER MAPSTO expr
           | id IDENTIFIER MAPSTO expr COMMA exn-lst
@@ -78,14 +78,14 @@ decl ::= ty-decl
        | val-decl
        | fun-decl
 
-decl-lst ::= decl decl-lst
-           | decl
+decl-lst ::= decl
+           | decl decl-lst
 
 top-decl ::= decl
            | module-decl
 
-top-decl-lst ::= top-decl top-decl-lst
-               | top-decl
+top-decl-lst ::= top-decl
+               | top-decl top-decl-lst
 
 
 /* Types */
@@ -97,6 +97,9 @@ ty ::= BOTTOM
      | UNION LBRACE tycon-lst RBRACE
      | LBRACE typed-name-lst RBRACE
      | id
+
+ty-lst ::= ty
+         | ty COMMA ty-lst
 
 tycon-lst ::= IDENTIFIER COLON ty
             | IDENTIFIER COLON ty COMMA tycon-lst
@@ -125,8 +128,11 @@ record-ref ::= PIPE IDENTIFIER
 
 
 /* Functions */
-fun-decl ::= FUNCTION IDENTIFIER COLON ty formals-lst ASSIGN expr
-           | FUNCTION IDENTIFIER formals-lst ASSIGN expr
+fun-decl ::= FUNCTION IDENTIFIER ty-formals-lst formals-lst COLON ty ASSIGN expr
+           | FUNCTION IDENTIFIER ty-formals-lst formals-lst ASSIGN expr
+
+ty-formals-lst ::= LPAREN RPAREN
+                 | LPAREN name-lst RPAREN
 
 formals-lst ::= LPAREN RPAREN
               | LPAREN typed-name-lst RPAREN
@@ -136,6 +142,8 @@ arg-lst ::= LPAREN RPAREN
 
 sym-ref ::= id
           | id arg-lst
+          | id arg-lst LPAREN RPAREN
+          | id arg-lst LPAREN ty-lst RPAREN
           | sym-ref record-ref
           | id LBRACE record-assn-lst RBRACE
 
