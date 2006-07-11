@@ -174,16 +174,24 @@ possibilities though the programmer must also be careful with the typing.
 
 3.1. case Expressions
 ---------------------
-case-expr ::= CASE test-expr IN branch-lst END
+case-expr = case-symbol test-expr in-symbol branch-lst end-symbol
 
-branch-lst ::= branch-test-expr MAPSTO result-expr
-             | branch-test-expr MAPSTO result-expr COMMA branch-lst
-             | ELSE MAPSTO default-expr
+branch-lst = branch-test-expr mapsto-symbol result-expr (comma-symbol branch-lst)?
+           | else-symbol mapsto-symbol default-expr
 
-branch-test-expr ::= id
-                   | INTEGER
-                   | STRING
-                   | BOOLEAN
+branch-test-expr = id
+                 | id lparen-symbol name-lst? rparen-symbol
+                 | integer-symbol
+                 | string-symbol
+                 | boolean-symbol
+
+name-lst = identifier-symbol (comma-symbol, identifier-symbol)*
+
+test-expr = expr
+
+result-expr = expr
+
+default-expr = expr
 
 The case expression is a rather complex piece of syntax.  It consists of a
 test expression and a list of branches.  Each branch in the list consists
@@ -197,23 +205,27 @@ have the same type.  When a matching result is found, the result
 expression is evaluated and that value and type is returned for the entire
 case expression.  All result expressions must have the same type.
 
-The allowed types for the test expressions is limited to integers,
-strings, and booleans.  There is no restriction on the type of the result
-expressions.
+The allowed types for the test expressions are limited to integers, booleans,
+strings, and unions.  There is no restriction on the type of the result
+expressions.  If the test expressions are unions, the syntax gets a little
+more complicated.  In the test expression, you must specify the constructor
+of the union being specified, followed by a comma-separated list of
+identifiers if the constructor is more than just a name.  Each identifier
+will be bound to one value of the constructor in a new environment that
+exists just for the corresponding result expression.
 
 The case expression may also include a default expression.  If no branch
 test expressions match, the default expression becomes the result of the
 case.  This default is not required, however.  If the compiler is unable
-to determine at runtime that all possibilities for the result of the test
-expression are covered by the branches, a warning will be issued.  If no
-match is found a runtime, an exception will be thrown and execution
-halted.  The compiler is able to determine that all possibilities are
-covered if a default expression is provided or if the type of the tests is
-boolean.
+to determine at compile time that all possibilities for the result of the
+test expression are covered by the branches, an error will occur.
+
 
 3.2. decl Expressions
 ---------------------
-decl-expr ::= DECL decl-lst IN expr END
+decl-expr = decl-symbol decl+ in-symbol expr end-symbol
+
+decl = ty-decl | val-decl | fun-decl
 
 The decl expression creates a new level of lexical scope.  The definitions
 contained in decl-lst may includes types, exceptions, functions, and
@@ -226,7 +238,13 @@ expression.
 
 3.3. if-then-else Expressions
 -----------------------------
-if-expr ::= IF test-expr THEN then-expr ELSE else-expr
+if-expr = if-symbol test-expr then-symbol then-expr else-symbol else-expr
+
+test-expr = expr
+
+then-expr = expr
+
+else-expr = expr
 
 The if-then-else expression is different from similar forms found in other
 programming languages.  Since this is an expression, it must return a
@@ -245,7 +263,7 @@ of the entire expression.
 
 3.5. raise Expressions
 ----------------------
-raise-expr ::= RAISE expr
+raise-expr = raise-symbol expr
 
 The raise expression causes an exception to be raised immediately.  The
 form of this expression is unusually flexible in that it raises the
@@ -267,11 +285,10 @@ a runtime error occurs and execution halts.
 
 3.7. Exception Handlers
 -----------------------
-handle-expr ::= HANDLE exn-lst END
+handle-expr = handle-symbol exn-lst end-symbol
 
-exn-lst ::= id IDENTIFIER MAPSTO expr
-          | id IDENTIFIER MAPSTO expr COMMA exn-lst
-          | ELSE IDENTIFIER MAPSTO expr
+exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
+        | else-symbol identifier-symbol mapsto-symbol expr
 
 Exception handlers may be specified immediately after any valid
 expression.  These constructs may handle any kind of exception, given by
