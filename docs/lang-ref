@@ -325,6 +325,32 @@ value returned by the handler will become the value of the expression.
 4.4. Module Declarations
 ------------------------
 
+4.5. absorb Statement
+---------------------
+absorb-stmt = absorb-symbol id
+
+The absorb statement is a convenient piece of syntax that lets you not
+have to do as much typing.  absorb takes an identifier that is a module
+name, and puts all its symbols into the symbol table of the current scope.
+That is, it makes the values, types, functions, modules, and exceptions
+defined in that module look as if they are defined locally, saving you
+from having to type the module name before each identifier.  So instead of
+typing:
+
+   Integer.+ (a, b)
+
+you could instead type:
+
+   absorb Integer
+   + (a, b)
+
+This pays off most when you have a lot of method calls into the same
+module.  absorb may be used anywhere declarations can be defined.  Placing
+it in a module-level could work well.  Note that the bindings imported
+from the module are only available after absorb is used, and that they
+will override anything you have already defined.  When the current level
+of scope ends, so does the effects of absorb.
+
 
 5. Modules
 ==========

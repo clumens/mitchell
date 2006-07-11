@@ -2,11 +2,10 @@
    - documentation aimed more at actual users
    - write a formal semantics
    - think about a better documentation format
-   - type checking rules for unions
+   - type checking rules for polymorphism
    - audit all documentation for changes due to: union type, explicit
      polymorphism, and module opening keyword
 - grammar:
-   - add a keyword to open a module in the current scope
    - allow some sort of list pattern matching as a stop-gap for real
      pattern matching throughout
 - misc:

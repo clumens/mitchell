@@ -48,8 +48,9 @@ structure Absyn = struct
           | UnionTy of {tycons: {sym: Symbol.symbol, ty: Ty option,
                         pos: pos} list, pos: pos}
 
-   (* Each element of calls must be a FunCallExp. *)
-   and Decl = FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
+   and Decl = Absorb of {module: Symbol.symbol, pos: pos}
+              (* Each element of calls must be a FunCallExp. *)
+            | FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty) list,
                           calls: Expr list, body: Expr, symtab: Symbol.symtab}
             | ModuleDecl of {sym: Symbol.symbol, decl: Decl list, pos: pos,

@@ -70,6 +70,7 @@ record-literal = lbrace-symbol record-assn-lst rbrace-symbol
 decl = ty-decl
      | val-decl
      | fun-decl
+     | absorb-symbol id
 
 top-decl = decl
          | module-decl
@@ -126,6 +127,8 @@ comment = start-comment-symbol .* end-comment-symbol
 
 
 /* Terminals */
+absorb-symbol = "absorb"
+
 assign-symbol = "←"
 
 boolean-symbol = "t" | "f"

@@ -11,7 +11,8 @@ struct
     * lineno and column where the token occurs (or starts, in the case of
     * really long things).  Any additional parameters are easy to figure out.
     *)
-   datatype tokens = Assign of int * int
+   datatype tokens = Absorb of int * int
+                   | Assign of int * int
                    | Boolean of int * int * bool
                    | Bottom of int * int
                    | Case of int * int
@@ -110,7 +111,8 @@ struct
        *)
       fun handleWord (lst, lineno, column) =
          case UniChar.Data2String lst of
-            "case"   => Case(lineno, column)
+            "absorb" => Absorb(lineno, column)
+          | "case"   => Case(lineno, column)
           | "decl"   => Decl(lineno, column)
           | "else"   => Else(lineno, column)
           | "end"    => End(lineno, column)
