@@ -62,6 +62,17 @@ A ⊢ { I1 ← E1: T1, ..., In ← En: Tn } : { I1 : T1, ..., In : Tn }
 ------------------------------------------------------------     [case-expr-2]
    A ⊢ case Et in Eb1 → E1, ..., Ebn → En, else → Ee end : T
 
+         A ⊢ Et : (oneof (I1 T1) ... (In Tn))
+      ∀i. ∃j. ((Ii = Itj) ∧ (A[Ivj: Ti] ⊢ Ej: T))
+---------------------------------------------------------     [case-expr-3]
+A ⊢ case Et in It1(Iv1) → E1, ..., EItn(Ivn) → En end : T
+
+                A ⊢ Et : (oneof (I1 T1) ... (In Tn))
+              ∀i. (∃j. (Ii = Itj)) . A[Ivj: Ti] ⊢ Ej: T
+                             A ⊢ Ee : T
+--------------------------------------------------------------------     [case-expr-4]
+A ⊢ case Et in It1(Iv1) → E1, ..., EItn(Ivn) → En, else → Ee end : T
+
       A' = A[I1 : T1, ..., In : Tn]
            ∀i . (A' ⊢ Ii : Ti)
                A' ⊢ E : Te
@@ -99,6 +110,19 @@ A ⊢ Ip : (T1, ..., Tn) → Tb
 A ⊢ ƒ If: Tb (I1: T1, ..., In: Tn) ← Eb : (T1, ..., Tn) → Tb
 
 
+Notes
+=====
+[case-expr-3] is a specialization of the normal case-expr type checking rules
+for tag discriminated union types.  This rule states that in a case-expr
+without a default branch, all possible constructors of the union must be
+specified.  All branches must return the same type.
+
+[case-expr-4] is similar, except that it allows for a default expression
+to be evaluated if not all constructors are listed as branch possibilities.
+This default expression must be of the same type as the return value of all
+the branches.
+
+
 Type Equivalence Rules
 ======================
 T = T    [reflexive-=]
@@ -119,10 +143,15 @@ T1 list = T2 list
 
            { Nl1, ..., Nln } = { Nr1, ..., Nrn }
               ∀i, j . (Nlj = Nri ⇒ Tlj = Tri)
------------------------------------------------------------     [record-=]
-{Nl1 : Tl1, ..., Nln : Tln } = {Nr1 : Tr1, ..., Nrn : Trn }
+----------------------------------------------------------     [record-=]
+{Nl1 : Tl1, ..., Nln : Tln } = {Nr1 : Tr1, ..., Nrn : Trn}
 
 τ I ← { N1, ..., Nn } = τ Inew ← [Inew/I]{ N1, ..., Nn }     [record-α]
+
+           { Nl1, ..., Nln } = { Nr1, ..., Nrn }
+              ∀i, j . (Nlj = Nri ⇒ Tlj = Tri)
+----------------------------------------------------------     [union-=]
+{Nl1 : Tl1, ..., Nln : Tln } = {Nr1 : Tr1, ..., Nrn : Trn}
 
 
 Notes
@@ -147,14 +176,13 @@ definitions are equivalent:
    * τ lst ← string list = τ str_lst ← string list
 
 
-[record-=] states that two record types are equivalent if the have the
+[record-=] states that two record types are equivalent if they have the
 same named elements with equivalent types.  However, the elements can be
 listed in any order and still preserve equivalence.  That is, the
 following record types are equivalent:
 
    * { name: string } = { name: string }
-   * { make: string, model: string, year: integer } =
-        { make: string, model: string, year: integer }
+   * { make: string, model: string, year: integer } = { make: string, model: string, year: integer }
    * { name: string, age: integer } = { age: integer, name: string }
 
 However, the following record types are not:
@@ -169,8 +197,16 @@ types even if they have different type names, as long as the underlying
 types are equivalent subject to [record-=].  That is, the following record
 definitions are equivalent:
 
-   * τ car ← { make: string, model: string } =
-        τ vehicle ← { make: string, model: string }
+   * τ car ← { make: string, model: string } = τ vehicle ← { make: string, model: string }
+
+
+[union-=] states that two union types are equivalent if they have the same
+named elements with equivalent types.  However, the elements can be listed
+in any order and still preserve equivalence.  That is, the following union
+types are equivalent:
+
+   * τ tree1 ← ∪ { Leaf: integer, Branch: {Left: tree1, Right: tree1} } = τ tree2 ← { Branch: {Left: tree2, Right: tree2}, Leaf: integer}
+   * τ enum1 ← ∪ { Red, Orange, Yellow, Green } = τ enum2 ← { Yellow, Red, Green, Orange }
 
 
 Name Scope
