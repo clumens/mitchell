@@ -1,14 +1,11 @@
-/* Grammar for the mitchell language.  No guarantees are made that this
- * grammar is LL(1).  Being that restrictive can mean an awkward grammar,
- * and since I'm not even using a parser generator, I can play as fast and
- * loose as I want with the token lookahead.  So here's the grammar,
- * whatever it may be.
- *
- * $Id: grammar,v 1.19 2005/07/08 17:32:23 chris Exp $
+/* EBNF for the mitchell language.  No guarantees are made that this grammar
+ * is LL(1).  Being that restrictive can mean an awkward grammar, and since
+ * I'm not even using a parser generator, I can play as fast and loose as I
+ * want with the token lookahead.  So here's the grammar, whatever it may be.
  */
 
 /* mitchell - the bootstrapping compiler
- * Copyright (C) 2004 Chris Lumens
+ * Copyright (C) 2004-2006 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -25,191 +22,174 @@
  */
 
 /* Program-level */
-start ::= module-decl-lst
+start = module-decl+
 
-module-decl ::= MODULE IDENTIFIER ASSIGN DECL top-decl-lst END
-
-module-decl-lst ::= module-decl
-                  | module-decl module-decl-lst
+module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl+ end-symbol
 
 
 /* Expressions */
-expr ::= LPAREN base-expr RPAREN
-       | LPAREN base-expr RPAREN HANDLE exn-lst END
-       | base-expr
-       | base-expr HANDLE exn-lst END
+expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
+     | base-expr (handle-symbol enx-lst end-symbol)?
 
-base-expr ::= LBRACE record-assn-lst RBRACE
-            | list-expr
-            | CASE expr IN branch-lst END
-            | DECL decl-lst IN expr END
-            | IF expr THEN expr ELSE expr
-            | sym-ref
-            | RAISE expr
-            | INTEGER
-            | STRING
-            | BOOLEAN
-            | BOTTOM
+expr-lst = expr (comma-symbol expr)*
 
-list-expr ::= LBRACK RBRACK
-            | LBRACK expr-lst RBRACK
+base-expr = record-literal
+          | lbrack-symbol expr-lst? rbrack-symbol
+          | case-expr
+          | decl-expr
+          | if-expr
+          | sym-ref
+          | raise-symbol expr
+          | integer-symbol
+          | string-symbol
+          | boolean-symbol
+          | bottom-symbol
 
-branch-lst ::= branch-expr MAPSTO expr
-             | branch-expr MAPSTO expr COMMA branch-lst
-             | ELSE MAPSTO expr
+branch-lst = branch-expr mapsto-symbol expr (comma-symbol branch-lst)?
+           | else-symbol mapsto-symbol expr
 
-branch-expr ::= id
-              | id LPAREN RPAREN
-              | id LPAREN name-lst RPAREN
-              | INTEGER
-              | STRING
-              | BOOLEAN
+branch-expr = id
+            | id lparen-symbol name-lst? rparen-symbol
+            | integer-symbol
+            | string-symbol
+            | boolean-symbol
 
-expr-lst ::= expr
-           | expr COMMA expr-lst
+case-expr = case-symbol expr in-symbol branch-lst end-symbol
 
-exn-lst ::= id IDENTIFIER MAPSTO expr
-          | id IDENTIFIER MAPSTO expr COMMA exn-lst
-          | ELSE IDENTIFIER MAPSTO expr
+decl-expr = decl-symbol decl+ in-symbol expr end-symbol
+
+exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
+        | else-symbol identifier-symbol mapsto-symbol expr
+
+if-expr = if-symbol expr then-symbol expr else-symbol expr
+
+record-literal = lbrace-symbol record-assn-lst rbrace-symbol
 
 
 /* Declarations */
-decl ::= ty-decl
-       | val-decl
-       | fun-decl
+decl = ty-decl
+     | val-decl
+     | fun-decl
 
-decl-lst ::= decl
-           | decl decl-lst
-
-top-decl ::= decl
-           | module-decl
-
-top-decl-lst ::= top-decl
-               | top-decl top-decl-lst
+top-decl = decl
+         | module-decl
 
 
 /* Types */
-ty-decl ::= TYPE IDENTIFIER ASSIGN ty
+ty-decl = type-symbol identifier-symbol assign-symbol ty
 
-ty ::= BOTTOM
-     | LIST ty
-     | EXN LBRACE typed-name-lst RBRACE
-     | UNION LBRACE tycon-lst RBRACE
-     | LBRACE typed-name-lst RBRACE
-     | id
+ty = bottom-symbol
+   | list-symbol ty
+   | exn-symbol lbrace-symbol typed-name-lst rbrace-symbol
+   | union-symbol lbrace-symbol tycon-lst rbrace-symbol
+   | lbrace-symbol typed-name-lst rbrace-symbol
+   | id
 
-ty-lst ::= ty
-         | ty COMMA ty-lst
+ty-lst = ty (comma-symbol ty)*
 
-tycon-lst ::= IDENTIFIER COLON ty
-            | IDENTIFIER COLON ty COMMA tycon-lst
-            | IDENTIFIER
-            | IDENTIFIER COMMA tycon-lst
+tycon-lst = identifier-symbol colon-symbol ty (comma-symbol tycon-lst)*
+          | identifier-symbol (comma-symbol tycon-lst)*
 
-typed-name-lst ::= IDENTIFIER COLON ty
-                 | IDENTIFIER COLON ty COMMA typed-name-lst
+typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol typed-name-lst)*
 
-name-lst ::= IDENTIFIER
-           | IDENTIFIER COMMA name-lst
+name-lst = identifier-symbol (comma-symbol identifier-symbol)*
 
-record-assn-lst ::= IDENTIFIER ASSIGN expr
-                  | IDENTIFIER ASSIGN expr COMMA record-assn-lst
+record-assn-lst = identifier-symbol assign-symbol expr (comma-symbol record-assn-lst)*
 
 
 /* Values */
-val-decl ::= VAL IDENTIFIER COLON ty ASSIGN expr
-           | VAL IDENTIFIER ASSIGN expr
+val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr
 
-id ::= IDENTIFIER
-     | IDENTIFIER DOT id
+id = identifier-symbol (dot-symbol identifier-symbol)*
 
-record-ref ::= PIPE IDENTIFIER
-             | PIPE IDENTIFIER record-ref
+record-ref = (pipe-symbol identifier-symbol)+
 
 
 /* Functions */
-fun-decl ::= FUNCTION IDENTIFIER ty-formals-lst formals-lst COLON ty ASSIGN expr
-           | FUNCTION IDENTIFIER ty-formals-lst formals-lst ASSIGN expr
+fun-decl = function-symbol identifier-symbol ty-formals-lst formals-lst (colon-symbol ty)? assign-symbol expr
 
-ty-formals-lst ::= LPAREN RPAREN
-                 | LPAREN name-lst RPAREN
+ty-formals-lst = lparen-symbol name-lst? rparen-symbol
 
-formals-lst ::= LPAREN RPAREN
-              | LPAREN typed-name-lst RPAREN
+formals-lst = lparen-symbol typed-name-lst? rparen-symbol
 
-arg-lst ::= LPAREN RPAREN
-          | LPAREN expr-lst RPAREN
+arg-lst = lparen-symbol expr-lst? rparen-symbol
 
-sym-ref ::= id
-          | id arg-lst
-          | id arg-lst LPAREN RPAREN
-          | id arg-lst LPAREN ty-lst RPAREN
-          | sym-ref record-ref
-          | id LBRACE record-assn-lst RBRACE
+sym-ref = id
+        | id arg-lst
+        | id arg-lst lparen-symbol ty-lst? rparen-symbol
+        | sym-ref record-ref
+        | id record-literal
+
+
+/* Misc */
+comment = start-comment-symbol .* end-comment-symbol
 
 
 /* Terminals */
-ASSIGN ::= ←
+assign-symbol = "←"
 
-BOOLEAN ::= t
-          | f
+boolean-symbol = "t" | "f"
 
-BOTTOM ::= ⊥
+bottom-symbol = "⊥"
 
-CASE ::= case
+case-symbol = "case"
 
-COLON ::= :
+colon-symbol = ":"
 
-COMMA ::= ,
+comma-symbol = ","
 
-DECL ::= decl
+decl-symbol = "decl"
 
-DOT ::= .
+dot-symbol = "."
 
-ELSE ::= else
+else-symbol = "else"
 
-END ::= end
+end-symbol = "end"
 
-EXN ::= ℰ
+end-comment-symbol = "\n"
 
-FUNCTION ::= ƒ
+exn-symbol = "ℰ"
 
-HANDLE ::= handle
+function-symbol = "ƒ"
 
-IF ::= if
+handle-symbol = "handle"
 
-IN ::= in
+if-symbol = "if"
 
-INTEGER ::= [0-9]+
+in-symbol = "in"
 
-LBRACE ::= {
+integer-symbol = [0-9]+
 
-LBRACK ::= [
+lbrace-symbol = "{"
 
-LIST ::= list
+lbrack-symbol = "["
 
-LPAREN ::= (
+list-symbol = "list"
 
-MAPSTO ::= →
+lparen-symbol = "("
 
-MODULE ::= ℳ
+mapsto-symbol = "→"
 
-PIPE ::= |
+module-symbol = "ℳ"
 
-RAISE ::= raise
+pipe-symbol = "|"
 
-RBRACE ::= }
+raise-symbol = "raise"
 
-RBRACK ::= ]
+rbrace-symbol = "}"
 
-RPAREN ::= )
+rbrack-symbol = "]"
 
-STRING ::= ".*"
+rparen-symbol = ")"
 
-THEN ::= then
+start-comment-symbol = "#"
 
-TYPE ::= τ
+string-symbol = ".*"
 
-UNION ::= ∪
+then-symbol = "then"
 
-VAL ::= ʋ
+type-symbol = "τ"
+
+union-symbol = "∪"
+
+val-symbol = "ʋ"
