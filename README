@@ -62,6 +62,8 @@ The following are features of the Mitchell language and compiler:
    * Strict type checking promotes type safety and prevents various
      classes of errors in programs.
 
+   * Polymorphic types allow for generic programming and easy code reuse.
+
    * Support for exceptions makes for easier error handling and cleaner
      code.
 
@@ -73,26 +75,11 @@ The following are features of the Mitchell language and compiler:
 -----------------
 The following components are required to build the mitchell compiler:
 
-   * gcc-3.4.x - Required to have the proper wide character support
-                 http://gcc.gnu.org
-
-   * Boehm GC library - Garbage collection library for C
-                        http://www.hpl.hp.com/personal/Hans_Boehm/gc/
-
-   * GNU gettext - Required for internationalization of compiler messages.
-                   http://www.gnu.org/software/gettext/
+   * SML/NJ - Compiler for the SML language used to bootstrap mitchell.
+              http://www.smlnj.org
 
 3.2. Building 
 -------------
-Building the Mitchell compiler is easy:
-
-   # make
-
-You can make a debugging build (debugging for the compiler, not your
-programs) like so:
-
-   # make DEBUG=1
-
 If you would like to run the automated test suite, all you need to do is:
 
    # make test
@@ -101,13 +88,6 @@ All tests should be reported as passing.  Even tests that are supposed to
 fail should report "PASS" as long as they behaved as expected.  Any
 failures are either due to an incorrect $LANG setting (see the man page)
 or are an actual bug in the compiler.
-
-The built compiler may then be found in src/kern.  There is currently no
-installation target due to the current limited functionality of the
-compiler.  It's nothing you would want to install As the compiler becomes
-more featured, so will the build and installation process.  Additionally,
-there is currently no way to customize the build process for different
-options or build flags.
 
 3.3. Test Case Status
 ---------------------
