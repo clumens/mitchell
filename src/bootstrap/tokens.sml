@@ -1,3 +1,18 @@
+signature TOKENS =
+sig
+   datatype TokenKind = Absorb | Assign | Boolean of bool | Bottom | Case | Colon
+                      | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
+                      | Function | Handle | Identifier of UniChar.Data | If | In
+                      | Integer of int | LBrace | LBrack | List | LParen | Mapsto
+                      | Module | Pipe | Raise | RBrace | RBrack | RParen
+                      | String of UniChar.Data | Then | Type | Union | Val
+
+   type tokens = (int * int * TokenKind)
+
+   val toString: tokens -> string
+   val nextToken: Decode.DecFile -> tokens * Decode.DecFile
+end
+
 (* This structure defines the tokenizing portion of the mitchell compiler.
  * The entry point into this structure is nextToken, which takes a file object
  * and returns the next token read from the input file in the form of a
@@ -5,48 +20,16 @@
  * parser, though it's possible other structures may need to use the tokens
  * datatype.
  *)
-structure Tokens =
+structure Tokens :> TOKENS =
 struct
-   (* All the types of valid Mitchell tokens.  The first two ints are the
-    * lineno and column where the token occurs (or starts, in the case of
-    * really long things).  Any additional parameters are easy to figure out.
-    *)
-   datatype tokens = Absorb of int * int
-                   | Assign of int * int
-                   | Boolean of int * int * bool
-                   | Bottom of int * int
-                   | Case of int * int
-                   | Colon of int * int
-                   | Comma of int * int
-                   | Dblquote of int * int
-                   | Decl of int * int
-                   | Dot of int * int
-                   | Else of int * int
-                   | End of int * int
-                   | EndOfFile of int * int
-                   | Exn of int * int
-                   | Function of int * int
-                   | Handle of int * int
-                   | Identifier of int * int * UniChar.Data
-                   | If of int * int
-                   | In of int * int
-                   | Integer of int * int * int
-                   | LBrace of int * int
-                   | LBrack of int * int
-                   | List of int * int
-                   | LParen of int * int
-                   | Mapsto of int * int
-                   | Module of int * int
-                   | Pipe of int * int
-                   | Raise of int * int
-                   | RBrace of int * int
-                   | RBrack of int * int
-                   | RParen of int * int
-                   | String of int * int * UniChar.Data
-                   | Then of int * int
-                   | Type of int * int
-                   | Union of int * int
-                   | Val of int * int
+   datatype TokenKind = Absorb | Assign | Boolean of bool | Bottom | Case | Colon
+                      | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
+                      | Function | Handle | Identifier of UniChar.Data | If | In
+                      | Integer of int | LBrace | LBrack | List | LParen | Mapsto
+                      | Module | Pipe | Raise | RBrace | RBrack | RParen
+                      | String of UniChar.Data | Then | Type | Union | Val
+
+   type tokens = (int * int * TokenKind)
 
    (* The current position in the input file. *)
    val lineno = ref 1
@@ -56,7 +39,45 @@ struct
                    0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133, 0wx2190,
                    0wx2192, 0wx222a, 0wx22a5]
 
-   (* Fetch the next token from the input file, returning a token * DecFile *)
+   (* Convert a token datatype into a string representation. *)
+   fun toString (_, _, Absorb) = "ABSORB"
+     | toString (_, _, Assign) = "ASSIGN"
+     | toString (_, _, Boolean v) = if v then "BOOLEAN(t)" else "BOOLEAN(f)"
+     | toString (_, _, Bottom) = "BOTTOM"
+     | toString (_, _, Case) = "CASE"
+     | toString (_, _, Colon) = "COLON"
+     | toString (_, _, Comma) = "COMMA"
+     | toString (_, _, Dblquote) = "DBLQUOTE"
+     | toString (_, _, Decl) = "DECL"
+     | toString (_, _, Dot) = "DOT"
+     | toString (_, _, Else) = "ELSE"
+     | toString (_, _, End) = "END"
+     | toString (_, _, EndOfFile) = "ENDOFFILE"
+     | toString (_, _, Exn) = "EXN"
+     | toString (_, _, Function) = "FUNCTION"
+     | toString (_, _, Handle) = "HANDLE"
+     | toString (_, _, Identifier i) = "IDENTIFIER()"
+     | toString (_, _, If) = "IF"
+     | toString (_, _, In) = "IN"
+     | toString (_, _, Integer i) = "INTEGER(" ^ Int.toString(i) ^ ")"
+     | toString (_, _, LBrace) = "LBRACE"
+     | toString (_, _, LBrack) = "LBRACK"
+     | toString (_, _, List) = "LIST"
+     | toString (_, _, LParen) = "LPAREN"
+     | toString (_, _, Mapsto) = "MAPSTO"
+     | toString (_, _, Module) = "MODULE"
+     | toString (_, _, Pipe) = "PIPE"
+     | toString (_, _, Raise) = "RAISE"
+     | toString (_, _, RBrace) = "RBRACE"
+     | toString (_, _, RBrack) = "RBRACK"
+     | toString (_, _, RParen) = "RPAREN"
+     | toString (_, _, String s) = "STRING()"
+     | toString (_, _, Then) = "THEN"
+     | toString (_, _, Type) = "TYPE"
+     | toString (_, _, Union) = "UNION"
+     | toString (_, _, Val) = "VAL"
+
+   (* Fetch the next token from the input file, returning a tokens * DecFile *)
    fun nextToken file = let
       fun isReserved ch =
          List.exists (fn ele => UniChar.compareChar (ele, ch) = EQUAL) reserved
@@ -111,20 +132,20 @@ struct
        *)
       fun handleWord (lst, lineno, column) =
          case UniChar.Data2String lst of
-            "absorb" => Absorb(lineno, column)
-          | "case"   => Case(lineno, column)
-          | "decl"   => Decl(lineno, column)
-          | "else"   => Else(lineno, column)
-          | "end"    => End(lineno, column)
-          | "f"      => Boolean(lineno, column, false)
-          | "handle" => Handle(lineno, column)
-          | "if"     => If(lineno, column)
-          | "in"     => In(lineno, column)
-          | "list"   => List(lineno, column)
-          | "raise"  => Raise(lineno, column)
-          | "t"      => Boolean(lineno, column, true)
-          | "then"   => Then(lineno, column)
-          | _        => Identifier(lineno, column, lst)
+            "absorb" => (lineno, column, Absorb)
+          | "case"   => (lineno, column, Case)
+          | "decl"   => (lineno, column, Decl)
+          | "else"   => (lineno, column, Else)
+          | "end"    => (lineno, column, End)
+          | "f"      => (lineno, column, Boolean false)
+          | "handle" => (lineno, column, Handle)
+          | "if"     => (lineno, column, If)
+          | "in"     => (lineno, column, In)
+          | "list"   => (lineno, column, List)
+          | "raise"  => (lineno, column, Raise)
+          | "t"      => (lineno, column, Boolean true)
+          | "then"   => (lineno, column, Then)
+          | _        => (lineno, column, Identifier lst)
 
       fun handleInteger lst =
          Option.valOf (Int.fromString (UniChar.Data2String lst)) handle Option => raise Error.ParseError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
@@ -193,38 +214,38 @@ struct
        * welcome to Unicode in SML land.
        *)
       case ch of
-         0wx2190 => (Assign(!lineno, !column), file')
-       | 0wx22a5 => (Bottom(!lineno, !column), file')
-       | 0wx3a   => (Colon(!lineno, !column), file')
-       | 0wx2c   => (Comma(!lineno, !column), file')
+         0wx2190 => ((!lineno, !column, Assign), file')
+       | 0wx22a5 => ((!lineno, !column, Bottom), file')
+       | 0wx3a   => ((!lineno, !column, Colon), file')
+       | 0wx2c   => ((!lineno, !column, Comma), file')
        | 0wx23   => nextToken (skipComments file')
        | 0wx22   => let
                        val (startLine, startCol) = (!lineno, !column)
                        val (str, file'') = readString ([], file')
                     in
-                       (String(startLine, startCol, str), file'')
+                       ((startLine, startCol, String str), file'')
                     end
-       | 0wx2e   => (Dot(!lineno, !column), file')
-       | 0wx2130 => (Exn(!lineno, !column), file')
-       | 0wx0192 => (Function(!lineno, !column), file')
+       | 0wx2e   => ((!lineno, !column, Dot), file')
+       | 0wx2130 => ((!lineno, !column, Exn), file')
+       | 0wx0192 => ((!lineno, !column, Function), file')
        | (0wx30|0wx31|0wx32|0wx33|0wx34|0wx35|0wx36|0wx37|0wx38|0wx39) => let
                        val (startLine, startCol) = (!lineno, !column)
                        val (str, file'') = readWord ([ch], file', fn ch => UniClasses.isDec ch)
                     in
-                       (Integer(startLine, startCol, handleInteger str), file'')
+                       ((startLine, startCol, Integer (handleInteger str)), file'')
                     end
-       | 0wx7b   => (LBrace(!lineno, !column), file')
-       | 0wx5b   => (LBrack(!lineno, !column), file')
-       | 0wx28   => (LParen(!lineno, !column), file')
-       | 0wx2192 => (Mapsto(!lineno, !column), file')
-       | 0wx2133 => (Module(!lineno, !column), file')
-       | 0wx7c   => (Pipe(!lineno, !column), file')
-       | 0wx7d   => (RBrace(!lineno, !column), file')
-       | 0wx5d   => (RBrack(!lineno, !column), file')
-       | 0wx29   => (RParen(!lineno, !column), file')
-       | 0wx03c4 => (Type(!lineno, !column), file')
-       | 0wx222a => (Union(!lineno, !column), file')
-       | 0wx028b => (Val(!lineno, !column), file')
+       | 0wx7b   => ((!lineno, !column, LBrace), file')
+       | 0wx5b   => ((!lineno, !column, LBrack), file')
+       | 0wx28   => ((!lineno, !column, LParen), file')
+       | 0wx2192 => ((!lineno, !column, Mapsto), file')
+       | 0wx2133 => ((!lineno, !column, Module), file')
+       | 0wx7c   => ((!lineno, !column, Pipe), file')
+       | 0wx7d   => ((!lineno, !column, RBrace), file')
+       | 0wx5d   => ((!lineno, !column, RBrack), file')
+       | 0wx29   => ((!lineno, !column, RParen), file')
+       | 0wx03c4 => ((!lineno, !column, Type), file')
+       | 0wx222a => ((!lineno, !column, Union), file')
+       | 0wx028b => ((!lineno, !column, Val), file')
        | _       => let
                        val f = fn ch => not (UniClasses.isS ch) andalso not (isReserved ch)
                        val (startLine, startCol) = (!lineno, !column)
@@ -232,5 +253,5 @@ struct
                     in
                        (handleWord (str, startLine, startCol), file'')
                     end
-   end handle DecEof => (EndOfFile(!lineno, !column), file)
+   end handle DecEof => ((!lineno, !column, EndOfFile), file)
 end
