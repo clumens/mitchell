@@ -1,6 +1,7 @@
 Group is
    absyn.sml
    error.sml
+   parse.sml
    symbol.sml
    tokens.sml
    types.sml
