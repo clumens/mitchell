@@ -36,7 +36,7 @@ structure Absyn = struct
                 | RaiseExp of Expr
                 | RecordAssnExp of {sym: Symbol.symbol, expr: Expr} list
                 | RecordRefExp of {record: Expr, ele: Symbol.symbol}
-                | StringExp of UniChar.Data * pos
+                | StringExp of UniChar.Data
 
    and Ty = BottomTy of pos
           | ExnTy of {exn': {sym: Symbol.symbol, ty: Ty, pos: pos} list,
