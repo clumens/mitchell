@@ -54,7 +54,7 @@ structure Absyn = struct
                           formals: (Symbol.symbol * Ty) list,
                           calls: Expr list, body: Expr, symtab: Symbol.symtab}
             | ModuleDecl of {sym: Symbol.symbol, decl: Decl list, pos: pos,
-                             Symtab: Symbol.symtab}
+                             symtab: Symbol.symtab}
             | TyDecl of {sym: Symbol.symbol, ty: Types.Type, absynTy: Ty,
                          pos: pos}
             | ValDecl of {sym: Symbol.symbol, ty: Types.Type,
