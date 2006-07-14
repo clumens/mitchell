@@ -33,4 +33,14 @@ structure Symbol = struct
 
    (* FIXME *)
    type symtab = bool
+
+   (* FIXME - kill this *)
+   fun empty () : symtab = false
+
+   (* Convert a Mitchell identifier and given Subtable into a symbol,
+    * mangling the unicode char list down into a string suitable for printing
+    * out into an assembly file later on.
+    *)
+   fun toSymbol (unicodeSym, subtable) =
+      ([(unicodeSym, UniChar.Data2String unicodeSym)], subtable)
 end
