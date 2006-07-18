@@ -8,50 +8,51 @@ CM.make ("../sources.cm");
 fun openFile filename =
    Decode.decOpenUni (SOME(Uri.String2Uri filename), Encoding.UTF8)
 
-fun printToken tok =
-   case tok of
-      Tokens.Assign(_, _)        => print "ASSIGN\n"
-    | Tokens.Boolean(_, _, v)    => print ("BOOLEAN(" ^ (if v then "true)\n" else "false)\n"))
-    | Tokens.Bottom(_, _)        => print "BOTTOM\n"
-    | Tokens.Case(_, _)          => print "CASE\n"
-    | Tokens.Colon(_, _)         => print "COLON\n"
-    | Tokens.Comma(_, _)         => print "COMMA\n"
-    | Tokens.Dblquote(_, _)      => print "DBLQUOTE\n"
-    | Tokens.Decl(_, _)          => print "DECL\n"
-    | Tokens.Dot(_, _)           => print "DOT\n"
-    | Tokens.Else(_, _)          => print "ELSE\n"
-    | Tokens.End(_, _)           => print "END\n"
-    | Tokens.EndOfFile(_, _)     => print "ENDOFFILE\n"
-    | Tokens.Exn(_, _)           => print "EXN\n"
-    | Tokens.Function(_, _)      => print "FUNCTION\n"
-    | Tokens.Handle(_, _)        => print "HANDLE\n"
-    | Tokens.Identifier(_, _, v) => print ("IDENTIFIER(" ^ UniChar.Data2String v ^ ")\n")
-    | Tokens.If(_, _)            => print "IF\n"
-    | Tokens.In(_, _)            => print "IN\n"
-    | Tokens.Integer(_, _, v)    => print ("INTEGER(" ^ Int.toString v ^ ")\n")
-    | Tokens.LBrace(_, _)        => print "LBRACE\n"
-    | Tokens.LBrack(_, _)        => print "LBRACK\n"
-    | Tokens.List(_, _)          => print "LIST\n"
-    | Tokens.LParen(_, _)        => print "LPAREN\n"
-    | Tokens.Mapsto(_, _)        => print "MAPSTO\n"
-    | Tokens.Module(_, _)        => print "MODULE\n"
-    | Tokens.Pipe(_, _)          => print "PIPE\n"
-    | Tokens.Raise(_, _)         => print "RAISE\n"
-    | Tokens.RBrace(_, _)        => print "RBRACE\n"
-    | Tokens.RBrack(_, _)        => print "RBRACK\n"
-    | Tokens.RParen(_, _)        => print "RPAREN\n"
-    | Tokens.String(_, _, v)     => print ("STRING(" ^ UniChar.Data2String v ^ ")\n")
-    | Tokens.Then(_, _)          => print "THEN\n"
-    | Tokens.Type(_, _)          => print "TYPE\n"
-    | Tokens.Union(_,_)          => print "UNION\n"
-    | Tokens.Val(_, _)           => print "VAL\n"
+fun printToken (tok:Tokens.tokens) =
+   case (#3 tok) of
+      Tokens.Absorb        => print "ABSORB\n"
+    | Tokens.Assign        => print "ASSIGN\n"
+    | Tokens.Boolean(v)    => print ("BOOLEAN(" ^ (if v then "true)\n" else "false)\n"))
+    | Tokens.Bottom        => print "BOTTOM\n"
+    | Tokens.Case          => print "CASE\n"
+    | Tokens.Colon         => print "COLON\n"
+    | Tokens.Comma         => print "COMMA\n"
+    | Tokens.Dblquote      => print "DBLQUOTE\n"
+    | Tokens.Decl          => print "DECL\n"
+    | Tokens.Dot           => print "DOT\n"
+    | Tokens.Else          => print "ELSE\n"
+    | Tokens.End           => print "END\n"
+    | Tokens.EndOfFile     => print "ENDOFFILE\n"
+    | Tokens.Exn           => print "EXN\n"
+    | Tokens.Function      => print "FUNCTION\n"
+    | Tokens.Handle        => print "HANDLE\n"
+    | Tokens.Identifier(v) => print ("IDENTIFIER(" ^ UniChar.Data2String v ^ ")\n")
+    | Tokens.If            => print "IF\n"
+    | Tokens.In            => print "IN\n"
+    | Tokens.Integer(v)    => print ("INTEGER(" ^ Int.toString v ^ ")\n")
+    | Tokens.LBrace        => print "LBRACE\n"
+    | Tokens.LBrack        => print "LBRACK\n"
+    | Tokens.List          => print "LIST\n"
+    | Tokens.LParen        => print "LPAREN\n"
+    | Tokens.Mapsto        => print "MAPSTO\n"
+    | Tokens.Module        => print "MODULE\n"
+    | Tokens.Pipe          => print "PIPE\n"
+    | Tokens.Raise         => print "RAISE\n"
+    | Tokens.RBrace        => print "RBRACE\n"
+    | Tokens.RBrack        => print "RBRACK\n"
+    | Tokens.RParen        => print "RPAREN\n"
+    | Tokens.String(v)     => print ("STRING(" ^ UniChar.Data2String v ^ ")\n")
+    | Tokens.Then          => print "THEN\n"
+    | Tokens.Type          => print "TYPE\n"
+    | Tokens.Union         => print "UNION\n"
+    | Tokens.Val           => print "VAL\n"
 
 fun readFile filename = let
    fun doRead file = let
       val (tok, file') = Tokens.nextToken file
    in
-      case tok of
-         Tokens.EndOfFile(_, _) => ()
+      case (#3 tok) of
+         Tokens.EndOfFile => ()
        | _  => ( printToken tok ; doRead file' )
    end
 in
