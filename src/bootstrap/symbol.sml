@@ -41,6 +41,8 @@ structure Symbol = struct
     * mangling the unicode char list down into a string suitable for printing
     * out into an assembly file later on.
     *)
+   val mangle = UniChar.Data2String
+
    fun toSymbol (unicodeSym, subtable) =
-      ([(unicodeSym, UniChar.Data2String unicodeSym)], subtable)
+      ([(unicodeSym, mangle unicodeSym)], subtable)
 end
