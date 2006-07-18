@@ -24,7 +24,7 @@ syntax region  mitEncl     transparent start=/\[/ end=/\]/ contains=ALLBUT,mitBr
 syntax region  mitEncl     transparent start=/(/ end=/)/ contains=ALLBUT,mitParenErr
 
 " Keywords
-syntax keyword mitKeyword  ← case decl else end ƒ handle if in → ℳ raise
+syntax keyword mitKeyword  ← absorb case decl else end ƒ handle if in → ℳ raise
 syntax keyword mitKeyword  then τ ʋ
 
 " Comments
