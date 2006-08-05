@@ -392,21 +392,72 @@ struct
    end
 
    (* ty = bottom-symbol
-    *    | list-symbol ty
     *    | exn-symbol lbrace-symbol typed-name-lst rbrace-symbol
-    *    | union-symbol lbrace-symbol tycon-lst rbrace-symbol
-    *    | lbrace-symbol typed-name-lst rbrace-symbol
     *    | id
+    *    | lbrace-symbol typed-name-lst rbrace-symbol
+    *    | list-symbol ty
+    *    | union-symbol lbrace-symbol tycon-lst rbrace-symbol
     *)
    (* TODO *)
-   and parseTy (tok, file) = let
+   and parseTy (tok as (_, _, kind), file) = let
       (* tycon-lst = identifier-symbol colon-symbol ty (comma-symbol tycon-lst)*
        *           | identifier-symbol (comma-symbol tycon-lst)*
        *)
       (* TODO *)
-      fun parseTyconLst (tok, file) = ()
+      fun parseTyconLst (tok, file) = let
+         fun doParseTyconLst (tok, file, lst) = let
+            val (tok', file', sym) = parseId (tok, file)
+         in
+         end
+      in
+         doParseTyconLst (tok, file, [])
+      end
+
+      fun parseExnTy (tok, file) = let
+         val (lstTok, file') = checkTok (tok, file) [Exn, LBrace]
+         val (tok', file', lst) = parseTypedNameLst (lstTok, file')
+         val (tok', file') = checkTok (tok', file') [RBrace]
+      in
+         (tok', file', Absyn.ExnTy{exn'=lst, pos=tokenPos tok})
+      end
+
+      fun parseIdentifierTy (tok, file) = let
+         val (tok', file', sym) = parseId (tok, file)
+      in
+         (tok', file', Absyn.IdTy{sym=sym, pos=tokenPos tok})
+      end
+
+      fun parseListTy (tok, file) = let
+         val (tyTok, file') = checkTok (tok, file) [List]
+         val (tok', file', ty) = parseTy (tyTok, file')
+      in
+         (tok', file', Absyn.ListTy{lst=ty, pos=tokenPos tok})
+      end
+
+      fun parseRecordTy (tok, file) = let
+         val (lstTok, file') = checkTok (tok, file) [LBrace]
+         val (tok', file', lst) = parseTypedNameLst (lstTok, file')
+         val (tok', file') = checkTok (tok', file') [RBrace]
+      in
+         (tok', file', Absyn.RecordTy{record=lst, pos=tokenPos tok})
+      end
+
+      fun parseUnionTy (tok, file) = let
+         val (tyconTok, file') = checkTok (tok, file) [Union, LBrace]
+         val (tok', file', tycons) = parseTyconLst (tyconTok, file')
+         val (tok', file') = checkTok (tok', file') [RBrace]
+      in
+         (tok', file', Absyn.UnionTy{tycons=tycons, pos=tokenPos tok})
+      end
    in
-      (tok, file, Absyn.BottomTy(0, 0))
+      case kind of
+         Bottom         => (tok, file, Absyn.BottomTy(tokenPos tok))
+       | Exn            => parseExnTy (tok, file)
+       | Identifier []  => parseIdentifierTy (tok, file)
+       | LBrace         => parseRecordTy (tok, file)
+       | List           => parseListTy (tok, file)
+       | Union          => parseUnionTy (tok, file)
+       | _              => raise err (tok, [Bottom, Exn, Identifier [], LBrace, List, Union])
    end
 
    (* typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)* *)
@@ -415,7 +466,7 @@ struct
          val (tok', file', sym) = parseId (tok, file)
          val (tyTok, file') = checkTok (tok', file') [Colon]
          val (tok', file', ty) = parseTy (tyTok, file)
-         val lst' = (sym, ty)::lst
+         val lst' = (sym, ty, tokenPos tok)::lst
       in
          case #3 tok' of
             Comma => let
