@@ -6,10 +6,12 @@ structure Types = struct
    datatype Finite = NOT_FINITE | UNVISITED | VISITED | FINITE
 
    (* These are obvious except for a couple:
-    *    TY_ALIAS is when you make a new name for an existing type.
-    *    TY_ANY is the type of a RaiseExpr, since it needs to be equal to
-    *           whatever type is expected for type checking purposes.
-    *    TY_BOTTOM is the type for when there's no other type.
+    *    ALIAS is when you make a new name for an existing type.
+    *    ANY is the type of a RaiseExpr, since it needs to be equal to
+    *        whatever type is expected for type checking purposes.
+    *    BOTTOM is the type for when there's no other type.
+    *    NONE_YET is what gets set in the AST while it's being built, but
+    *             typechecking has run.
     *)
    datatype Type = ALIAS of Symbol.symbol * Finite
                  | ANY of Finite
@@ -18,6 +20,7 @@ structure Types = struct
                  | EXN of (Symbol.symbol * Type) list * Finite
                  | INTEGER
                  | LIST of Type * Finite
+                 | NONE_YET
                  | RECORD of (Symbol.symbol * Type) list * Finite
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
