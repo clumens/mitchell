@@ -111,35 +111,82 @@ struct
       end
 
       (* fun-decl = function-symbol identifier-symbol ty-formals-lst formals-lst (colon-symbol ty)? assign-symbol expr *)
-      (* TODO *)
       and parseFunDecl (tok, file) = let
          (* formals-lst = lparen-symbol typed-name-lst? rparen-symbol *)
-         (* TODO *)
-         fun parseFormalsLst (tok, file) = ()
+         fun parseFormalsLst (tok, file) = let
+            val (tok', file') = checkTok (tok, file) [LParen]
+            val (tok', file', lst) = parseTypedNameLst (tok', file')
+            val (tok', file') = checkTok (tok, file) [RParen]
+         in
+            (tok', file', lst)
+         end
 
          (* ty-formals-lst = lparen-symbol name-lst? rparen-symbol *)
-         (* TODO *)
-         and parseTyFormalsLst (tok, file) = ()
+         and parseTyFormalsLst (tok, file) = let
+            val (tok', file') = checkTok (tok, file) [LParen]
+            val (tok', file', lst) = parseNameLst (tok', file')
+            val (tok', file') = checkTok (tok, file) [RParen]
+         in
+            (tok', file', lst)
+         end
+
+         val (idTok, file') = checkTok (tok, file) [Function]
+         val (tyFormalsTok, file', sym) = parseId (idTok, file')
+         val (formalsTok, file', tyFormals) = parseTyFormalsLst (tyFormalsTok, file')
+         val (tok', file', formals) = parseFormalsLst (formalsTok, file')
       in
-         (tok, file, Absyn.FunDecl{sym=Symbol.toSymbol([], Symbol.FUNCTION), retval=NONE,
-                                   pos=(0, 0), formals=[], calls=[], symtab=Symbol.empty(),
-                                   body=Absyn.Expr{expr=Absyn.BottomExp, pos=(0, 0),
-                                                   ty=Types.BOTTOM, exnHandler=NONE}})
+         if #3 tok == Colon then let
+               val (tyTok, file') = checkTok (tok', file') [Colon]
+               val (tok', file', ty) = parseTy (tyTok, file')
+               val (exprTok, file') = checkTok (tok', file') [Assign]
+               val (tok', file', expr) = parseExpr (exprTok, file')
+            in
+               (tok', file', Absyn.FunDecl{sym=sym, retval=SOME ty, pos=tokenPos tok,
+                                           formals=formals, tyFormals=tyFormals, calls=[],
+                                           symtab=Symbol.empty(), body=expr})
+            end
+         else let
+               val (exprTok, file') = checkTok (tok', file') [Assign]
+               val (tok', file', expr) = parseExpr (exprTok, file')
+            in
+               (tok', file', Absyn.FunDecl{sym=sym, retval=NONE, pos=tokenPos tok, formals=formals,
+                                           tyFormals=tyFormals, calls=[], symtab=Symbol.empty(),
+                                           body=expr})
+            end
       end
 
       (* ty-decl = type-symbol identifier-symbol assign-symbol ty *)
-      (* TODO *)
-      and parseTyDecl (tok, file) =
-         (tok, file, Absyn.TyDecl{sym=Symbol.toSymbol([], Symbol.TYPE), ty=Types.BOTTOM,
-                                  absynTy=Absyn.BottomTy(0, 0), pos=(0,0)})
+      and parseTyDecl (tok, file) = let
+         val (idTok, file') = checkTok (tok, file) [Type]
+         val (tok', file', sym) = parseId (idTok, file')
+         val (tyTok, file') = checkTok (tok', file') [Assign]
+         val (tok', file', ty) = parseTy (tyTok, file')
+      in
+         (tok', file', Absyn.TyDecl{sym=sym, ty=Types.NONE_YET, absynTy=ty, pos=tokenPos tok})
+      end
 
       (* val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr *)
-      (* TODO *)
-      and parseValDecl (tok, file) =
-         (tok, file, Absyn.ValDecl{sym=Symbol.toSymbol([], Symbol.VALUE), ty=Types.BOOLEAN,
-                                   absynTy=NONE, pos=(0, 0),
-                                   init=Absyn.Expr{expr=Absyn.BottomExp, pos=(0, 0),
-                                                   ty=Types.BOTTOM, exnHandler=NONE}})
+      and parseValDecl (tok, file) = let
+         val (idTok, file') = checkTok (tok, file) [Val]
+         val (tok', file', sym) = parseId (idTok, file')
+      in
+         if #3 tok == Colon then let
+               val (tyTok, file') = checkTok (tok', file') [Colon]
+               val (tok', file', ty) = parseTy (tyTok, file')
+               val (exprTok, file') = checkTok (tok', file') [Assign]
+               val (tok', file', expr) = parseExpr (exprTok, file')
+            in
+               (tok', file', Absyn.ValDecl{sym=sym, ty=Types.NONE_YET, absynTy=SOME ty,
+                                           pos=tokenPos tok, init=expr})
+            end
+         else let
+               val (exprTok, file') = checkTok (tok', file') [Assign]
+               val (tok', file', expr) = parseExpr (exprTok, file')
+            in
+               (tok', file', Absyn.ValDecl{sym=sym, ty=Types.NONE_YET, absynTy=NONE, pos=tokenPos tok,
+                                           init=expr})
+            end
+      end
    in
       case kind of
          Absorb =>   parseAbsorbDecl (tok, file)
@@ -250,7 +297,7 @@ struct
 (*         (tok', file', Absyn.IfExp{test=testExpr, then'=thenExpr, else'=elseExpr}) *)
       end
    in
-      (tok, file, Absyn.BottomExp)
+      (tok, file, Absyn.Expr{expr=Absyn.BottomExp, pos=(0, 0), ty=Types.NONE_YET, exnHandler=NONE})
    end
 
    (* expr-lst = expr (comma-symbol expr)* *)
@@ -309,7 +356,7 @@ struct
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
    (* TODO *)
-   and parseNameLst (tok, file) = ()
+   and parseNameLst (tok, file) = (tok, file, [])
 
    (* record-literal = lbrace-symbol record-assn-lst rbrace-symbol *)
    (* TODO *)
@@ -359,10 +406,10 @@ struct
       (* TODO *)
       fun parseTyconLst (tok, file) = ()
    in
-      ()
+      (tok, file, Absyn.BottomTy(0, 0))
    end
 
    (* typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol typed-name-lst)* *)
    (* TODO *)
-   and parseTypedNameLst (tok, file) = ()
+   and parseTypedNameLst (tok, file) = (tok, file, [])
 end
