@@ -11,7 +11,11 @@ struct
    (* Read the next token from the token stream, returning the token and the
     * updated file object.
     *)
-   fun eat file = nextToken file
+   fun eat file = let
+      val (tok', file') = nextToken file
+   in
+      print (Tokens.toString tok' ^ "\n") ; (tok', file')
+   end
 
 
    (* ERROR HANDLING FUNCTIONS *)
@@ -54,7 +58,7 @@ struct
     *)
    fun checkTok (tok, file) lst = let
       fun doCheck (tok, file) expected =
-         if (#3 tok) == expected then eat file
+         if #3 tok == expected then eat file
          else raise err (tok, [expected])
 
       fun loop (tok, file) (expected::[]) = doCheck (tok, file) expected
@@ -88,9 +92,9 @@ struct
             Module => let
                          val (tok', file', ast) = parseModuleDecl (tok, file)
                       in
-                         doParseStart (tok', file', lst @ [ast])
+                         doParseStart (tok', file', ast::lst)
                       end
-          | EndOfFile => (tok, file, lst)
+          | EndOfFile => (tok, file, rev lst)
           | _         => raise err (tok, [Module, EndOfFile])
    in
       doParseStart (tok, file, [])
@@ -98,10 +102,10 @@ struct
 
    (* decl = absorb-symbol id | fun-decl | ty-decl | val-decl *)
    (* TODO *)
-   and parseDecl (tok, file) = let
+   and parseDecl (tok as (_, _, kind), file) = let
       fun parseAbsorbDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Absorb]
-         val (tok', file', sym) = parseId (idTok, file)
+         val (tok', file', sym) = parseId (idTok, file')
       in
          (tok', file', Absyn.Absorb{module=sym, pos=tokenPos tok})
       end
@@ -137,7 +141,7 @@ struct
                                    init=Absyn.Expr{expr=Absyn.BottomExp, pos=(0, 0),
                                                    ty=Types.BOTTOM, exnHandler=NONE}})
    in
-      case #3 tok of
+      case kind of
          Absorb =>   parseAbsorbDecl (tok, file)
        | Function => parseFunDecl (tok, file)
        | Type =>     parseTyDecl (tok, file)
@@ -151,7 +155,6 @@ struct
    (* TODO *)
    and parseExnLst (tok, file) = ()
 
-   (* {{{ *)
    (* expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
     *      | base-expr (handle-symbol exn-lst end-symbol)?
     *)
@@ -249,30 +252,35 @@ struct
    in
       (tok, file, Absyn.BottomExp)
    end
-   (* }}} *)
 
    (* expr-lst = expr (comma-symbol expr)* *)
    (* TODO *)
    and parseExprLst (tok, file) = ()
 
    (* id = identifier-symbol (dot-symbol identifier-symbol)* *)
-   and parseId (tok, file) = let
+(*
+   and parseId (tok as (_, _, kind), file) = let
       fun doParseId (tok, file, lst) = let
          val (tok', file') = checkTok (tok, file) [Identifier[]]
+         val id = stripId kind
+         val lst' = (id, Symbol.mangle id)::lst
       in
-         if (#3 tok') == Dot then let
-               val id = stripId (#3 tok)
-            in
-               doParseId (tok', file', (id, Symbol.mangle id)::lst)
-            end
          (* This could also be a Symbol.TYPE.  How do we check that here? *)
-         else (tok', file', (rev lst, Symbol.VALUE))
+         if kind == Dot then doParseId (tok', file', lst')
+         else (tok', file', (rev lst', Symbol.VALUE))
       end
    in
       case tok of
          (_, _, Identifier i) => doParseId (tok, file, [])
        | _                    => raise err (tok, [Identifier[]])
    end
+*)
+   and parseId (tok as (_, _, kind), file) =
+      case tok of
+         (_, _, Identifier i) => let val (tok', file') = eat file
+                                 in (tok', file', Symbol.toSymbol (i, Symbol.VALUE))
+                                 end
+       | _ => raise err (tok, [Identifier[]])
 
    (* module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl+ end-symbol *)
    and parseModuleDecl (tok, file) = let
