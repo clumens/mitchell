@@ -91,7 +91,7 @@ ty-lst = ty (comma-symbol ty)*
 tycon-lst = identifier-symbol colon-symbol ty (comma-symbol tycon-lst)*
           | identifier-symbol (comma-symbol tycon-lst)*
 
-typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol typed-name-lst)*
+typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)*
 
 name-lst = identifier-symbol (comma-symbol identifier-symbol)*
 
