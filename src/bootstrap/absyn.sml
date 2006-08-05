@@ -52,6 +52,7 @@ structure Absyn = struct
               (* Each element of calls must be a FunCallExp. *)
             | FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty) list,
+                          tyFormals: Symbol.symbol list,
                           calls: Expr list, body: Expr, symtab: Symbol.symtab}
             | ModuleDecl of {sym: Symbol.symbol, decl: Decl list, pos: pos,
                              symtab: Symbol.symtab}
