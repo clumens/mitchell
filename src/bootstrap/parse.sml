@@ -89,11 +89,9 @@ struct
    and parseStart (tok, file) = let
       fun doParseStart (tok as (_, _, kind), file, lst) =
          case kind of
-            Module => let
-                         val (tok', file', ast) = parseModuleDecl (tok, file)
-                      in
-                         doParseStart (tok', file', ast::lst)
-                      end
+            Module    => let val (tok', file', ast) = parseModuleDecl (tok, file)
+                         in doParseStart (tok', file', ast::lst)
+                         end
           | EndOfFile => (tok, file, rev lst)
           | _         => raise err (tok, [Module, EndOfFile])
    in
@@ -102,16 +100,6 @@ struct
 
    (* decl = absorb-symbol id | fun-decl | ty-decl | val-decl *)
    and parseDecl (tok as (_, _, kind), file) = let
-       fun parseOptionalType (tok, file) =
-          if #3 tok == Colon then let
-                val (tyTok, file') = checkTok (tok, file) [Colon]
-                val (tok', file', ty) = parseTy (tyTok, file')
-             in
-                (tok', file', SOME ty)
-             end
-          else
-             (tok, file, NONE)
-
       fun parseAbsorbDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Absorb]
          val (tok', file', sym) = parseId (idTok, file')
@@ -175,11 +163,11 @@ struct
       end
    in
       case kind of
-         Absorb =>   parseAbsorbDecl (tok, file)
+         Absorb   => parseAbsorbDecl (tok, file)
        | Function => parseFunDecl (tok, file)
-       | Type =>     parseTyDecl (tok, file)
-       | Val =>      parseValDecl (tok, file)
-       | _ =>        raise err (tok, [Absorb, Function, Type, Val])
+       | Type     => parseTyDecl (tok, file)
+       | Val      => parseValDecl (tok, file)
+       | _        => raise err (tok, [Absorb, Function, Type, Val])
    end
 
    (* exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
@@ -206,36 +194,36 @@ struct
        *           | bottom-symbol
        *)
       (* TODO *)
-      fun parseBaseExpr (tok, file) = ()
+      fun parseBaseExpr (tok as (_, _, kind), file) = ()
 (*
-         case tok of
-            (_, _, LBrace)       => parseRecordLiteral (tok, file)
-          | (_, _, LBrack)       => (tok, file, [])
-          | (_, _, Case)         => parseCaseExpr (tok, file)
-          | (_, _, Decl)         => parseDeclExpr (tok, file)
-          | (_, _, If)           => parseIfExpr (tok, file)
-          | (_, _, Identifier _) => parseSymRef (tok, file)
-          | (_, _, Raise)        => (tok, file, [])
-          | (_, _, Integer i)    => let
-                                       val (tok', file') = checkTok (tok, file) (Integer i)
-                                    in
-                                       (tok', file', Absyn.IntegerExp i)
-                                    end
-          | (_, _, String s)     => let
-                                       val (tok', file') = checkTok (tok, file) (String s)
-                                    in
-                                       (tok', file', Absyn.StringExp s)
-                                    end
-          | (_, _, Boolean b)    => let
-                                       val (tok', file') = checkTok (tok, file) (Boolean b)
-                                    in
-                                       (tok', file', Absyn.BooleanExp b)
-                                    end
-          | (_, _, Bottom)       => let
-                                       val (tok', file') = checkTok (tok, file) Bottom
-                                    in
-                                       (tok', file', Absyn.BottomExp)
-                                    end
+         case kind of
+            LBrace       => parseRecordLiteral (tok, file)
+          | LBrack       => let
+                               val (tok', file') = checkTok (tok, file) [LBrack]
+                               val (tok', file', lst) = checkExprLst (tok, file)
+                               val (tok', file') = checkTok (tok, file) [RBrack]
+                            in
+                               (tok', file', Absyn.ExprLstExp lst)
+                            end
+          | Case         => parseCaseExpr (tok, file)
+          | Decl         => parseDeclExpr (tok, file)
+          | If           => parseIfExpr (tok, file)
+          | Identifier _ => parseSymRef (tok, file)
+          | Raise        => (tok, file, [])
+          | Integer i    => let val (tok', file') = checkTok (tok, file) [Integer i]
+                            in (tok', file', Absyn.IntegerExp i)
+                            end
+          | String s     => let val (tok', file') = checkTok (tok, file) [String s]
+                            in (tok', file', Absyn.StringExp s)
+                            end
+          | Boolean b    => let val (tok', file') = checkTok (tok, file) [Boolean b]
+                            in (tok', file', Absyn.BooleanExp b)
+                            end
+          | Bottom       => let val (tok', file') = checkTok (tok, file) [Bottom]
+                            in (tok', file', Absyn.BottomExp)
+                            end
+          | _ => raise err (tok, [Boolean true, Bottom, Case, Decl, Identifier [], If, Integer 0,
+                                  LBrace, LBrack, Raise, String []])
 *)
 
       (* branch-expr = id
@@ -253,6 +241,7 @@ struct
          (* branch-lst = branch-expr mapsto-symbol expr (comma-symbol branch-lst)?
           *            | else-symbol mapsto-symbol expr
           *)
+          (* TODO *)
          fun parseBranchLst (tok, file) = (tok, file, [])
 
          val (tok', file') = checkTok (tok, file) [Case]
@@ -261,8 +250,7 @@ struct
          val (tok', file', branchLst) = parseBranchLst (tok', file')
          val (tok', file') = checkTok (tok', file') [End]
       in
-         ()
-(*         (tok', file', Absyn.CaseExp{test=testExpr, default=NONE, branches=branchLst}) *)
+         (tok', file', Absyn.CaseExp{test=testExpr, default=NONE, branches=branchLst})
       end
 
       (* decl-expr = decl-symbol decl+ in-symbol expr end-symbol *)
@@ -270,7 +258,6 @@ struct
       and parseDeclExpr (tok, file) = ()
 
       (* if-expr = if-symbol expr then-symbol expr else-symbol expr *)
-      (* TODO *)
       and parseIfExpr (tok, file) = let
          val (tok', file') = checkTok (tok, file) [If]
          val (tok', file', testExpr) = parseExpr (tok', file')
@@ -279,8 +266,7 @@ struct
          val (tok', file') = checkTok (tok', file') [Else]
          val (tok', file', elseExpr) = parseExpr (tok', file')
       in
-         ()
-(*         (tok', file', Absyn.IfExp{test=testExpr, then'=thenExpr, else'=elseExpr}) *)
+         (tok', file', Absyn.IfExp{test=testExpr, then'=thenExpr, else'=elseExpr})
       end
    in
       (tok, file, Absyn.Expr{expr=Absyn.BottomExp, pos=(0, 0), ty=Types.NONE_YET, exnHandler=NONE})
@@ -303,17 +289,17 @@ struct
          else (tok', file', (rev lst', Symbol.VALUE))
       end
    in
-      case tok of
-         (_, _, Identifier i) => doParseId (tok, file, [])
-       | _                    => raise err (tok, [Identifier[]])
+      case kind of
+         Identifier i => doParseId (tok, file, [])
+       | _            => raise err (tok, [Identifier[]])
    end
 *)
    and parseId (tok as (_, _, kind), file) =
-      case tok of
-         (_, _, Identifier i) => let val (tok', file') = eat file
-                                 in (tok', file', Symbol.toSymbol (i, Symbol.VALUE))
-                                 end
-       | _ => raise err (tok, [Identifier[]])
+      case kind of
+         Identifier i => let val (tok', file') = eat file
+                         in (tok', file', Symbol.toSymbol (i, Symbol.VALUE))
+                         end
+       | _            => raise err (tok, [Identifier[]])
 
    (* module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl+ end-symbol *)
    and parseModuleDecl (tok, file) = let
@@ -347,16 +333,24 @@ struct
          val lst' = sym::lst
       in
          case #3 tok' of
-            Comma => let
-                        val (tok', file') = checkTok (tok', file') [Comma]
-                     in
-                        doParseNameLst (tok', file', lst')
+            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
+                     in doParseNameLst (tok', file', lst')
                      end
           | _     => (tok', file', rev lst')
       end
    in
       doParseNameLst (tok, file, [])
    end
+
+   and parseOptionalType (tok, file) =
+      if #3 tok == Colon then let
+            val (tyTok, file') = checkTok (tok, file) [Colon]
+            val (tok', file', ty) = parseTy (tyTok, file')
+         in
+            (tok', file', SOME ty)
+         end
+      else
+         (tok, file, NONE)
 
    (* record-literal = lbrace-symbol record-assn-lst rbrace-symbol *)
    (* TODO *)
@@ -398,16 +392,20 @@ struct
     *    | list-symbol ty
     *    | union-symbol lbrace-symbol tycon-lst rbrace-symbol
     *)
-   (* TODO *)
    and parseTy (tok as (_, _, kind), file) = let
-      (* tycon-lst = identifier-symbol colon-symbol ty (comma-symbol tycon-lst)*
-       *           | identifier-symbol (comma-symbol tycon-lst)*
-       *)
-      (* TODO *)
+      (* tycon-lst = identifier-symbol (colon-symbol ty)? (comma-symbol tycon-lst)* *)
       fun parseTyconLst (tok, file) = let
          fun doParseTyconLst (tok, file, lst) = let
             val (tok', file', sym) = parseId (tok, file)
+            val (tok', file', ty) = parseOptionalType (tok', file')
          in
+            if #3 tok' == Comma then let
+                  val (tok', file') = checkTok (tok', file') [Comma]
+               in
+                  doParseTyconLst (tok', file', (sym, ty, tokenPos tok)::lst)
+               end
+            else
+               (tok, file, rev lst)
          end
       in
          doParseTyconLst (tok, file, [])
@@ -451,13 +449,13 @@ struct
       end
    in
       case kind of
-         Bottom         => (tok, file, Absyn.BottomTy(tokenPos tok))
-       | Exn            => parseExnTy (tok, file)
-       | Identifier []  => parseIdentifierTy (tok, file)
-       | LBrace         => parseRecordTy (tok, file)
-       | List           => parseListTy (tok, file)
-       | Union          => parseUnionTy (tok, file)
-       | _              => raise err (tok, [Bottom, Exn, Identifier [], LBrace, List, Union])
+         Bottom       => (tok, file, Absyn.BottomTy(tokenPos tok))
+       | Exn          => parseExnTy (tok, file)
+       | Identifier _ => parseIdentifierTy (tok, file)
+       | LBrace       => parseRecordTy (tok, file)
+       | List         => parseListTy (tok, file)
+       | Union        => parseUnionTy (tok, file)
+       | _            => raise err (tok, [Bottom, Exn, Identifier [], LBrace, List, Union])
    end
 
    (* typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)* *)
@@ -469,10 +467,8 @@ struct
          val lst' = (sym, ty, tokenPos tok)::lst
       in
          case #3 tok' of
-            Comma => let
-                        val (tok', file') = checkTok (tok', file') [Comma]
-                     in
-                        doParseTypedNameLst (tok', file', lst')
+            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
+                     in doParseTypedNameLst (tok', file', lst')
                      end
           | _     => (tok', file', rev lst')
       end

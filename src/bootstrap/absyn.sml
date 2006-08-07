@@ -43,8 +43,7 @@ structure Absyn = struct
           | IdTy of {sym: Symbol.symbol, pos: pos}
           | ListTy of {lst: Ty, pos: pos}
           | RecordTy of {record: (Symbol.symbol * Ty * pos) list, pos: pos}
-          | UnionTy of {tycons: {sym: Symbol.symbol, ty: Ty option,
-                        pos: pos} list, pos: pos}
+          | UnionTy of {tycons: (Symbol.symbol * Ty option * pos) list, pos: pos}
 
    and Decl = Absorb of {module: Symbol.symbol, pos: pos}
               (* Each element of calls must be a FunCallExp. *)
