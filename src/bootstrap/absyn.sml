@@ -9,8 +9,8 @@ structure Absyn = struct
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
     *)
-   and Branch = RegularBranch of Expr * Expr
-              | UnionBranch of Symbol.symbol list * Expr
+   and Branch = RegularBranch of Expr
+              | UnionBranch of Symbol.symbol * Symbol.symbol list
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
@@ -23,7 +23,7 @@ structure Absyn = struct
    and BaseExpr = BooleanExp of bool
                 | BottomExp
                 | CaseExp of {test: Expr, default: Expr option,
-                              branches: Branch list}
+                              branches: (Branch * Expr) list}
                 | DeclExp of {decls: Decl list, expr: Expr,
                               symtab: Symbol.symtab}
                 | ExnExp of {sym: Symbol.symbol, ty: Types.Type,
@@ -31,10 +31,11 @@ structure Absyn = struct
                 | ExprLstExp of Expr list
                 | FunCallExp of {function: Symbol.symbol, args: Expr list,
                                  frees: Symbol.symbol list}
+                | IdExp of Symbol.symbol
                 | IfExp of {test: Expr, then': Expr, else': Expr}
                 | IntegerExp of int
                 | RaiseExp of Expr
-                | RecordAssnExp of {sym: Symbol.symbol, expr: Expr} list
+                | RecordAssnExp of (Symbol.symbol * Expr) list
                 | RecordRefExp of {record: Expr, ele: Symbol.symbol}
                 | StringExp of UniChar.Data
 
