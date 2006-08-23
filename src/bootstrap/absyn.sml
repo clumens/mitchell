@@ -9,7 +9,7 @@ structure Absyn = struct
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
     *)
-   and Branch = RegularBranch of Expr
+   and Branch = RegularBranch of BaseExpr
               | UnionBranch of Symbol.symbol * Symbol.symbol list
 
    (* Wrap the basic expression type in things every expression has -
