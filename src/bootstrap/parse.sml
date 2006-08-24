@@ -74,12 +74,33 @@ struct
 
    (* PARSING HELPER FUNCTIONS *)
 
+   (* Consume the tokens surrounding a list and parse the list itself.  The
+    * list is parsed by the function f.
+    *)
    fun wrappedLst (tok, file) (openKind, closeKind) f = let
       val (tok', file') = checkTok (tok, file) openKind
       val (tok', file', ast) = f (tok', file')
       val (tok', file') = checkTok (tok', file') closeKind
    in
       (tok', file', ast)
+   end
+
+   (* Generic function for parsing a list of elements.  Provide the starting
+    * list, the element separator, and a function to parse one element.  The
+    * repeated results of calling function f are accumulated into a list, which
+    * is reversed when a token is seen besides the separator.
+    *)
+   fun parseLst (tok, file) lst sep f = let
+      val (tok', file', ret) = f (tok, file)
+      val lst' = ret::lst
+   in
+      if #3 tok' == sep then let
+            val (tok', file') = checkTok (tok', file') [sep]
+         in
+            parseLst (tok', file') lst' sep f
+         end
+      else
+         (tok', file', rev lst')
    end
 
 
@@ -371,33 +392,15 @@ struct
          else parseBaseExpr (tok, file)
 
       val (tok', file', expr) = doParseExpr (tok, file)
+      val (tok', file', lst) = if #3 tok' == Handle then wrappedLst (tok', file') ([Handle], [End]) parseExnLst
+                               else (tok', file', NONE)
    in
-      if #3 tok' == Handle then let
-            val (tok', file', lst) = wrappedLst (tok', file') ([Handle], [End]) parseExnLst
-         in
-            (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET,
-                                     exnHandler=lst})
-         end
-      else
-         (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET,
-                                  exnHandler=NONE})
+      (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET, exnHandler=lst})
    end
 
    (* expr-lst = expr (comma-symbol expr)* *)
-   and parseExprLst (tok, file) = let
-      fun doParseExprLst (tok, file, lst) = let
-         val (tok', file', expr) = parseExpr (tok, file)
-         val lst' = expr::lst
-      in
-         case #3 tok' of
-            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
-                     in doParseExprLst (tok', file', lst')
-                     end
-          | _     => (tok', file', rev lst')
-      end
-   in
-      doParseExprLst (tok, file, [])
-   end
+   and parseExprLst (tok, file) =
+      parseLst (tok, file) [] Comma parseExpr
 
    (* A subtle distinction between this and parseId.  This function just
     * returns the UniChar.Data from the Identifier token.  This can then be
@@ -459,19 +462,13 @@ struct
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
    and parseNameLst (tok, file) = let
-      fun doParseNameLst (tok, file, lst) = let
+      fun parseOneName (tok, file) = let
          val (tok', file', id) = parseIdentifierSym (tok, file)
-         val sym = Symbol.toSymbol (id, Symbol.VALUE)
-         val lst' = sym::lst
       in
-         case #3 tok' of
-            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
-                     in doParseNameLst (tok', file', lst')
-                     end
-          | _     => (tok', file', rev lst')
+         (tok', file', Symbol.toSymbol (id, Symbol.VALUE))
       end
    in
-      doParseNameLst (tok, file, [])
+      parseLst (tok, file) [] Comma parseOneName
    end
 
    and parseOptionalType (tok, file) =
@@ -488,19 +485,15 @@ struct
    and parseRecordLiteral (tok, file) = let
       (* record-assn-lst = identifier-symbol assign-symbol expr (comma-symbol record-assn-lst)* *)
       fun parseRecordAssnLst (tok, file) = let
-         fun doParseRecordAssnLst (tok, file, lst) = let
+         fun parseOneRecordAssn (tok, file) = let
             val (tok', file', id) = parseIdentifierSym (tok, file)
             val (exprTok, file') = checkTok (tok', file') [Assign]
             val (tok', file', expr) = parseExpr (exprTok, file')
-            val sym = Symbol.toSymbol (id, Symbol.VALUE)
-            val lst' = (sym, expr)::lst
          in
-            case #3 tok' of
-               Comma => doParseRecordAssnLst (tok', file', lst')
-             | _     => (tok', file', rev lst')
+            (tok', file', (Symbol.toSymbol (id, Symbol.VALUE), expr))
          end
       in
-         doParseRecordAssnLst (tok, file, [])
+         parseLst (tok, file) [] Comma parseOneRecordAssn
       end
 
       val (tok', file', lst) = wrappedLst (tok, file) ([LBrace], [RBrace]) parseRecordAssnLst
@@ -525,20 +518,8 @@ struct
       and parseRecordRef (tok, file) = ()
 
       (* ty-lst = ty (comma-symbol ty)* *)
-      and parseTyLst (tok, file) = let
-         fun doParseTyLst (tok, file, lst) = let
-            val (tok', file', ty) = parseTy (tok, file)
-            val lst' = ty::lst
-         in
-            case #3 tok of
-               Comma => let val (tok', file') = checkTok (tok', file') [Comma]
-                        in doParseTyLst (tok', file', lst')
-                        end
-             | _     => (tok', file', rev lst')
-         end
-      in
-         doParseTyLst (tok, file, [])
-      end
+      and parseTyLst (tok, file) =
+         parseLst (tok, file) [] Comma parseTy
    in
       (tok, file, Absyn.BottomExp)
    end
@@ -579,21 +560,14 @@ struct
       fun parseUnionTy (tok, file) = let
          (* tycon-lst = identifier-symbol (colon-symbol ty)? (comma-symbol tycon-lst)* *)
          fun parseTyconLst (tok, file) = let
-            fun doParseTyconLst (tok, file, lst) = let
+            fun parseOneTycon (tok, file) = let
                val (tok', file', id) = parseIdentifierSym (tok, file)
                val (tok', file', ty) = parseOptionalType (tok', file')
-               val sym = Symbol.toSymbol (id, Symbol.TYPE)
             in
-               if #3 tok' == Comma then let
-                     val (tok', file') = checkTok (tok', file') [Comma]
-                  in
-                     doParseTyconLst (tok', file', (sym, ty, tokenPos tok)::lst)
-                  end
-               else
-                  (tok, file, rev lst)
+               (tok', file', (Symbol.toSymbol (id, Symbol.TYPE), ty, tokenPos tok))
             end
          in
-            doParseTyconLst (tok, file, [])
+            parseLst (tok, file) [] Comma parseOneTycon
          end
 
          val (tok', file', tycons) = wrappedLst (tok, file) ([Union, LBrace], [RBrace]) parseTyconLst
@@ -613,20 +587,14 @@ struct
 
    (* typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)* *)
    and parseTypedNameLst (tok, file) = let
-      fun doParseTypedNameLst (tok, file, lst) = let
+      fun parseOneTypedName (tok, file) = let
          val (tok', file', id) = parseIdentifierSym (tok, file)
          val (tyTok, file') = checkTok (tok', file') [Colon]
          val (tok', file', ty) = parseTy (tyTok, file)
-         val sym = Symbol.toSymbol (id, Symbol.VALUE)
-         val lst' = (sym, ty, tokenPos tok)::lst
       in
-         case #3 tok' of
-            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
-                     in doParseTypedNameLst (tok', file', lst')
-                     end
-          | _     => (tok', file', rev lst')
+         (tok', file', (Symbol.toSymbol (id, Symbol.VALUE), ty, tokenPos tok))
       end
    in
-      doParseTypedNameLst (tok, file, [])
+      parseLst (tok, file) [] Comma parseOneTypedName
    end
 end
