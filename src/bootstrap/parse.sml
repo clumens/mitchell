@@ -72,6 +72,17 @@ struct
    fun tokenPos (tok:tokens) = (#1 tok, #2 tok)
 
 
+   (* PARSING HELPER FUNCTIONS *)
+
+   fun wrappedLst (tok, file) (openKind, closeKind) f = let
+      val (tok', file') = checkTok (tok, file) openKind
+      val (tok', file', ast) = f (tok', file')
+      val (tok', file') = checkTok (tok', file') closeKind
+   in
+      (tok', file', ast)
+   end
+
+
    (* PARSING FUNCTIONS *)
 
    (* Structure entry point - start parsing the token stream, returning an
@@ -108,29 +119,13 @@ struct
       end
 
       (* fun-decl = function-symbol identifier-symbol ty-formals-lst formals-lst (colon-symbol ty)? assign-symbol expr *)
+      (* formals-lst = lparen-symbol typed-name-lst? rparen-symbol *)
+      (* ty-formals-lst = lparen-symbol name-lst? rparen-symbol *)
       and parseFunDecl (tok, file) = let
-         (* formals-lst = lparen-symbol typed-name-lst? rparen-symbol *)
-         fun parseFormalsLst (tok, file) = let
-            val (tok', file') = checkTok (tok, file) [LParen]
-            val (tok', file', lst) = parseTypedNameLst (tok', file')
-            val (tok', file') = checkTok (tok, file) [RParen]
-         in
-            (tok', file', lst)
-         end
-
-         (* ty-formals-lst = lparen-symbol name-lst? rparen-symbol *)
-         and parseTyFormalsLst (tok, file) = let
-            val (tok', file') = checkTok (tok, file) [LParen]
-            val (tok', file', lst) = parseNameLst (tok', file')
-            val (tok', file') = checkTok (tok, file) [RParen]
-         in
-            (tok', file', lst)
-         end
-
          val (idTok, file') = checkTok (tok, file) [Function]
          val (tyFormalsTok, file', id) = parseIdentifierSym (idTok, file')
-         val (formalsTok, file', tyFormals) = parseTyFormalsLst (tyFormalsTok, file')
-         val (tok', file', formals) = parseFormalsLst (formalsTok, file')
+         val (formalsTok, file', tyFormals) = wrappedLst (tyFormalsTok, file') ([LParen], [RParen]) parseNameLst
+         val (tok', file', formals) = wrappedLst (formalsTok, file') ([LParen], [RParen]) parseTypedNameLst
          val (tok', file', ty) = parseOptionalType (tok', file')
          val (exprTok, file') = checkTok (tok', file') [Assign]
          val (tok', file', expr) = parseExpr (exprTok, file')
@@ -241,9 +236,7 @@ struct
          case kind of
             LBrace       => parseRecordLiteral (tok, file)
           | LBrack       => let
-                               val (tok', file') = checkTok (tok, file) [LBrack]
-                               val (tok', file', lst) = parseExprLst (tok, file)
-                               val (tok', file') = checkTok (tok, file) [RBrack]
+                               val (tok', file', lst) = wrappedLst (tok, file) ([LBrack], [RBrack]) parseExprLst
                             in
                                (tok', file', Absyn.ExprLstExp lst)
                             end
@@ -311,9 +304,7 @@ struct
                   val (tok', file', sym) = parseId (tok, file)
                in
                   if #3 tok == LParen then let
-                        val (lstTok, file') = checkTok (tok', file') [LParen]
-                        val (tok', file', lst) = parseNameLst (lstTok, file)
-                        val (tok', file') = checkTok (tok', file') [RParen]
+                        val (tok', file', lst) = wrappedLst (tok', file') ([LParen], [RParen]) parseNameLst
                      in
                         (tok', file', Absyn.UnionBranch (sym, lst))
                      end
@@ -376,22 +367,13 @@ struct
       end
 
       fun doParseExpr (tok as (_, _, kind), file) =
-         if kind == LParen then let
-               val (exprTok, file') = checkTok (tok, file) [LParen]
-               val (tok', file', expr) = parseBaseExpr (exprTok, file')
-               val (tok', file') = checkTok (tok', file') [RParen]
-            in
-               (tok', file', expr)
-            end
-         else
-            parseBaseExpr (tok, file)
+         if kind == LParen then wrappedLst (tok, file) ([LParen], [RParen]) parseBaseExpr
+         else parseBaseExpr (tok, file)
 
       val (tok', file', expr) = doParseExpr (tok, file)
    in
       if #3 tok' == Handle then let
-            val (lstTok, file') = checkTok (tok', file') [Handle]
-            val (tok', file', lst) = parseExnLst (lstTok, file')
-            val (tok', file') = checkTok (tok', file') [End]
+            val (tok', file', lst) = wrappedLst (tok', file') ([Handle], [End]) parseExnLst
          in
             (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET,
                                      exnHandler=lst})
@@ -521,9 +503,7 @@ struct
          doParseRecordAssnLst (tok, file, [])
       end
 
-      val (lstTok, file') = checkTok (tok, file) [LBrace]
-      val (tok', file', lst) = parseRecordAssnLst (lstTok, file')
-      val (tok', file') = checkTok (tok', file') [RBrace]
+      val (tok', file', lst) = wrappedLst (tok, file) ([LBrace], [RBrace]) parseRecordAssnLst
    in
       (tok', file', Absyn.RecordAssnExp lst)
    end
@@ -537,13 +517,8 @@ struct
    (* TODO *)
    and parseSymRef (tok, file) = let
       (* arg-lst = lparen-symbol expr-lst? rparen-symbol *)
-      fun parseArgLst (tok, file) = let
-         val (lstTok, file') = checkTok (tok, file) [LParen]
-         val (tok', file', lst) = parseExprLst (lstTok, file')
-         val (tok', file') = checkTok (tok, file) [RParen]
-      in
-         (tok', file', lst)
-      end
+      fun parseArgLst (tok, file) = 
+         wrappedLst (tok, file) ([LParen], [RParen]) parseExprLst
 
       (* record-ref = (pipe-symbol identifier-symbol)+ *)
       (* TODO *)
@@ -577,9 +552,7 @@ struct
     *)
    and parseTy (tok as (l, c, kind), file) = let
       fun parseExnTy (tok, file) = let
-         val (lstTok, file') = checkTok (tok, file) [Exn, LBrace]
-         val (tok', file', lst) = parseTypedNameLst (lstTok, file')
-         val (tok', file') = checkTok (tok', file') [RBrace]
+         val (tok', file', lst) = wrappedLst (tok, file) ([Exn, LBrace], [RBrace]) parseTypedNameLst
       in
          (tok', file', Absyn.ExnTy{exn'=lst, pos=tokenPos tok})
       end
@@ -598,9 +571,7 @@ struct
       end
 
       fun parseRecordTy (tok, file) = let
-         val (lstTok, file') = checkTok (tok, file) [LBrace]
-         val (tok', file', lst) = parseTypedNameLst (lstTok, file')
-         val (tok', file') = checkTok (tok', file') [RBrace]
+         val (tok', file', lst) = wrappedLst (tok, file) ([LBrace], [RBrace]) parseTypedNameLst
       in
          (tok', file', Absyn.RecordTy{record=lst, pos=tokenPos tok})
       end
@@ -625,9 +596,7 @@ struct
             doParseTyconLst (tok, file, [])
          end
 
-         val (tyconTok, file') = checkTok (tok, file) [Union, LBrace]
-         val (tok', file', tycons) = parseTyconLst (tyconTok, file')
-         val (tok', file') = checkTok (tok', file') [RBrace]
+         val (tok', file', tycons) = wrappedLst (tok, file) ([Union, LBrace], [RBrace]) parseTyconLst
       in
          (tok', file', Absyn.UnionTy{tycons=tycons, pos=tokenPos tok})
       end
