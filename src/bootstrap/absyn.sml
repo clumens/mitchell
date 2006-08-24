@@ -2,9 +2,14 @@
 structure Absyn = struct
    type pos = int * int
 
-   datatype ExnHandler = ExnHandler of {sym: Symbol.symbol, id: UniChar.Data,
-                                        expr: Expr, symtab: Symbol.symtab,
-                                        ty: Types.Type, pos: pos}
+   (* Exception handler expression.  sym is optional in the default case,
+    * where we handle all types of exceptions and therefore aren't given
+    * an exception type.
+    *)
+   datatype ExnHandler = ExnHandler of {sym: Symbol.symbol option,
+                                        id: UniChar.Data, expr: Expr,
+                                        symtab: Symbol.symtab, ty: Types.Type,
+                                        pos: pos}
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
