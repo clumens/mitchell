@@ -128,12 +128,14 @@ struct
          end
 
          val (idTok, file') = checkTok (tok, file) [Function]
-         val (tyFormalsTok, file', sym) = parseId (idTok, file')
+         val (tyFormalsTok, file', id) = parseIdentifierSym (idTok, file')
          val (formalsTok, file', tyFormals) = parseTyFormalsLst (tyFormalsTok, file')
          val (tok', file', formals) = parseFormalsLst (formalsTok, file')
          val (tok', file', ty) = parseOptionalType (tok', file')
          val (exprTok, file') = checkTok (tok', file') [Assign]
          val (tok', file', expr) = parseExpr (exprTok, file')
+
+         val sym = Symbol.toSymbol (id, Symbol.FUNCTION)
       in
          (tok', file', Absyn.FunDecl{sym=sym, retval=ty, pos=tokenPos tok, formals=formals,
                                      tyFormals=tyFormals, calls=[], symtab=Symbol.empty(),
@@ -143,9 +145,11 @@ struct
       (* ty-decl = type-symbol identifier-symbol assign-symbol ty *)
       and parseTyDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Type]
-         val (tok', file', sym) = parseId (idTok, file')
+         val (tok', file', id) = parseIdentifierSym (idTok, file')
          val (tyTok, file') = checkTok (tok', file') [Assign]
          val (tok', file', ty) = parseTy (tyTok, file')
+
+         val sym = Symbol.toSymbol (id, Symbol.TYPE)
       in
          (tok', file', Absyn.TyDecl{sym=sym, ty=Types.NONE_YET, absynTy=ty, pos=tokenPos tok})
       end
@@ -153,10 +157,12 @@ struct
       (* val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr *)
       and parseValDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Val]
-         val (tok', file', sym) = parseId (idTok, file')
+         val (tok', file', id) = parseIdentifierSym (idTok, file')
          val (tok', file', ty) = parseOptionalType (tok', file')
          val (exprTok, file') = checkTok (tok, file) [Assign]
          val (tok', file', expr) = parseExpr (exprTok, file')
+
+         val sym = Symbol.toSymbol (id, Symbol.VALUE)
       in
          (tok', file', Absyn.ValDecl{sym=sym, ty=Types.NONE_YET, absynTy=ty, pos=tokenPos tok,
                                      init=expr})
@@ -173,9 +179,47 @@ struct
    (* exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
     *         | else-symbol identifier-symbol mapsto-symbol expr
     *)
-   (* TODO *)
-   and parseExnLst (tok, file) = (tok, file, {handlers=[], default=NONE, ty=Types.NONE_YET,
-                                              pos=(0, 0)})
+   and parseExnLst (tok, file) = let
+      fun doParseExnLst (tok as (_, _, kind), file, lst) = let
+         fun handleElseBranch (tok, file, lst) = let
+            val (tok', file') = checkTok (tok, file) [Else]
+            val (tok', file', id) = parseIdentifierSym (tok', file')
+            val (tok', file') = checkTok (tok', file') [Mapsto]
+            val (tok', file', expr) = parseExpr (tok', file')
+
+            val handler = Absyn.ExnHandler {sym=NONE, id=id, expr=expr, symtab=Symbol.empty(),
+                                            ty=Types.NONE_YET, pos=tokenPos tok}
+         in
+            (tok', file', SOME {handlers=rev lst, default=SOME handler, ty=Types.NONE_YET,
+                                pos=tokenPos tok})
+         end
+      in
+         if kind == Identifier [] then let
+               val (tok', file', sym) = parseId (tok, file)
+               val (tok', file', id) = parseIdentifierSym (tok', file')
+               val (tok', file') = checkTok (tok', file') [Mapsto]
+               val (tok', file', expr) = parseExpr (tok', file')
+
+               (* For the sym, we need to replace the default that parseId gave
+                * us with the real subtable of the thing.
+                *)
+               val handler = Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN), id=id, expr=expr,
+                                               symtab=Symbol.empty(), ty=Types.NONE_YET,
+                                               pos=tokenPos tok}
+            in
+               if #3 tok' == Comma then let val (tok', file') = checkTok (tok', file') [Comma]
+                                        in doParseExnLst (tok', file', handler::lst)
+                                        end
+               else (tok', file', SOME {handlers=rev lst, default=NONE, ty=Types.NONE_YET,
+                                        pos=tokenPos tok})
+            end
+         else if kind == Else then handleElseBranch (tok, file, lst)
+              else (tok, file, SOME {handlers=rev lst, default=NONE, ty=Types.NONE_YET,
+                                     pos=tokenPos tok})
+      end
+   in
+      doParseExnLst (tok, file, [])
+   end
 
    (* expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
     *      | base-expr (handle-symbol exn-lst end-symbol)?
@@ -350,7 +394,7 @@ struct
             val (tok', file') = checkTok (tok', file') [End]
          in
             (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET,
-                                     exnHandler=SOME lst})
+                                     exnHandler=lst})
          end
       else
          (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET,
@@ -358,33 +402,50 @@ struct
    end
 
    (* expr-lst = expr (comma-symbol expr)* *)
-   (* TODO *)
-   and parseExprLst (tok, file) = (tok, file, [])
-
-   (* id = identifier-symbol (dot-symbol identifier-symbol)* *)
-(*
-   and parseId (tok as (_, _, kind), file) = let
-      fun doParseId (tok, file, lst) = let
-         val (tok', file') = checkTok (tok, file) [Identifier[]]
-         val id = stripId kind
-         val lst' = (id, Symbol.mangle id)::lst
+   and parseExprLst (tok, file) = let
+      fun doParseExprLst (tok, file, lst) = let
+         val (tok', file', expr) = parseExpr (tok, file)
+         val lst' = expr::lst
       in
-         (* This could also be a Symbol.TYPE.  How do we check that here? *)
-         if kind == Dot then doParseId (tok', file', lst')
-         else (tok', file', (rev lst', Symbol.VALUE))
+         case #3 tok' of
+            Comma => let val (tok', file') = checkTok (tok', file') [Comma]
+                     in doParseExprLst (tok', file', lst')
+                     end
+          | _     => (tok', file', rev lst')
       end
    in
-      case kind of
-         Identifier i => doParseId (tok, file, [])
-       | _            => raise err (tok, [Identifier[]])
+      doParseExprLst (tok, file, [])
    end
-*)
-   and parseId (tok as (_, _, kind), file) =
+
+   (* A subtle distinction between this and parseId.  This function just
+    * returns the UniChar.Data from the Identifier token.  This can then be
+    * wrapped up into whatever kind of symbol.  Use this when the production
+    * takes a single name, not a dot-separated path.  Use parseId in that case.
+    *)
+   and parseIdentifierSym (tok as (_, _, kind), file) =
       case kind of
          Identifier i => let val (tok', file') = eat file
-                         in (tok', file', Symbol.toSymbol (i, Symbol.VALUE))
+                         in (tok', file', i)
                          end
        | _            => raise err (tok, [Identifier[]])
+
+   (* id = identifier-symbol (dot-symbol identifier-symbol)* *)
+   and parseId (tok, file) = let
+      fun doParseId (tok as (_, _, kind), file, lst) = let
+         val (tok', file', id) = parseIdentifierSym (tok, file)
+      in
+         (* We don't know exactly where parseId is going to be called, so the
+          * subtable is going to be wrong some of the time.  Callers will need
+          * to modify this return value appropriately.
+          *)
+         if #3 tok' == Dot then let val (tok', file') = checkTok (tok', file') [Dot]
+                                in doParseId (tok', file', (id, Symbol.mangle id)::lst)
+                                end
+         else (tok', file', (rev lst, Symbol.VALUE))
+      end
+   in
+      doParseId (tok, file, [])
+   end
 
    (* module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl+ end-symbol *)
    and parseModuleDecl (tok, file) = let
@@ -403,18 +464,22 @@ struct
               else (tok, file, rev lst)
 
       val (idTok, file') = checkTok (tok, file) [Module]
+      val (tok', file', id) = parseIdentifierSym (idTok, file')
       val (tok', file') = checkTok (idTok, file') [Identifier [], Assign, Decl]
       val (tok', file', declLst) = parseTopDecl (tok', file', [])
       val (tok', file') = checkTok (tok', file') [End]
+
+      val sym = Symbol.toSymbol (id, Symbol.MODULE)
    in
-      (tok', file', Absyn.ModuleDecl{sym=Symbol.toSymbol (stripId (#3 idTok), Symbol.MODULE),
-                                     decl=declLst, pos=tokenPos idTok, symtab=Symbol.empty()})
+      (tok', file', Absyn.ModuleDecl{sym=sym, decl=declLst, pos=tokenPos idTok,
+                                     symtab=Symbol.empty()})
    end
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
    and parseNameLst (tok, file) = let
       fun doParseNameLst (tok, file, lst) = let
-         val (tok', file', sym) = parseId (tok, file)
+         val (tok', file', id) = parseIdentifierSym (tok, file)
+         val sym = Symbol.toSymbol (id, Symbol.VALUE)
          val lst' = sym::lst
       in
          case #3 tok' of
@@ -442,9 +507,10 @@ struct
       (* record-assn-lst = identifier-symbol assign-symbol expr (comma-symbol record-assn-lst)* *)
       fun parseRecordAssnLst (tok, file) = let
          fun doParseRecordAssnLst (tok, file, lst) = let
-            val (tok', file', sym) = parseId (tok, file)
+            val (tok', file', id) = parseIdentifierSym (tok, file)
             val (exprTok, file') = checkTok (tok', file') [Assign]
             val (tok', file', expr) = parseExpr (exprTok, file')
+            val sym = Symbol.toSymbol (id, Symbol.VALUE)
             val lst' = (sym, expr)::lst
          in
             case #3 tok' of
@@ -543,8 +609,9 @@ struct
          (* tycon-lst = identifier-symbol (colon-symbol ty)? (comma-symbol tycon-lst)* *)
          fun parseTyconLst (tok, file) = let
             fun doParseTyconLst (tok, file, lst) = let
-               val (tok', file', sym) = parseId (tok, file)
+               val (tok', file', id) = parseIdentifierSym (tok, file)
                val (tok', file', ty) = parseOptionalType (tok', file')
+               val sym = Symbol.toSymbol (id, Symbol.TYPE)
             in
                if #3 tok' == Comma then let
                      val (tok', file') = checkTok (tok', file') [Comma]
@@ -578,9 +645,10 @@ struct
    (* typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)* *)
    and parseTypedNameLst (tok, file) = let
       fun doParseTypedNameLst (tok, file, lst) = let
-         val (tok', file', sym) = parseId (tok, file)
+         val (tok', file', id) = parseIdentifierSym (tok, file)
          val (tyTok, file') = checkTok (tok', file') [Colon]
          val (tok', file', ty) = parseTy (tyTok, file)
+         val sym = Symbol.toSymbol (id, Symbol.VALUE)
          val lst' = (sym, ty, tokenPos tok)::lst
       in
          case #3 tok' of
