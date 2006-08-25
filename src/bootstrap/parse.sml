@@ -24,8 +24,7 @@ struct
    fun err (tok, accepted) = let
       fun asToken kind = (0, 0, kind)
 
-      val acceptedStr = String.concatWith " " (map Tokens.toString
-                                                   (map asToken accepted))
+      val acceptedStr = String.concatWith " " (map Tokens.toString (map asToken accepted))
    in
       ParseError ("FIXME", #1 tok, #2 tok,
                   "Expected token from set { " ^ acceptedStr ^ " } but got { " ^
@@ -79,9 +78,9 @@ struct
     * depending on how f is written.
     *)
    fun wrappedLst (tok, file) (openKind, closeKind) f = let
-      val (tok', file') = checkTok (tok, file) openKind
+      val (tok', file') = checkTok (tok, file) [openKind]
       val (tok', file', ast) = f (tok', file')
-      val (tok', file') = checkTok (tok', file') closeKind
+      val (tok', file') = checkTok (tok', file') [closeKind]
    in
       (tok', file', ast)
    end
@@ -91,7 +90,7 @@ struct
     * by passing the first two arguments, then using that call as the final
     * argument to wrappedLst.  Hooray currying.
     *)
-   fun lstMayBeEmpty closeKind f (tok, file) =
+   fun lstMayBeEmpty closeKind f (tok:Tokens, file) =
       if #3 tok == closeKind then (tok, file, [])
       else f (tok, file)
 
@@ -179,9 +178,9 @@ struct
       and parseFunDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Function]
          val (tyFormalsTok, file', id) = parseIdentifierSym (idTok, file')
-         val (formalsTok, file', tyFormals) = wrappedLst (tyFormalsTok, file') ([LParen], [RParen])
+         val (formalsTok, file', tyFormals) = wrappedLst (tyFormalsTok, file') (LParen, RParen)
                                                          (lstMayBeEmpty RParen parseNameLst)
-         val (tok', file', formals) = wrappedLst (formalsTok, file') ([LParen], [RParen])
+         val (tok', file', formals) = wrappedLst (formalsTok, file') (LParen, RParen)
                                                  (lstMayBeEmpty RParen parseTypedNameLst)
          val (tok', file', ty) = parseOptionalType (tok', file')
          val (exprTok, file') = checkTok (tok', file') [Assign]
@@ -281,7 +280,7 @@ struct
          case kind of
             LBrace       => parseRecordLiteral (tok, file)
           | LBrack       => let
-                               val (tok', file', lst) = wrappedLst (tok, file) ([LBrack], [RBrack])
+                               val (tok', file', lst) = wrappedLst (tok, file) (LBrack, RBrack)
                                                                    (lstMayBeEmpty RBrack parseExprLst)
                             in
                                (tok', file', Absyn.ExprLstExp lst)
@@ -335,7 +334,7 @@ struct
                   val (tok', file', sym) = parseId (tok, file)
                in
                   if #3 tok == LParen then let
-                        val (tok', file', lst) = wrappedLst (tok', file') ([LParen], [RParen])
+                        val (tok', file', lst) = wrappedLst (tok', file') (LParen, RParen)
                                                             (lstMayBeEmpty RParen parseNameLst)
                      in
                         (tok', file', Absyn.UnionBranch (sym, lst))
@@ -408,11 +407,11 @@ struct
       end
 
       fun doParseExpr (tok as (_, _, kind), file) =
-         if kind == LParen then wrappedLst (tok, file) ([LParen], [RParen]) parseBaseExpr
+         if kind == LParen then wrappedLst (tok, file) (LParen, RParen) parseBaseExpr
          else parseBaseExpr (tok, file)
 
       val (tok', file', expr) = doParseExpr (tok, file)
-      val (tok', file', lst) = if #3 tok' == Handle then wrappedLst (tok', file') ([Handle], [End]) parseExnLst
+      val (tok', file', lst) = if #3 tok' == Handle then wrappedLst (tok', file') (Handle, End) parseExnLst
                                else (tok', file', NONE)
    in
       (tok', file', Absyn.Expr{expr=expr, pos=tokenPos tok, ty=Types.NONE_YET, exnHandler=lst})
@@ -516,7 +515,7 @@ struct
          parseLst (tok, file) [] Comma parseOneRecordAssn
       end
 
-      val (tok', file', lst) = wrappedLst (tok, file) ([LBrace], [RBrace]) parseRecordAssnLst
+      val (tok', file', lst) = wrappedLst (tok, file) (LBrace, RBrace) parseRecordAssnLst
    in
       (tok', file', Absyn.RecordAssnExp lst)
    end
@@ -530,7 +529,7 @@ struct
    and parseSymRef (tok, file) = let
       (* arg-lst = lparen-symbol expr-lst? rparen-symbol *)
       fun parseArgLst (tok, file) = 
-         wrappedLst (tok, file) ([LParen], [RParen]) (lstMayBeEmpty RParen parseExprLst)
+         wrappedLst (tok, file) (LParen, RParen) (lstMayBeEmpty RParen parseExprLst)
 
       (* record-ref = (pipe-symbol identifier-symbol)+ *)
       (* TODO *)
@@ -552,7 +551,8 @@ struct
     *)
    and parseTy (tok as (l, c, kind), file) = let
       fun parseExnTy (tok, file) = let
-         val (tok', file', lst) = wrappedLst (tok, file) ([Exn, LBrace], [RBrace]) parseTypedNameLst
+         val (tok', file') = checkTok (tok, file) [Exn]
+         val (tok', file', lst) = wrappedLst (tok, file) (LBrace, RBrace) parseTypedNameLst
       in
          (tok', file', Absyn.ExnTy{exn'=lst, pos=tokenPos tok})
       end
@@ -571,7 +571,7 @@ struct
       end
 
       fun parseRecordTy (tok, file) = let
-         val (tok', file', lst) = wrappedLst (tok, file) ([LBrace], [RBrace]) parseTypedNameLst
+         val (tok', file', lst) = wrappedLst (tok, file) (LBrace, RBrace) parseTypedNameLst
       in
          (tok', file', Absyn.RecordTy{record=lst, pos=tokenPos tok})
       end
@@ -589,7 +589,8 @@ struct
             parseLst (tok, file) [] Comma parseOneTycon
          end
 
-         val (tok', file', tycons) = wrappedLst (tok, file) ([Union, LBrace], [RBrace]) parseTyconLst
+         val (tok', file') = checkTok (tok, file) [Union]
+         val (tok', file', tycons) = wrappedLst (tok, file) (LBrace, RBrace) parseTyconLst
       in
          (tok', file', Absyn.UnionTy{tycons=tycons, pos=tokenPos tok})
       end
