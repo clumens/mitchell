@@ -35,6 +35,7 @@ structure Absyn = struct
                              values: {sym: Symbol.symbol, expr: Expr} list}
                 | ExprLstExp of Expr list
                 | FunCallExp of {function: Symbol.symbol, args: Expr list,
+                                 tyArgs: Symbol.symbol list,
                                  frees: Symbol.symbol list}
                 | IdExp of Symbol.symbol
                 | IfExp of {test: Expr, then': Expr, else': Expr}
