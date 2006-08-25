@@ -81,8 +81,7 @@ struct
     * depending on how f is written.
     *)
    fun wrappedLst state (openKind, closeKind) f = let
-      val state' = checkTok state [openKind]
-      val (state', ast) = f state'
+      val (state', ast) = f (checkTok state [openKind])
       val state' = checkTok state' [closeKind]
    in
       (state', ast)
@@ -106,13 +105,8 @@ struct
       val (state' as (tok', _), ret) = f state
       val lst' = ret::lst
    in
-      if #3 tok' == sep then let
-            val state' = checkTok state' [sep]
-         in
-            parseLst state' lst' sep f
-         end
-      else
-         (state', rev lst')
+      if #3 tok' == sep then parseLst (checkTok state' [sep]) lst' sep f
+      else (state', rev lst')
    end
 
    (* Similar to parseLst, but allow for a default (or else) branch as part of
@@ -128,9 +122,7 @@ struct
             val (state' as (tok', _), ele) = f state
             val lst' = ele::lst
          in
-            if #3 tok' == sep then let val state' = checkTok state' [sep]
-                                   in parseDefaultLst state' lst' acceptSet sep f e
-                                   end
+            if #3 tok' == sep then parseDefaultLst (checkTok state' [sep]) lst' acceptSet sep f e
             else (state', (rev lst', NONE))
          end
       else if #3 tok == Else then let val (state', default) = e state
@@ -169,8 +161,7 @@ struct
    (* decl = absorb-symbol id | fun-decl | ty-decl | val-decl *)
    and parseDecl (state as (tok, _)) = let
       fun parseAbsorbDecl state = let
-         val state' = checkTok state [Absorb]
-         val (state', sym) = parseId state
+         val (state', sym) = parseId (checkTok state [Absorb])
       in
          (state', Absyn.Absorb{module=sym, pos=statePos state})
       end
@@ -179,47 +170,36 @@ struct
       (* formals-lst = lparen-symbol typed-name-lst? rparen-symbol *)
       (* ty-formals-lst = lparen-symbol name-lst? rparen-symbol *)
       and parseFunDecl state = let
-         val state' = checkTok state [Function]
-         val (state', id) = parseIdentifierSym state'
+         val (state', id) = parseIdentifierSym (checkTok state [Function])
          val (state', tyFormals) = wrappedLst state' (LParen, RParen)
                                                        (lstMayBeEmpty RParen parseNameLst)
          val (state', formals) = wrappedLst state' (LParen, RParen)
                                              (lstMayBeEmpty RParen parseTypedNameLst)
          val (state', ty) = parseOptionalType state'
-         val state' = checkTok state' [Assign]
-         val (state', expr) = parseExpr state'
-
-         val sym = Symbol.toSymbol (id, Symbol.FUNCTION)
+         val (state', expr) = parseExpr (checkTok state' [Assign])
       in
-         (state', Absyn.FunDecl{sym=sym, retval=ty, pos=statePos state, formals=formals,
-                                 tyFormals=tyFormals, calls=[], symtab=Symbol.empty(),
-                                 body=expr})
+         (state', Absyn.FunDecl{sym=Symbol.toSymbol (id, Symbol.FUNCTION), retval=ty,
+                                pos=statePos state, formals=formals, tyFormals=tyFormals,
+                                calls=[], symtab=Symbol.empty(), body=expr})
       end
 
       (* ty-decl = type-symbol identifier-symbol assign-symbol ty *)
       and parseTyDecl state = let
-         val state' = checkTok state [Type]
-         val (state', id) = parseIdentifierSym state'
-         val state' = checkTok state' [Assign]
-         val (state', ty) = parseTy state'
-
-         val sym = Symbol.toSymbol (id, Symbol.TYPE)
+         val (state', id) = parseIdentifierSym (checkTok state [Type])
+         val (state', ty) = parseTy (checkTok state' [Assign])
       in
-         (state', Absyn.TyDecl{sym=sym, ty=Types.NONE_YET, absynTy=ty, pos=statePos state})
+         (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.TYPE), ty=Types.NONE_YET,
+                               absynTy=ty, pos=statePos state})
       end
 
       (* val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr *)
       and parseValDecl state = let
-         val state' = checkTok state [Val]
-         val (state', id) = parseIdentifierSym state'
+         val (state', id) = parseIdentifierSym (checkTok state [Val])
          val (state', ty) = parseOptionalType state'
-         val state' = checkTok state' [Assign]
-         val (state', expr) = parseExpr state'
-
-         val sym = Symbol.toSymbol (id, Symbol.VALUE)
+         val (state', expr) = parseExpr (checkTok state' [Assign])
       in
-         (state', Absyn.ValDecl{sym=sym, ty=Types.NONE_YET, absynTy=ty, pos=statePos state,
-                                 init=expr})
+         (state', Absyn.ValDecl{sym=Symbol.toSymbol (id, Symbol.VALUE), ty=Types.NONE_YET,
+                                absynTy=ty, pos=statePos state, init=expr})
       end
    in
       case #3 tok of
@@ -246,8 +226,7 @@ struct
       fun parseOneExn state = let
          val (state', sym) = parseId state
          val (state', id) = parseIdentifierSym state'
-         val state' = checkTok state' [Mapsto]
-         val (state', expr) = parseExpr state'
+         val (state', expr) = parseExpr (checkTok state' [Mapsto])
       in
          (* For the sym, we need to replace the default that parseId gave us
           * with the real subtable of the thing.
@@ -268,7 +247,7 @@ struct
     *)
    and parseExpr state = let
       (* base-expr = record-literal
-       *           | lbrack-symbol expr-lst? rbrack-symbol
+       *           | lbrack-symbol expr-lst? (brack-symbol
        *           | case-expr
        *           | decl-expr
        *           | if-expr
@@ -284,7 +263,7 @@ struct
             LBrace       => parseRecordLiteral state
           | LBrack       => let
                                val (state', lst) = wrappedLst state (LBrack, RBrack)
-                                                               (lstMayBeEmpty RBrack parseExprLst)
+                                                              (lstMayBeEmpty RBrack parseExprLst)
                             in
                                (state', Absyn.ExprLstExp lst)
                             end
@@ -292,24 +271,13 @@ struct
           | Decl         => parseDeclExpr state
           | If           => parseIfExpr state
           | Identifier _ => parseSymRef state
-          | Raise        => let
-                               val state' = checkTok state [Raise]
-                               val (state', expr) = parseExpr state'
-                            in
-                               (state', Absyn.RaiseExp expr)
+          | Raise        => let val (state', expr) = parseExpr (checkTok state [Raise])
+                            in (state', Absyn.RaiseExp expr)
                             end
-          | Integer i    => let val state' = checkTok state [Integer i]
-                            in (state', Absyn.IntegerExp i)
-                            end
-          | String s     => let val state' = checkTok state [String s]
-                            in (state', Absyn.StringExp s)
-                            end
-          | Boolean b    => let val state' = checkTok state [Boolean b]
-                            in (state', Absyn.BooleanExp b)
-                            end
-          | Bottom       => let val state' = checkTok state [Bottom]
-                            in (state', Absyn.BottomExp)
-                            end
+          | Integer i    => (checkTok state [Integer i], Absyn.IntegerExp i)
+          | String s     => (checkTok state [String s], Absyn.StringExp s)
+          | Boolean b    => (checkTok state [Boolean b], Absyn.BooleanExp b)
+          | Bottom       => (checkTok state [Bottom], Absyn.BottomExp)
           | _ => raise err (tok, [Boolean true, Bottom, Case, Decl, Identifier [], If, Integer 0,
                                   LBrace, LBrack, Raise, String []])
 
@@ -319,12 +287,8 @@ struct
           *            | else-symbol mapsto-symbol expr
           *)
          fun parseBranchLst state = let
-            fun handleElseBranch state = let
-               val state' = checkTok state [Else, Mapsto]
-               val (state', expr) = parseExpr state'
-            in
-               (state', expr)
-            end
+            fun handleElseBranch state =
+               parseExpr (checkTok state [Else, Mapsto])
 
             (* branch-expr = id
              *             | id lparen-symbol name-lst? rparen-symbol
@@ -338,7 +302,7 @@ struct
                in
                   if #3 tok' == LParen then let
                         val (state', lst) = wrappedLst state' (LParen, RParen)
-                                                        (lstMayBeEmpty RParen parseNameLst)
+                                                       (lstMayBeEmpty RParen parseNameLst)
                      in
                         (state', Absyn.UnionBranch (sym, lst))
                      end
@@ -358,8 +322,7 @@ struct
 
             fun parseOneBranch state = let
                val (state', branch) = parseBranchExpr state
-               val state' = checkTok state' [Mapsto]
-               val (state', expr) = parseExpr state'
+               val (state', expr) = parseExpr (checkTok state' [Mapsto])
             in
                (state', (branch, expr))
             end
@@ -368,10 +331,8 @@ struct
                             Comma parseOneBranch handleElseBranch
          end
 
-         val state' = checkTok state [Case]
-         val (state', testExpr) = parseExpr state'
-         val state' = checkTok state' [In]
-         val (state', (branchLst, default)) = parseBranchLst state'
+         val (state', testExpr) = parseExpr (checkTok state [Case])
+         val (state', (branchLst, default)) = parseBranchLst (checkTok state' [In])
          val state' = checkTok state' [End]
       in
          (state', Absyn.CaseExp{test=testExpr, default=default, branches=branchLst})
@@ -388,10 +349,8 @@ struct
             else if length lst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "decl expressions must contain at least one declaration")
                  else (state, rev lst)
 
-         val state' = checkTok state [Decl]
-         val (state', decls) = parseDeclLst (state', [])
-         val state' = checkTok state' [In]
-         val (state', expr) = parseExpr state'
+         val (state', decls) = parseDeclLst (checkTok state [Decl], [])
+         val (state', expr) = parseExpr (checkTok state' [In])
          val state' = checkTok state' [End]
       in
          (state', Absyn.DeclExp{decls=decls, expr=expr, symtab=Symbol.empty()})
@@ -399,12 +358,9 @@ struct
 
       (* if-expr = if-symbol expr then-symbol expr else-symbol expr *)
       and parseIfExpr state = let
-         val state' = checkTok state [If]
-         val (state', testExpr) = parseExpr state'
-         val state' = checkTok state' [Then]
-         val (state', thenExpr) = parseExpr state'
-         val state' = checkTok state' [Else]
-         val (state', elseExpr) = parseExpr state'
+         val (state', testExpr) = parseExpr (checkTok state [If])
+         val (state', thenExpr) = parseExpr (checkTok state' [Then])
+         val (state', elseExpr) = parseExpr (checkTok state' [Else])
       in
          (state', Absyn.IfExp{test=testExpr, then'=thenExpr, else'=elseExpr})
       end
@@ -415,7 +371,7 @@ struct
 
       val (state' as (tok', _), expr) = doParseExpr state
       val (state', lst) = if #3 tok' == Handle then wrappedLst state' (Handle, End) parseExnLst
-                           else (state', NONE)
+                          else (state', NONE)
    in
       (state', Absyn.Expr{expr=expr, pos=statePos state, ty=Types.NONE_YET, exnHandler=lst})
    end
@@ -466,16 +422,12 @@ struct
                  end
               else (state, rev lst)
 
-      val state' = checkTok state [Module]
-      val (state', id) = parseIdentifierSym state'
-      val state' = checkTok state' [Identifier [], Assign, Decl]
-      val (state', declLst) = parseTopDecl (state', [])
+      val (state', id) = parseIdentifierSym (checkTok state [Module])
+      val (state', declLst) = parseTopDecl (checkTok state' [Identifier[], Assign, Decl], [])
       val state' = checkTok state' [End]
-
-      val sym = Symbol.toSymbol (id, Symbol.MODULE)
    in
-      (state', Absyn.ModuleDecl{sym=sym, decl=declLst, pos=statePos state,
-                                 symtab=Symbol.empty()})
+      (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decl=declLst,
+                                pos=statePos state, symtab=Symbol.empty()})
    end
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
@@ -491,8 +443,7 @@ struct
 
    and parseOptionalType (state as (tok, _)) = 
       if #3 tok == Colon then let
-            val state' = checkTok state [Colon]
-            val (state', ty) = parseTy state'
+            val (state', ty) = parseTy (checkTok state [Colon])
          in
             (state', SOME ty)
          end
@@ -505,8 +456,7 @@ struct
       fun parseRecordAssnLst state = let
          fun parseOneRecordAssn state = let
             val (state', id) = parseIdentifierSym state
-            val state' = checkTok state' [Assign]
-            val (state', expr) = parseExpr state'
+            val (state', expr) = parseExpr (checkTok state' [Assign])
          in
             (state', (Symbol.toSymbol (id, Symbol.VALUE), expr))
          end
@@ -550,8 +500,7 @@ struct
     *)
    and parseTy (state as (tok, _)) = let
       fun parseExnTy state = let
-         val state' = checkTok state [Exn]
-         val (state', lst) = wrappedLst state' (LBrace, RBrace) parseTypedNameLst
+         val (state', lst) = wrappedLst (checkTok state [Exn]) (LBrace, RBrace) parseTypedNameLst
       in
          (state, Absyn.ExnTy{exn'=lst, pos=statePos state})
       end
@@ -563,8 +512,7 @@ struct
       end
 
       fun parseListTy state = let
-         val state' = checkTok state [List]
-         val (state', ty) = parseTy state'
+         val (state', ty) = parseTy (checkTok state [List])
       in
          (state', Absyn.ListTy{lst=ty, pos=statePos state})
       end
@@ -588,8 +536,7 @@ struct
             parseLst state [] Comma parseOneTycon
          end
 
-         val state' = checkTok state [Union]
-         val (state', tycons) = wrappedLst state' (LBrace, RBrace) parseTyconLst
+         val (state', tycons) = wrappedLst (checkTok state [Union]) (LBrace, RBrace) parseTyconLst
       in
          (state', Absyn.UnionTy{tycons=tycons, pos=statePos state})
       end
@@ -608,8 +555,7 @@ struct
    and parseTypedNameLst state = let
       fun parseOneTypedName state = let
          val (state', id) = parseIdentifierSym state
-         val state' = checkTok state' [Colon]
-         val (state', ty) = parseTy state'
+         val (state', ty) = parseTy (checkTok state' [Colon])
       in
          (state', (Symbol.toSymbol (id, Symbol.VALUE), ty, statePos state))
       end
