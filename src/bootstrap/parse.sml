@@ -75,7 +75,8 @@ struct
    (* PARSING HELPER FUNCTIONS *)
 
    (* Consume the tokens surrounding a list and parse the list itself.  The
-    * list is parsed by the function f.
+    * list is parsed by the function f.  The list may or may not be null,
+    * depending on how f is written.
     *)
    fun wrappedLst (tok, file) (openKind, closeKind) f = let
       val (tok', file') = checkTok (tok, file) openKind
@@ -84,6 +85,15 @@ struct
    in
       (tok', file', ast)
    end
+
+   (* Wrapper for a list parsing function f that would usually be passed to
+    * wrappedLst above.  This function allows those lists to be empty.  Use
+    * by passing the first two arguments, then using that call as the final
+    * argument to wrappedLst.  Hooray currying.
+    *)
+   fun lstMayBeEmpty closeKind f (tok, file) =
+      if #3 tok == closeKind then (tok, file, [])
+      else f (tok, file)
 
    (* Generic function for parsing a list of elements.  Provide the starting
     * list, the element separator, and a function to parse one element.  The
@@ -169,8 +179,10 @@ struct
       and parseFunDecl (tok, file) = let
          val (idTok, file') = checkTok (tok, file) [Function]
          val (tyFormalsTok, file', id) = parseIdentifierSym (idTok, file')
-         val (formalsTok, file', tyFormals) = wrappedLst (tyFormalsTok, file') ([LParen], [RParen]) parseNameLst
-         val (tok', file', formals) = wrappedLst (formalsTok, file') ([LParen], [RParen]) parseTypedNameLst
+         val (formalsTok, file', tyFormals) = wrappedLst (tyFormalsTok, file') ([LParen], [RParen])
+                                                         (lstMayBeEmpty RParen parseNameLst)
+         val (tok', file', formals) = wrappedLst (formalsTok, file') ([LParen], [RParen])
+                                                 (lstMayBeEmpty RParen parseTypedNameLst)
          val (tok', file', ty) = parseOptionalType (tok', file')
          val (exprTok, file') = checkTok (tok', file') [Assign]
          val (tok', file', expr) = parseExpr (exprTok, file')
@@ -269,7 +281,8 @@ struct
          case kind of
             LBrace       => parseRecordLiteral (tok, file)
           | LBrack       => let
-                               val (tok', file', lst) = wrappedLst (tok, file) ([LBrack], [RBrack]) parseExprLst
+                               val (tok', file', lst) = wrappedLst (tok, file) ([LBrack], [RBrack])
+                                                                   (lstMayBeEmpty RBrack parseExprLst)
                             in
                                (tok', file', Absyn.ExprLstExp lst)
                             end
@@ -322,7 +335,8 @@ struct
                   val (tok', file', sym) = parseId (tok, file)
                in
                   if #3 tok == LParen then let
-                        val (tok', file', lst) = wrappedLst (tok', file') ([LParen], [RParen]) parseNameLst
+                        val (tok', file', lst) = wrappedLst (tok', file') ([LParen], [RParen])
+                                                            (lstMayBeEmpty RParen parseNameLst)
                      in
                         (tok', file', Absyn.UnionBranch (sym, lst))
                      end
@@ -508,8 +522,7 @@ struct
    end
 
    (* sym-ref = id
-    *         | id arg-lst
-    *         | id arg-lst lparen-symbol ty-lst? rparen-symbol
+    *         | id lparen-symbol ty-lst? rparen-symbol arg-lst
     *         | id record-literal
     *         | sym-ref record-ref
     *)
@@ -517,14 +530,14 @@ struct
    and parseSymRef (tok, file) = let
       (* arg-lst = lparen-symbol expr-lst? rparen-symbol *)
       fun parseArgLst (tok, file) = 
-         wrappedLst (tok, file) ([LParen], [RParen]) parseExprLst
+         wrappedLst (tok, file) ([LParen], [RParen]) (lstMayBeEmpty RParen parseExprLst)
 
       (* record-ref = (pipe-symbol identifier-symbol)+ *)
       (* TODO *)
-      and parseRecordRef (tok, file) = ()
+      fun parseRecordRef (tok, file) = ()
 
       (* ty-lst = ty (comma-symbol ty)* *)
-      and parseTyLst (tok, file) =
+      fun parseTyLst (tok, file) =
          parseLst (tok, file) [] Comma parseTy
    in
       (tok, file, Absyn.BottomExp)
