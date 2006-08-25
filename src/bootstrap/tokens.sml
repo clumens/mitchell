@@ -8,9 +8,10 @@ sig
                       | String of UniChar.Data | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
+   type State = Tokens * Decode.DecFile
 
    val toString: Tokens -> string
-   val nextToken: Decode.DecFile -> Tokens * Decode.DecFile
+   val nextToken: Decode.DecFile -> State
 end
 
 (* This structure defines the tokenizing portion of the mitchell compiler.
@@ -30,6 +31,7 @@ struct
                       | String of UniChar.Data | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
+   type State = Tokens * Decode.DecFile
 
    (* The current position in the input file. *)
    val lineno = ref 1
