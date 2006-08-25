@@ -103,6 +103,30 @@ struct
          (tok', file', rev lst')
    end
 
+   (* Similar to parseLst, but allow for a default (or else) branch as part of
+    * the list.  acceptSet is the list of tokens that defines the start of a
+    * branch.  f is a function for parsing one branch, while e is the function
+    * that parses the default.  Each of these functions must return an updated
+    * file status and an element.  The default element will get shoved into an
+    * option type.
+    *)
+   fun parseDefaultLst (tok, file) lst acceptSet sep f e = let
+   in
+      if inSet (#3 tok) acceptSet then let
+            val (tok', file', ele) = f (tok, file)
+            val lst' = ele::lst
+         in
+            if #3 tok' == sep then let val (tok', file') = checkTok (tok, file) [sep]
+                                   in parseDefaultLst (tok', file') lst' acceptSet sep f e
+                                   end
+            else (tok', file', (rev lst', NONE))
+         end
+      else if #3 tok == Else then let val (tok', file', default) = e (tok, file)
+                                  in (tok', file', (rev lst, SOME default))
+                                  end
+           else (tok, file, (rev lst, NONE))
+   end
+
 
    (* PARSING FUNCTIONS *)
 
@@ -196,45 +220,33 @@ struct
     *         | else-symbol identifier-symbol mapsto-symbol expr
     *)
    and parseExnLst (tok, file) = let
-      fun doParseExnLst (tok as (_, _, kind), file, lst) = let
-         fun handleElseBranch (tok, file, lst) = let
-            val (tok', file') = checkTok (tok, file) [Else]
-            val (tok', file', id) = parseIdentifierSym (tok', file')
-            val (tok', file') = checkTok (tok', file') [Mapsto]
-            val (tok', file', expr) = parseExpr (tok', file')
-
-            val handler = Absyn.ExnHandler {sym=NONE, id=id, expr=expr, symtab=Symbol.empty(),
-                                            ty=Types.NONE_YET, pos=tokenPos tok}
-         in
-            (tok', file', SOME {handlers=rev lst, default=SOME handler, ty=Types.NONE_YET,
-                                pos=tokenPos tok})
-         end
+      fun handleElseBranch (tok, file) = let
+         val (tok', file', id) = parseIdentifierSym (tok, file)
+         val (tok', file') = checkTok (tok', file') [Mapsto]
+         val (tok', file', expr) = parseExpr (tok', file')
       in
-         if kind == Identifier [] then let
-               val (tok', file', sym) = parseId (tok, file)
-               val (tok', file', id) = parseIdentifierSym (tok', file')
-               val (tok', file') = checkTok (tok', file') [Mapsto]
-               val (tok', file', expr) = parseExpr (tok', file')
-
-               (* For the sym, we need to replace the default that parseId gave
-                * us with the real subtable of the thing.
-                *)
-               val handler = Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN), id=id, expr=expr,
-                                               symtab=Symbol.empty(), ty=Types.NONE_YET,
-                                               pos=tokenPos tok}
-            in
-               if #3 tok' == Comma then let val (tok', file') = checkTok (tok', file') [Comma]
-                                        in doParseExnLst (tok', file', handler::lst)
-                                        end
-               else (tok', file', SOME {handlers=rev lst, default=NONE, ty=Types.NONE_YET,
-                                        pos=tokenPos tok})
-            end
-         else if kind == Else then handleElseBranch (tok, file, lst)
-              else (tok, file, SOME {handlers=rev lst, default=NONE, ty=Types.NONE_YET,
-                                     pos=tokenPos tok})
+         (tok', file', Absyn.ExnHandler {sym=NONE, id=id, expr=expr, symtab=Symbol.empty(),
+                                         ty=Types.NONE_YET, pos=tokenPos tok})
       end
+
+      fun parseOneExn (tok, file) = let
+         val (tok', file', sym) = parseId (tok, file)
+         val (tok', file', id) = parseIdentifierSym (tok', file')
+         val (tok', file') = checkTok (tok', file') [Mapsto]
+         val (tok', file', expr) = parseExpr (tok', file')
+      in
+         (* For the sym, we need to replace the default that parseId gave us
+          * with the real subtable of the thing.
+          *)
+         (tok', file', Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN), id=id, expr=expr,
+                                         symtab=Symbol.empty(), ty=Types.NONE_YET,
+                                         pos=tokenPos tok})
+      end
+
+      val (tok', file', (lst, default)) = parseDefaultLst (tok, file) [] [Identifier[]]
+                                                          Comma parseOneExn handleElseBranch
    in
-      doParseExnLst (tok, file, [])
+      (tok', file', SOME {handlers=lst, default=default, ty=Types.NONE_YET, pos=tokenPos tok})
    end
 
    (* expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
@@ -292,26 +304,11 @@ struct
           *            | else-symbol mapsto-symbol expr
           *)
          fun parseBranchLst (tok, file) = let
-            fun doParseBranchLst (tok as (_, _, kind), file, lst) = let
-               fun handleElseBranch (tok, file, lst) = let
-                  val (tok', file') = checkTok (tok, file) [Else, Mapsto]
-                  val (tok', file', expr) = parseExpr (tok', file')
-               in
-                  (tok', file', (rev lst, SOME expr))
-               end
+            fun handleElseBranch (tok, file) = let
+               val (tok', file') = checkTok (tok, file) [Else, Mapsto]
+               val (tok', file', expr) = parseExpr (tok', file')
             in
-               if inSet kind [Boolean true, Identifier [], Integer 0, String []] then let
-                     val (tok', file', branch) = parseBranchExpr (tok, file)
-                     val (tok', file') = checkTok (tok', file') [Mapsto]
-                     val (tok', file', expr) = parseExpr (tok', file')
-                  in
-                     if #3 tok' == Comma then let val (tok', file') = checkTok (tok', file') [Comma]
-                                              in doParseBranchLst (tok', file', (branch, expr)::lst)
-                                              end
-                     else (tok', file', (rev lst, NONE))
-                  end
-               else if kind == Else then handleElseBranch (tok, file, lst)
-                    else (tok, file, (rev lst, NONE))
+               (tok', file', expr)
             end
 
             (* branch-expr = id
@@ -320,7 +317,7 @@ struct
              *             | string-symbol
              *             | boolean-symbol
              *)
-            and parseBranchExpr (tok as (_, _, kind), file) = let
+            fun parseBranchExpr (tok as (_, _, kind), file) = let
                fun parseIdBranch (tok, file) = let
                   val (tok', file', sym) = parseId (tok, file)
                in
@@ -342,8 +339,17 @@ struct
                   if kind == Identifier [] then parseIdBranch (tok, file)
                   else raise err (tok, [Boolean true, Identifier [], Integer 0, String []]) 
             end
+
+            fun parseOneBranch (tok, file) = let
+               val (tok', file', branch) = parseBranchExpr (tok, file)
+               val (tok', file') = checkTok (tok', file') [Mapsto]
+               val (tok', file', expr) = parseExpr (tok', file')
+            in
+               (tok', file', (branch, expr))
+            end
          in
-            doParseBranchLst (tok, file, [])
+            parseDefaultLst (tok, file) [] [Boolean true, Identifier [], Integer 0, String []]
+                            Comma parseOneBranch handleElseBranch
          end
 
          val (tok', file') = checkTok (tok, file) [Case]
