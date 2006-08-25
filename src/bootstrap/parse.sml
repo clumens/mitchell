@@ -69,7 +69,7 @@ struct
    end
 
    (* Extract position information from a token. *)
-   fun tokenPos (tok:tokens) = (#1 tok, #2 tok)
+   fun tokenPos (tok:Tokens) = (#1 tok, #2 tok)
 
 
    (* PARSING HELPER FUNCTIONS *)

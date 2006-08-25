@@ -7,10 +7,10 @@ sig
                       | Module | Pipe | Raise | RBrace | RBrack | RParen
                       | String of UniChar.Data | Then | Type | Union | Val
 
-   type tokens = (int * int * TokenKind)
+   type Tokens = (int * int * TokenKind)
 
-   val toString: tokens -> string
-   val nextToken: Decode.DecFile -> tokens * Decode.DecFile
+   val toString: Tokens -> string
+   val nextToken: Decode.DecFile -> Tokens * Decode.DecFile
 end
 
 (* This structure defines the tokenizing portion of the mitchell compiler.
@@ -29,7 +29,7 @@ struct
                       | Module | Pipe | Raise | RBrace | RBrack | RParen
                       | String of UniChar.Data | Then | Type | Union | Val
 
-   type tokens = (int * int * TokenKind)
+   type Tokens = (int * int * TokenKind)
 
    (* The current position in the input file. *)
    val lineno = ref 1
@@ -77,7 +77,7 @@ struct
      | toString (_, _, Union) = "UNION"
      | toString (_, _, Val) = "VAL"
 
-   (* Fetch the next token from the input file, returning a tokens * DecFile *)
+   (* Fetch the next token from the input file, returning a Tokens * DecFile *)
    fun nextToken file = let
       fun isReserved ch =
          List.exists (fn ele => UniChar.compareChar (ele, ch) = EQUAL) reserved
