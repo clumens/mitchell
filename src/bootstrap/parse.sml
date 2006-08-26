@@ -213,7 +213,7 @@ struct
    (* exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
     *         | else-symbol identifier-symbol mapsto-symbol expr
     *)
-   and parseExnLst state = let
+   and parseExnLst (state as (tok, _)) = let
       fun handleElseBranch state = let
          val (state', id) = parseIdentifierSym state
          val state' = checkTok state' [Mapsto]
@@ -239,7 +239,8 @@ struct
       val (state', (lst, default)) = parseDefaultLst state [] [Identifier[]]
                                                       Comma parseOneExn handleElseBranch
    in
-      (state', SOME {handlers=lst, default=default, ty=Types.NONE_YET, pos=statePos state})
+      if length lst = 0 andalso not (Option.isSome default) then raise ParseError ("FIXME", #1 tok, #2 tok, "exception handlers must have at least one branch or else clause")
+      else (state', SOME {handlers=lst, default=default, ty=Types.NONE_YET, pos=statePos state})
    end
 
    (* expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
@@ -282,7 +283,7 @@ struct
                                   LBrace, LBrack, Raise, String []])
 
       (* case-expr = case-symbol expr in-symbol branch-lst end-symbol *)
-      and parseCaseExpr state = let
+      and parseCaseExpr (state as (tok, _)) = let
          (* branch-lst = branch-expr mapsto-symbol expr (comma-symbol branch-lst)?
           *            | else-symbol mapsto-symbol expr
           *)
@@ -333,9 +334,10 @@ struct
 
          val (state', testExpr) = parseExpr (checkTok state [Case])
          val (state', (branchLst, default)) = parseBranchLst (checkTok state' [In])
-         val state' = checkTok state' [End]
       in
-         (state', Absyn.CaseExp{test=testExpr, default=default, branches=branchLst})
+         if length branchLst = 0 andalso not (Option.isSome default) then raise ParseError ("FIXME", #1 tok, #2 tok, "case expressions must have at least one branch or else clause")
+         else (checkTok state' [End], Absyn.CaseExp{test=testExpr, default=default,
+                                                    branches=branchLst})
       end
 
       (* decl-expr = decl-symbol decl+ in-symbol expr end-symbol *)
