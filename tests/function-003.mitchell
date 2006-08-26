@@ -2,6 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf: integer (a: integer, b: string, c: boolean) ←
+   ƒ asdf()(a: integer, b: string, c: boolean): integer ←
       a
 end

@@ -3,6 +3,6 @@
 # Expected: PASS
 
 ℳ Main ← decl
-   ƒ main: string (s: string) ← s
+   ƒ main()(s: string): string ← s
 end
 

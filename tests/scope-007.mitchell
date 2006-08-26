@@ -3,7 +3,7 @@
 # HowFail:  some_ty: Referenced symbol is unknown.
 
 ℳ Main ← decl
-   ƒ foo: some_ty () ← decl
+   ƒ foo()(): some_ty ← decl
       τ some_ty ← boolean
    in
       t

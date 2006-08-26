@@ -3,7 +3,7 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ foo: integer () ←
-      case Main.asdf() in
+   ƒ foo()(): integer ←
+      case Main.asdf()() in
       end
 end

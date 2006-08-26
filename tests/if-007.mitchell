@@ -2,6 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: integer () ←
+   ƒ foo()(): integer ←
       if decl ʋ x: boolean ← t in x end then 47 else 12
 end

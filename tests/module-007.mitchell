@@ -3,15 +3,15 @@
 # Disabled
 
 ℳ First ← decl
-   ƒ one: integer () ← 1
+   ƒ one()(): integer ← 1
 
-   ƒ main: integer () ←
-      Second.two()
+   ƒ main()(): integer ←
+      Second.two()()
 end
 
 ℳ Second ← decl
-   ƒ two: integer () ← 2
+   ƒ two()(): integer ← 2
 
-   ƒ main: integer () ←
-      First.one()
+   ƒ main()(): integer ←
+      First.one()()
 end

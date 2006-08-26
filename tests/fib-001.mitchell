@@ -3,7 +3,7 @@
 # Disabled
 
 ℳ Main ← decl
-   ƒ fib: integer (n: integer) ←
-      if Boolean.or (Integer.= (n, 0), Integer.= (n, 1)) then 1
-      else Integer.+ (fib (Integer.- (n, 1)), fib (Integer.- (n, 2)))
+   ƒ fib()(n: integer): integer ←
+      if Boolean.or()(Integer.=()(n, 0), Integer.=()(n, 1)) then 1
+      else Integer.+()(fib()(Integer.-()(n, 1)), fib()(Integer.-()(n, 2)))
 end

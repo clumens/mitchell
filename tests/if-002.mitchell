@@ -3,6 +3,6 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ foo: integer () ←
+   ƒ foo()(): integer ←
       if t then 47
 end

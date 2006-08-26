@@ -3,9 +3,9 @@
 # HowFail:  Type check error: Type of actual parameter does not match type of formal parameter.
 
 ℳ Main ← decl
-   ƒ rec2a: integer (b: {zoop: string}) ←
+   ƒ rec2a()(b: {zoop: string}): integer ←
       1
 
-   ƒ rec2b: {spiff: {gar: integer}} () ←
-      rec2a ({b ← {zoop ← "Greeblenicknicknick"}})
+   ƒ rec2b()(): {spiff: {gar: integer}} ←
+      rec2a()({b ← {zoop ← "Greeblenicknicknick"}})
 end

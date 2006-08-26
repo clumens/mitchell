@@ -2,6 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: integer () ←
+   ƒ foo()(): integer ←
       if t then 47 else 1
 end

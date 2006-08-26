@@ -3,8 +3,8 @@
 # HowFail:  Number of actual parameters does not match number of formals.
 
 ℳ Main ← decl
-   ƒ asdf: integer (a: integer, b: string, c: boolean) ←
+   ƒ asdf()(a: integer, b: string, c: boolean): integer ←
       a
 
-   ʋ val: integer ← asdf (47, "crap")
+   ʋ val: integer ← asdf()(47, "crap")
 end

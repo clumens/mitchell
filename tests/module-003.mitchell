@@ -3,8 +3,8 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ main: integer ()
+   ƒ main()(): integer
 in
-   ƒ main: integer () ←
+   ƒ main()(): integer ←
       47
 end

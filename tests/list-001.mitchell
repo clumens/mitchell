@@ -3,21 +3,20 @@
 # Expected: PASS
 
 ℳ Main ← decl
-   ƒ lst1a: list integer (p: list string) ←
+   ƒ lst1a()(p: list string): list integer ←
       [1, 2, 3]
 
-   ƒ lst1b: list integer () ←
-      lst1a (["The", "Cat", "Goes", "Woof"])
+   ƒ lst1b()(): list integer ←
+      lst1a()(["The", "Cat", "Goes", "Woof"])
 
-   ƒ lst2a: list list string (q: list list integer) ←
+   ƒ lst2a()(q: list list integer): list list string ←
       [["A", "B", "C"], ["0", "1"]]
    
-   ƒ lst2b: list list string () ←
-      lst2a ([[0, 1, 2], [3, 4, 5]])
+   ƒ lst2b()(): list list string ←
+      lst2a()([[0, 1, 2], [3, 4, 5]])
 
-   # Can't yet have empty lists - need polymorphic typing first.
-   #ƒ lst3: list bool () ← []
+   ƒ lst3()(): list bool ← []
 
-   ƒ main: string () ← ""
+   ƒ main()(): string ← ""
 end
 

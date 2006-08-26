@@ -7,7 +7,7 @@
    ʋ val: integer ← 47
    ʋ result: bool ← f
 
-   ƒ foo: boolean () ←
+   ƒ foo()(): boolean ←
       case val in
          10 → t,
          else → result

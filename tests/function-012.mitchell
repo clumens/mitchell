@@ -5,6 +5,6 @@
 ℳ Main ← decl
    τ rec ← { a: integer }
 
-   ƒ asdf: integer () ←
+   ƒ asdf()(): integer ←
       { a ← 15 }
 end

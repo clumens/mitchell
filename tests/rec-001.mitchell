@@ -3,17 +3,17 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ rec1a: {a: integer, b: string} () ←
+   ƒ rec1a()(): {a: integer, b: string} ←
       {b ← "Narf", a ← 1}
 
-   ƒ rec1b: {b: string, a: integer} () ←
+   ƒ rec1b()(): {b: string, a: integer} ←
       {a ← 1, b ← "Narf"}
 
-   ƒ rec2a: {spiff: {gar: integer}} (b: {zoop: string}) ←
+   ƒ rec2a()(b: {zoop: string}): {spiff: {gar: integer}} ←
       {spiff ← {gar ← 1}}
 
-   ƒ rec2b: {spiff: {gar: integer}} () ←
-      rec2a ({zoop ← "Greeblenicknicknick"})
+   ƒ rec2b()(): {spiff: {gar: integer}} ←
+      rec2a()({zoop ← "Greeblenicknicknick"})
 
-   ƒ main: string () ← ""
+   ƒ main()(): string ← ""
 end

@@ -2,7 +2,7 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ foo: boolean (x: integer) ← decl
+   ƒ foo()(x: integer): boolean ← decl
       ʋ x: string ← "asdf"
    in
       t

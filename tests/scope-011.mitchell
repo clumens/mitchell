@@ -5,7 +5,7 @@
 ℳ Main ← decl
    τ node ← { data: data, left: node, right: node }
 
-   ƒ fun: integer () ← 47
+   ƒ fun()(): integer ← 47
 
    τ data ← { name: string, age: integer }
 end

@@ -2,7 +2,7 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf: integer () ← decl
+   ƒ asdf()(): integer ← decl
       ʋ foo: integer ← 47
    in
       foo

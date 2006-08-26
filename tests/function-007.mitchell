@@ -3,7 +3,7 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ asdf: integer () ← decl
+   ƒ asdf()(): integer ← decl
    in
    end
 end

@@ -4,8 +4,8 @@
 ℳ Main ← decl
    τ Exn ← ℰ { msg: string }
 
-   ƒ foo: integer () ←
+   ƒ foo()(): integer ←
       raise Exn { msg ← "asdf" }
 
-   ʋ x: integer ← foo() handle Exn e → 0 end
+   ʋ x: integer ← foo()() handle Exn e → 0 end
 end

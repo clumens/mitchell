@@ -5,7 +5,7 @@
 ℳ Main ← decl
    ʋ i: integer ← 47
 
-   ƒ foo: boolean () ←
+   ƒ foo()(): boolean ←
       case i in
          else → f,
          1 → t
