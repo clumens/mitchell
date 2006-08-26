@@ -113,10 +113,8 @@ ty-formals-lst = lparen-symbol name-lst? rparen-symbol
 
 formals-lst = lparen-symbol typed-name-lst? rparen-symbol
 
-arg-lst = lparen-symbol expr-lst? rparen-symbol
-
 sym-ref = id
-        | id lparen-symbol ty-lst? rparen-symbol arg-lst
+        | id lparen-symbol ty-lst? rparen-symbol lparen-symbol expr-lst? rparen-symbol
         | sym-ref record-ref
         | id record-literal
 
