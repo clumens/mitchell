@@ -32,17 +32,16 @@ structure Absyn = struct
                 | DeclExp of {decls: Decl list, expr: Expr,
                               symtab: Symbol.symtab}
                 | ExnExp of {sym: Symbol.symbol, ty: Types.Type,
-                             values: {sym: Symbol.symbol, expr: Expr} list}
+                             values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
                 | FunCallExp of {function: Symbol.symbol, args: Expr list,
-                                 tyArgs: Symbol.symbol list,
-                                 frees: Symbol.symbol list}
+                                 tyArgs: Ty list, frees: Symbol.symbol list}
                 | IdExp of Symbol.symbol
                 | IfExp of {test: Expr, then': Expr, else': Expr}
                 | IntegerExp of int
                 | RaiseExp of Expr
                 | RecordAssnExp of (Symbol.symbol * Expr) list
-                | RecordRefExp of {record: Expr, ele: Symbol.symbol}
+                | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol}
                 | StringExp of UniChar.Data
 
    and Ty = BottomTy of pos
