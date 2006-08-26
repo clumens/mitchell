@@ -470,25 +470,61 @@ struct
    end
 
    (* sym-ref = id
-    *         | id lparen-symbol ty-lst? rparen-symbol arg-lst
+    *         | id lparen-symbol ty-lst? rparen-symbol lparen-symbol expr-lst? rparen-symbol
     *         | id record-literal
     *         | sym-ref record-ref
     *)
-   (* TODO *)
    and parseSymRef state = let
-      (* arg-lst = lparen-symbol expr-lst? rparen-symbol *)
-      fun parseArgLst state = 
-         wrappedLst state (LParen, RParen) (lstMayBeEmpty RParen parseExprLst)
-
       (* record-ref = (pipe-symbol identifier-symbol)+ *)
-      (* TODO *)
-      fun parseRecordRef state = ()
+      fun parseRecordRef state = let
+         fun doParseRecordRef (state, lst) = let
+            val (state' as (tok, _), id) = parseIdentifierSym (checkTok state [Pipe])
+            val lst' = (id, Symbol.mangle id)::lst
+         in
+            if #3 tok == Pipe then doParseRecordRef (state', lst')
+            else (state', rev lst')
+         end
+      in
+         doParseRecordRef (state, [])
+      end
 
-      (* ty-lst = ty (comma-symbol ty)* *)
-      fun parseTyLst state =
-         parseLst state [] Comma parseTy
+      fun doParseSymRef state = let
+         (* ty-lst = ty (comma-symbol ty)* *)
+         fun parseTyLst state =
+            parseLst state [] Comma parseTy
+
+         fun parseFunctionCall (state, name) = let
+             val (state', tyLst) = wrappedLst state (LParen, RParen) (lstMayBeEmpty RParen parseTyLst)
+             val (state', argLst) = wrappedLst state' (LParen, RParen) (lstMayBeEmpty RParen parseExprLst)
+         in
+             (state', Absyn.FunCallExp{function=name, args=argLst, tyArgs=tyLst, frees=[]})
+         end
+
+         fun parseExnExpr (state, name) = let
+             val (state', r) = parseRecordLiteral state
+             val lst = case r of Absyn.RecordAssnExp l => l
+                               | _ => raise InternalError "parseRecordLiteral returned something besides a RecordAssnExp"
+         in
+             (state', Absyn.ExnExp{sym=name, ty=Types.NONE_YET, values=lst})
+         end
+
+         val (state' as (tok, file), sym) = parseId state
+      in
+         case #3 tok of
+            LParen => parseFunctionCall (state, sym)
+          | LBrace => parseExnExpr (state, sym)
+          | _      => (state', Absyn.IdExp sym)
+      end
+
+      val (state' as (tok, _), expr) = doParseSymRef state
    in
-      (state, Absyn.BottomExp)
+      if #3 tok == Pipe then let
+            val (state', ele) = parseRecordRef state'
+         in
+            (state', Absyn.RecordRefExp{record=expr, ele=(ele, Symbol.VALUE)})
+         end
+      else
+         (state', expr)
    end
 
    (* ty = bottom-symbol
@@ -542,7 +578,7 @@ struct
       end
    in
       case #3 tok of
-         Bottom       => (state, Absyn.BottomTy (#1 tok, #2 tok))
+         Bottom       => (state, Absyn.BottomTy (tokenPos tok))
        | Exn          => parseExnTy state
        | Identifier _ => parseIdentifierTy state
        | LBrace       => parseRecordTy state
