@@ -140,7 +140,7 @@ struct
     *)
    fun parse file = let
       (* Prime the process by reading the first token from the input. *)
-      val state = nextToken file
+      val state = eat file
    in
       #2 (parseStart state)
    end
@@ -423,7 +423,7 @@ struct
               else (state, rev lst)
 
       val (state', id) = parseIdentifierSym (checkTok state [Module])
-      val (state', declLst) = parseTopDecl (checkTok state' [Identifier[], Assign, Decl], [])
+      val (state', declLst) = parseTopDecl (checkTok state' [Assign, Decl], [])
       val state' = checkTok state' [End]
    in
       (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decl=declLst,
@@ -511,8 +511,8 @@ struct
          val (state' as (tok, file), sym) = parseId state
       in
          case #3 tok of
-            LParen => parseFunctionCall (state, sym)
-          | LBrace => parseExnExpr (state, sym)
+            LParen => parseFunctionCall (state', sym)
+          | LBrace => parseExnExpr (state', sym)
           | _      => (state', Absyn.IdExp sym)
       end
 
