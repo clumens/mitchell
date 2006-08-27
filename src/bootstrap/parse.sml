@@ -289,7 +289,7 @@ struct
           *)
          fun parseBranchLst state = let
             fun handleElseBranch state =
-               parseExpr (checkTok state [Else, Mapsto])
+               parseExpr (checkTok state [Mapsto])
 
             (* branch-expr = id
              *             | id lparen-symbol name-lst? rparen-symbol
