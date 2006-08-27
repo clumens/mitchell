@@ -150,7 +150,7 @@ struct
           | _        => (lineno, column, Identifier lst)
 
       fun handleInteger lst =
-         Option.valOf (Int.fromString (UniChar.Data2String lst)) handle Option => raise Error.ParseError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
+         Option.valOf (Int.fromString (UniChar.Data2String lst)) handle Option => raise Error.TokenizeError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
 
       (* Tokenizing strings is the hardest part of this whole process because
        * of the escape sequences, multiple lines, etc.  Too bad they can't be
@@ -163,15 +163,15 @@ struct
              * elements are valid hex digits first.
              *)
             fun list2Int lst =
-               if List.exists UniClasses.isHex lst then raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
+               if not (List.all UniClasses.isHex lst) then raise Error.TokenizeError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
                else StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
          in
             if List.length lst = 4 then
                case list2Int (rev lst) of
                   SOME i => (Word.fromInt i, file)
-                | NONE   => raise Error.ParseError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
+                | NONE   => raise Error.TokenizeError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
             else let
-               val (ch, file') = readChar file handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file while reading escaped Unicode character sequence.")
+               val (ch, file') = readChar file handle DecEof => raise Error.TokenizeError ("FIXME", !lineno, !column, "Premature end of file while reading escaped Unicode character sequence.")
             in
                readEscapedUnicode (ch::lst, file')
             end
@@ -181,10 +181,10 @@ struct
          fun convertEscaped (ch, file) =
             case ch of
                (0wxa|0wxd) => let                        (* line continuation *)
-                                 val file' = skipWhitespace file handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file while reading whitespace escape sequence.")
+                                 val file' = skipWhitespace file handle DecEof => raise Error.TokenizeError ("FIXME", !lineno, !column, "Premature end of file while reading whitespace escape sequence.")
                                  val (ch', file'') = readChar file'
                               in
-                                 if not (ch' = 0wx5c) then raise Error.ParseError ("FIXME", !lineno, !column, "String whitespace escape sequences must end with '\\'.")
+                                 if not (ch' = 0wx5c) then raise Error.TokenizeError ("FIXME", !lineno, !column, "String whitespace escape sequences must end with '\\'.")
                                  else (0wx0, file'')
                               end
              | 0wx6e => (0wxa, file)                     (* \n *)
@@ -197,7 +197,7 @@ struct
          case ch of
             0wx22 => (rev str, file')  (* " *)
           | 0wx5c => let               (* \ *)
-                        val (ch', file'') = readChar file' handle DecEof => raise Error.ParseError ("FIXME", !lineno, !column, "Premature end of file in string escape sequence")
+                        val (ch', file'') = readChar file' handle DecEof => raise Error.TokenizeError ("FIXME", !lineno, !column, "Premature end of file in string escape sequence")
                         val (unescaped, file''') = convertEscaped (ch', file'')
                      in
                         (* If there was a line continuation embedded in the
