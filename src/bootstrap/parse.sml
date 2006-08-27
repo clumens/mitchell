@@ -125,7 +125,7 @@ struct
             if #3 tok' == sep then parseDefaultLst (checkTok state' [sep]) lst' acceptSet sep f e
             else (state', (rev lst', NONE))
          end
-      else if #3 tok == Else then let val (state', default) = e state
+      else if #3 tok == Else then let val (state', default) = e (checkTok state [Else])
                                   in (state', (rev lst, SOME default))
                                   end
            else (state, (rev lst, NONE))
@@ -237,7 +237,7 @@ struct
       end
 
       val (state', (lst, default)) = parseDefaultLst state [] [Identifier[]]
-                                                      Comma parseOneExn handleElseBranch
+                                                     Comma parseOneExn handleElseBranch
    in
       if length lst = 0 andalso not (Option.isSome default) then raise ParseError ("FIXME", #1 tok, #2 tok, "exception handlers must have at least one branch or else clause")
       else (state', SOME {handlers=lst, default=default, ty=Types.NONE_YET, pos=statePos state})
@@ -540,7 +540,7 @@ struct
       fun parseExnTy state = let
          val (state', lst) = wrappedLst (checkTok state [Exn]) (LBrace, RBrace) parseTypedNameLst
       in
-         (state, Absyn.ExnTy{exn'=lst, pos=statePos state})
+         (state', Absyn.ExnTy{exn'=lst, pos=statePos state})
       end
 
       fun parseIdentifierTy state = let
