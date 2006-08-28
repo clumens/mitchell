@@ -172,9 +172,9 @@ struct
       and parseFunDecl state = let
          val (state', id) = parseIdentifierSym (checkTok state [Function])
          val (state', tyFormals) = wrappedLst state' (LParen, RParen)
-                                                       (lstMayBeEmpty RParen parseNameLst)
+                                              (lstMayBeEmpty RParen parseNameLst)
          val (state', formals) = wrappedLst state' (LParen, RParen)
-                                             (lstMayBeEmpty RParen parseTypedNameLst)
+                                            (lstMayBeEmpty RParen parseTypedNameLst)
          val (state', ty) = parseOptionalType state'
          val (state', expr) = parseExpr (checkTok state' [Assign])
       in
@@ -348,8 +348,9 @@ struct
                in
                   parseDeclLst (state', ast::lst)
                end
-            else if length lst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "decl expressions must contain at least one declaration")
-                 else (state, rev lst)
+            else if #3 tok == Module then raise ParseError ("FIXME", #1 tok, #2 tok, "decl expressions may not define modules")
+                 else if length lst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "decl expressions must contain at least one declaration")
+                      else (state, rev lst)
 
          val (state', decls) = parseDeclLst (checkTok state [Decl], [])
          val (state', expr) = parseExpr (checkTok state' [In])
