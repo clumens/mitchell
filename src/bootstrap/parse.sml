@@ -409,7 +409,7 @@ struct
    end
 
    (* module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl+ end-symbol *)
-   and parseModuleDecl state = let
+   and parseModuleDecl (state as (tok, _)) = let
       (* top-decl = decl | module-decl *)
       fun parseTopDecl (state as (tok, _), lst) =
          if #3 tok == Module then let
@@ -428,8 +428,9 @@ struct
       val (state', declLst) = parseTopDecl (checkTok state' [Assign, Decl], [])
       val state' = checkTok state' [End]
    in
-      (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decl=declLst,
-                                pos=statePos state, symtab=Symbol.empty()})
+      if length declLst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "modules must have at least one declaration")
+      else (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decl=declLst,
+                                     pos=statePos state, symtab=Symbol.empty()})
    end
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
