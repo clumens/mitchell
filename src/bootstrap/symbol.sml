@@ -45,4 +45,6 @@ structure Symbol = struct
 
    fun toSymbol (unicodeSym, subtable) =
       ([(unicodeSym, mangle unicodeSym)], subtable)
+
+   fun toString sym = "FIXME"
 end
