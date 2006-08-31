@@ -57,7 +57,7 @@ structure Absyn = struct
                           formals: (Symbol.symbol * Ty * pos) list,
                           tyFormals: Symbol.symbol list,
                           calls: Expr list, body: Expr, symtab: Symbol.symtab}
-            | ModuleDecl of {sym: Symbol.symbol, decl: Decl list, pos: pos,
+            | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
                              symtab: Symbol.symtab}
             | TyDecl of {sym: Symbol.symbol, ty: Types.Type, absynTy: Ty,
                          pos: pos}
@@ -84,26 +84,18 @@ structure Absyn = struct
        *)
       fun printLst lst f i = app (f i) lst
 
-      fun writeIdLst lst i = let
-         fun writeOne i (sym, ty, _) =
-            (indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
-             indent i ; sayln "ty = " ; writeTy (i+1) ty ;
-             indent i ; say ",")
-      in
-         << i "id_lst" (printLst lst writeOne)
-      end
+      fun writeTypedId i (sym, ty, _) =
+         (indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
+          indent i ; sayln "ty = " ; writeTy (i+1) ty ;
+          indent i ; say ",")
 
-      and writeOptionalIdLst lst i = let
-         fun writeOne i (sym, ty, _) = let
-            fun optTy i (SOME ty) = (indent i ; sayln "ty = " ; writeTy (i+1) ty)
-              | optTy i _         = ()
-         in
-            indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
-            optTy i ty ;
-            indent i ; say ","
-         end
+      and writeOptTypedId i (sym, ty, _) = let
+         fun optTy i (SOME ty) = (indent i ; sayln "ty = " ; writeTy (i+1) ty)
+           | optTy i _         = ()
       in
-         << i "id_lst" (printLst lst writeOne)
+         indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
+         optTy i ty ;
+         indent i ; say ","
       end
 
       and writeAssnExpr i (symbol, expr) =
@@ -185,14 +177,27 @@ structure Absyn = struct
              (indent i ; sayln ("STRING(" ^ UniChar.Data2String v ^ ")"))
 
       and writeTy i (BottomTy _) = (indent i ; sayln "ty = BOTTOM")
-        | writeTy i (ExnTy{exn', ...}) = (indent i ; sayln "ty = EXN" ; writeIdLst exn' (i+1))
+        | writeTy i (ExnTy{exn', ...}) = << i "ty = EXN" (printLst exn' writeTypedId)
         | writeTy i (IdTy{sym, ...}) = (indent i ; sayln ("ty = " ^ Symbol.toString sym))
         | writeTy i (ListTy{lst, ...}) = (indent i ; sayln "ty = LIST " ; writeTy (i+1) lst)
-        | writeTy i (RecordTy{record, ...}) = << i "ty = RECORD " (writeIdLst record)
-        | writeTy i (UnionTy{tycons, ...}) = << i "ty = UNION" (writeOptionalIdLst tycons)
+        | writeTy i (RecordTy{record, ...}) = << i "ty = RECORD " (printLst record writeTypedId)
+        | writeTy i (UnionTy{tycons, ...}) = << i "ty = UNION" (printLst tycons writeOptTypedId)
 
       and writeDecl i (Absorb{module, ...}) =
              (indent i ; sayln ("absorb = " ^ Symbol.toString module))
+        | writeDecl i (FunDecl{sym, retval, formals, tyFormals, body, ...}) =
+             (indent i ; sayln "fun_decl = {" ;
+              indent (i+1) ; sayln ("sym = " ^ Symbol.toString sym) ;
+              case retval of SOME v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)
+                           | NONE => () ;
+              << (i+1) "formals" (printLst formals writeTypedId) ;
+              indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;
+              indent i ; sayln "}")
+        | writeDecl i (ModuleDecl{sym, decls, ...}) =
+             (indent i ; sayln "module_decl = {" ;
+              indent (i+1) ; sayln ("sym = " ^ Symbol.toString sym) ;
+              << (i+1) "decls" (printLst decls writeDecl) ;
+              indent i ; sayln "}")
         | writeDecl i (TyDecl{sym, absynTy, ...}) =
              (indent i ; sayln "ty_decl = {" ;
               indent (i+1) ; sayln ("symbol = " ^ Symbol.toString sym) ;
