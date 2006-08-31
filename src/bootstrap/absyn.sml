@@ -106,6 +106,10 @@ structure Absyn = struct
          << i "id_lst" (printLst lst writeOne)
       end
 
+      and writeAssnExpr i (symbol, expr) =
+         (indent i ; sayln ("symbol = " ^ Symbol.toString symbol) ;
+          indent i ; sayln "expr = " ; writeExpr (i+1) expr)
+
       and writeExnHandler i (ExnHandler{sym, id, expr, ...}) =
          (indent i ; sayln "exn_handler = {" ;
           case sym of SOME v => (indent (i+1) ; sayln ("sym = " ^ Symbol.toString v))
@@ -141,8 +145,24 @@ structure Absyn = struct
               case default of SOME v => (indent (i+1) ; say "default =" ; writeExpr (i+2) v)
                             | NONE => () ;
               indent i ; sayln "}")
+        | writeBaseExpr i (DeclExp{decls, expr, ...}) =
+             (indent i ; say "decl = {" ;
+              << (i+2) "decls" (printLst decls writeDecl) ;
+              indent (i+1) ; say "expr =" ; writeExpr (i+2) expr ;
+              indent i ; say "}")
+        | writeBaseExpr i (ExnExp{sym, values, ...}) =
+             (indent i ; say "exn_expr = {" ;
+              indent (i+1) ; say ("sym = " ^ Symbol.toString sym) ;
+              << (i+2) "values" (printLst values writeAssnExpr) ;
+              indent i ; sayln "}")
         | writeBaseExpr i (ExprLstExp lst) =
              << i "expr_lst" (printLst lst writeExpr)
+        | writeBaseExpr i (FunCallExp{function, args, tyArgs, ...}) =
+             (indent i ; sayln "function = {" ;
+              indent (i+1) ; sayln ("sym = " ^ Symbol.toString function) ;
+              << (i+2) "args" (printLst args writeExpr) ;
+              << (i+2) "tyArgs" (printLst tyArgs writeTy) ;
+              indent i ; sayln "}")
         | writeBaseExpr i (IdExp v) =
              (indent i ; sayln ("id = " ^ Symbol.toString v))
         | writeBaseExpr i (IfExp{test, then', else'}) =
@@ -155,6 +175,8 @@ structure Absyn = struct
              (indent i ; sayln ("INTEGER(" ^ Int.toString v ^ ")"))
         | writeBaseExpr i (RaiseExp expr) =
              (indent (i+1) ; sayln "raise_expr = "; writeExpr (i+2) expr)
+        | writeBaseExpr i (RecordAssnExp lst) =
+             (indent i ; sayln "record_assn_expr =" ; printLst lst writeAssnExpr (i+1))
         | writeBaseExpr i (RecordRefExp{record, ele}) =
              (indent i ; sayln "record_expr = {" ;
               indent (i+1) ; sayln "record =" ; writeBaseExpr (i+2) record ;
