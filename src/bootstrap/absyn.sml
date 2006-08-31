@@ -141,6 +141,8 @@ structure Absyn = struct
               case default of SOME v => (indent (i+1) ; say "default =" ; writeExpr (i+2) v)
                             | NONE => () ;
               indent i ; sayln "}")
+        | writeBaseExpr i (ExprLstExp lst) =
+             << i "expr_lst" (printLst lst writeExpr)
         | writeBaseExpr i (IdExp v) =
              (indent i ; sayln ("id = " ^ Symbol.toString v))
         | writeBaseExpr i (IfExp{test, then', else'}) =
