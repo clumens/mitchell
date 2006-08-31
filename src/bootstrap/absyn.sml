@@ -85,7 +85,7 @@ structure Absyn = struct
       fun printLst lst f i = app (f i) lst
 
       fun writeTypedId i (sym, ty, _) =
-         (indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
+         (writeSymbol i sym ;
           indent i ; sayln "ty = " ; writeTy (i+1) ty ;
           indent i ; say ",")
 
@@ -93,18 +93,17 @@ structure Absyn = struct
          fun optTy i (SOME ty) = (indent i ; sayln "ty = " ; writeTy (i+1) ty)
            | optTy i _         = ()
       in
-         indent i ; sayln ("symbol = " ^ Symbol.toString sym) ;
-         optTy i ty ;
-         indent i ; say ","
+         writeSymbol i sym ; optTy i ty ; indent i ; say ","
       end
 
       and writeAssnExpr i (symbol, expr) =
-         (indent i ; sayln ("symbol = " ^ Symbol.toString symbol) ;
-          indent i ; sayln "expr = " ; writeExpr (i+1) expr)
+         ( writeSymbol i symbol ; indent i ; sayln "expr = " ; writeExpr (i+1) expr )
+
+      and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
       and writeExnHandler i (ExnHandler{sym, id, expr, ...}) =
          (indent i ; sayln "exn_handler = {" ;
-          case sym of SOME v => (indent (i+1) ; sayln ("sym = " ^ Symbol.toString v))
+          case sym of SOME v => writeSymbol (i+1) v
                     | NONE => ();
           indent (i+1) ; sayln ("id = " ^ UniChar.Data2String id) ;
           indent (i+1) ; sayln "expr =" ; writeExpr (i+2) expr ;
@@ -144,19 +143,19 @@ structure Absyn = struct
               indent i ; say "}")
         | writeBaseExpr i (ExnExp{sym, values, ...}) =
              (indent i ; say "exn_expr = {" ;
-              indent (i+1) ; say ("sym = " ^ Symbol.toString sym) ;
+              writeSymbol (i+1) sym ;
               << (i+2) "values" (printLst values writeAssnExpr) ;
               indent i ; sayln "}")
         | writeBaseExpr i (ExprLstExp lst) =
              << i "expr_lst" (printLst lst writeExpr)
         | writeBaseExpr i (FunCallExp{function, args, tyArgs, ...}) =
              (indent i ; sayln "function = {" ;
-              indent (i+1) ; sayln ("sym = " ^ Symbol.toString function) ;
+              writeSymbol (i+1) function ;
               << (i+2) "args" (printLst args writeExpr) ;
               << (i+2) "tyArgs" (printLst tyArgs writeTy) ;
               indent i ; sayln "}")
         | writeBaseExpr i (IdExp v) =
-             (indent i ; sayln ("id = " ^ Symbol.toString v))
+             writeSymbol i v
         | writeBaseExpr i (IfExp{test, then', else'}) =
              (indent i ; sayln "if = {" ;
               indent (i+1) ; sayln "test = " ; writeExpr (i+2) test ;
@@ -172,7 +171,7 @@ structure Absyn = struct
         | writeBaseExpr i (RecordRefExp{record, ele}) =
              (indent i ; sayln "record_expr = {" ;
               indent (i+1) ; sayln "record =" ; writeBaseExpr (i+2) record ;
-              indent (i+1) ; sayln ("ele = " ^ Symbol.toString ele))
+              writeSymbol (i+1) ele)
         | writeBaseExpr i (StringExp v) =
              (indent i ; sayln ("STRING(" ^ UniChar.Data2String v ^ ")"))
 
@@ -187,25 +186,26 @@ structure Absyn = struct
              (indent i ; sayln ("absorb = " ^ Symbol.toString module))
         | writeDecl i (FunDecl{sym, retval, formals, tyFormals, body, ...}) =
              (indent i ; sayln "fun_decl = {" ;
-              indent (i+1) ; sayln ("sym = " ^ Symbol.toString sym) ;
+              writeSymbol (i+1) sym ;
               case retval of SOME v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)
                            | NONE => () ;
               << (i+1) "formals" (printLst formals writeTypedId) ;
+              << (i+1) "tyFormals" (printLst tyFormals writeSymbol) ;
               indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;
               indent i ; sayln "}")
         | writeDecl i (ModuleDecl{sym, decls, ...}) =
              (indent i ; sayln "module_decl = {" ;
-              indent (i+1) ; sayln ("sym = " ^ Symbol.toString sym) ;
+              writeSymbol (i+1) sym ;
               << (i+1) "decls" (printLst decls writeDecl) ;
               indent i ; sayln "}")
         | writeDecl i (TyDecl{sym, absynTy, ...}) =
              (indent i ; sayln "ty_decl = {" ;
-              indent (i+1) ; sayln ("symbol = " ^ Symbol.toString sym) ;
+              writeSymbol (i+1) sym ;
               indent (i+1) ; sayln "ty =" ; writeTy (i+2) absynTy ;
               indent i ; sayln "}")
         | writeDecl i (ValDecl{sym, absynTy, init, ...}) =
              (indent i ; sayln "val_decl = {" ;
-              indent (i+1) ; sayln ("symbol = " ^ Symbol.toString sym) ;
+              writeSymbol (i+1) sym ;
               case absynTy of SOME(ty) => (indent (i+1) ; sayln "ty =" ; writeTy (i+2) ty)
                             | NONE => () ;
               indent (i+1) ; sayln "init =" ; writeExpr (i+2) init)
