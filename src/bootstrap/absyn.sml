@@ -96,6 +96,10 @@ structure Absyn = struct
          writeSymbol i sym ; optTy i ty ; indent i ; say ","
       end
 
+      and writeOneBranch i (branch, expr) =
+         (indent i ; sayln "branch = " ; writeBranch (i+1) branch ;
+          indent i ; sayln "expr = " ; writeExpr (i+1) expr)
+
       and writeAssnExpr i (symbol, expr) =
          ( writeSymbol i symbol ; indent i ; sayln "expr = " ; writeExpr (i+1) expr )
 
@@ -110,6 +114,11 @@ structure Absyn = struct
           indent i ; sayln "}")
 
       and writeBranch i (RegularBranch expr) = writeBaseExpr i expr
+        | writeBranch i (UnionBranch (sym, lst)) =
+             (indent i ; sayln "union_branch = {" ;
+              writeSymbol i sym ;
+              << (i+1) "bindings" (printLst lst writeSymbol) ;
+              indent i ; sayln "}")
 
       and writeExpr i (Expr{expr, exnHandler, ...}) = let
          fun writeExnHandlers i {handlers, default, ty, pos} = let
@@ -132,7 +141,7 @@ structure Absyn = struct
         | writeBaseExpr i (CaseExp{test, default, branches}) =
              (indent i ; sayln "case = {" ;
               indent (i+1) ; sayln "test =" ; writeExpr (i+2) test ;
-(*            indent (i+1) ; sayln "branches = [" ; writeBranchLst (i+2) branches ; indent (i+1) ; sayln "]" *)
+              << (i+1) "branches" (printLst branches writeOneBranch) ;
               case default of SOME v => (indent (i+1) ; say "default =" ; writeExpr (i+2) v)
                             | NONE => () ;
               indent i ; sayln "}")
