@@ -430,7 +430,7 @@ struct
       val state' = checkTok state' [End]
    in
       if length declLst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "modules must have at least one declaration")
-      else (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decl=declLst,
+      else (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decls=declLst,
                                      pos=statePos state, symtab=Symbol.empty()})
    end
 
