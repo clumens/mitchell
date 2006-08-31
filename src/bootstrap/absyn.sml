@@ -64,6 +64,10 @@ structure Absyn = struct
             | ValDecl of {sym: Symbol.symbol, ty: Types.Type,
                           absynTy: Ty option, init: Expr, pos: pos}
 
+   (* Given a TextIO.outstream * string * Decl list (where a Decl list is
+    * really an abstract syntax tree), print the AST.  This could be
+    * considered a pretty printer, if the output was actually pretty.
+    *)
    fun write stream hdr ast = let
       fun say str = TextIO.output (stream, str)
       fun sayln str = TextIO.output (stream, str ^ "\n")
@@ -83,6 +87,9 @@ structure Absyn = struct
        * its function, and << will pass the indentation level.
        *)
       fun printLst lst f i = app (f i) lst
+
+
+      (* AST PRINTING HELPER FUNCTIONS *)
 
       fun writeTypedId i (sym, ty, _) =
          (writeSymbol i sym ;
@@ -105,6 +112,9 @@ structure Absyn = struct
 
       and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
+
+      (* AST PRINTING FUNCTIONS *)
+
       and writeExnHandler i (ExnHandler{sym, id, expr, ...}) =
          (indent i ; sayln "exn_handler = {" ;
           case sym of SOME v => writeSymbol (i+1) v
@@ -116,7 +126,7 @@ structure Absyn = struct
       and writeBranch i (RegularBranch expr) = writeBaseExpr i expr
         | writeBranch i (UnionBranch (sym, lst)) =
              (indent i ; sayln "union_branch = {" ;
-              writeSymbol i sym ;
+              writeSymbol (i+1) sym ;
               << (i+1) "bindings" (printLst lst writeSymbol) ;
               indent i ; sayln "}")
 
@@ -147,21 +157,21 @@ structure Absyn = struct
               indent i ; sayln "}")
         | writeBaseExpr i (DeclExp{decls, expr, ...}) =
              (indent i ; say "decl = {" ;
-              << (i+2) "decls" (printLst decls writeDecl) ;
+              << (i+1) "decls" (printLst decls writeDecl) ;
               indent (i+1) ; say "expr =" ; writeExpr (i+2) expr ;
               indent i ; say "}")
         | writeBaseExpr i (ExnExp{sym, values, ...}) =
              (indent i ; say "exn_expr = {" ;
               writeSymbol (i+1) sym ;
-              << (i+2) "values" (printLst values writeAssnExpr) ;
+              << (i+1) "values" (printLst values writeAssnExpr) ;
               indent i ; sayln "}")
         | writeBaseExpr i (ExprLstExp lst) =
              << i "expr_lst" (printLst lst writeExpr)
         | writeBaseExpr i (FunCallExp{function, args, tyArgs, ...}) =
              (indent i ; sayln "function = {" ;
               writeSymbol (i+1) function ;
-              << (i+2) "args" (printLst args writeExpr) ;
-              << (i+2) "tyArgs" (printLst tyArgs writeTy) ;
+              << (i+1) "args" (printLst args writeExpr) ;
+              << (i+1) "tyArgs" (printLst tyArgs writeTy) ;
               indent i ; sayln "}")
         | writeBaseExpr i (IdExp v) =
              writeSymbol i v
@@ -174,13 +184,14 @@ structure Absyn = struct
         | writeBaseExpr i (IntegerExp v) =
              (indent i ; sayln ("INTEGER(" ^ Int.toString v ^ ")"))
         | writeBaseExpr i (RaiseExp expr) =
-             (indent (i+1) ; sayln "raise_expr = "; writeExpr (i+2) expr)
+             (indent i ; sayln "raise_expr = "; writeExpr (i+1) expr)
         | writeBaseExpr i (RecordAssnExp lst) =
-             (indent i ; sayln "record_assn_expr =" ; printLst lst writeAssnExpr (i+1))
+             << i "record_assn_expr" (printLst lst writeAssnExpr)
         | writeBaseExpr i (RecordRefExp{record, ele}) =
              (indent i ; sayln "record_expr = {" ;
               indent (i+1) ; sayln "record =" ; writeBaseExpr (i+2) record ;
-              writeSymbol (i+1) ele)
+              writeSymbol (i+1) ele ;
+              indent i ; sayln "}")
         | writeBaseExpr i (StringExp v) =
              (indent i ; sayln ("STRING(" ^ UniChar.Data2String v ^ ")"))
 
@@ -217,8 +228,9 @@ structure Absyn = struct
               writeSymbol (i+1) sym ;
               case absynTy of SOME(ty) => (indent (i+1) ; sayln "ty =" ; writeTy (i+2) ty)
                             | NONE => () ;
-              indent (i+1) ; sayln "init =" ; writeExpr (i+2) init)
+              indent (i+1) ; sayln "init =" ; writeExpr (i+2) init ;
+              indent i ; sayln "}")
    in
-      sayln ("\n" ^ hdr ^ "\n========================================") ; writeTy 0 ast
+      sayln ("\n" ^ hdr ^ "\n========================================") ; writeDecl 0 ast
    end
 end
