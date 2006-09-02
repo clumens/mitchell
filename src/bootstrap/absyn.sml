@@ -88,8 +88,6 @@ structure Absyn = struct
        *)
       fun printLst lst f i = app (f i) lst
 
-      fun withOpt opt f = case opt of SOME v => f (v) | NONE => ()
-
 
       (* AST PRINTING HELPER FUNCTIONS *)
 
@@ -99,7 +97,7 @@ structure Absyn = struct
           indent i ; say ",")
 
       and writeOptTypedId i (sym, ty, _) = 
-         (writeSymbol i sym ; withOpt ty (fn v => (indent i ; sayln "ty = " ; writeTy (i+1) v)) ;
+         (writeSymbol i sym ; Option.app (fn v => (indent i ; sayln "ty = " ; writeTy (i+1) v)) ty ;
           indent i ; say ",")
 
       and writeOneBranch i (branch, expr) =
@@ -116,7 +114,7 @@ structure Absyn = struct
 
       and writeExnHandler i (ExnHandler{sym, id, expr, ...}) =
          (indent i ; sayln "exn_handler = {" ;
-          withOpt sym (fn v => writeSymbol (i+1) v) ;
+          Option.app (fn v => writeSymbol (i+1) v) sym ;
           indent (i+1) ; sayln ("id = " ^ UniChar.Data2String id) ;
           indent (i+1) ; sayln "expr =" ; writeExpr (i+2) expr ;
           indent i ; sayln "}")
@@ -139,7 +137,7 @@ structure Absyn = struct
          end
       in
          indent i ; sayln "expr = " ; writeBaseExpr (i+1) expr ;
-         withOpt exnHandler (fn v => writeExnHandlers (i+1) v)
+         Option.app (fn v => writeExnHandlers (i+1) v) exnHandler
       end
 
       and writeBaseExpr i (BooleanExp v) =
@@ -150,7 +148,7 @@ structure Absyn = struct
              (indent i ; sayln "case = {" ;
               indent (i+1) ; sayln "test =" ; writeExpr (i+2) test ;
               << (i+1) "branches" (printLst branches writeOneBranch) ;
-              withOpt default (fn v => (indent (i+1) ; say "default =" ; writeExpr (i+2) v)) ;
+              Option.app (fn v => (indent (i+1) ; say "default =" ; writeExpr (i+2) v)) default ;
               indent i ; sayln "}")
         | writeBaseExpr i (DeclExp{decls, expr, ...}) =
              (indent i ; say "decl = {" ;
@@ -204,7 +202,7 @@ structure Absyn = struct
         | writeDecl i (FunDecl{sym, retval, formals, tyFormals, body, ...}) =
              (indent i ; sayln "fun_decl = {" ;
               writeSymbol (i+1) sym ;
-              withOpt retval (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) ;
+              Option.app (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) retval ;
               << (i+1) "formals" (printLst formals writeTypedId) ;
               << (i+1) "tyFormals" (printLst tyFormals writeSymbol) ;
               indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;
@@ -222,7 +220,7 @@ structure Absyn = struct
         | writeDecl i (ValDecl{sym, absynTy, init, ...}) =
              (indent i ; sayln "val_decl = {" ;
               writeSymbol (i+1) sym ;
-              withOpt absynTy (fn v => (indent (i+1) ; sayln "ty = " ; writeTy (i+2) v)) ;
+              Option.app (fn v => (indent (i+1) ; sayln "ty = " ; writeTy (i+2) v)) absynTy ;
               indent (i+1) ; sayln "init =" ; writeExpr (i+2) init ;
               indent i ; sayln "}")
    in
