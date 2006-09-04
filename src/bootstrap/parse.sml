@@ -14,7 +14,8 @@ struct
    fun eat file = let
       val (tok', file') = nextToken file
    in
-      print (Tokens.toString tok' ^ "\n") ; (tok', file')
+      (* print (Tokens.toString tok' ^ "\n") ; (tok', file') *)
+      (tok', file')
    end
 
 
@@ -397,13 +398,14 @@ struct
    and parseId state = let
       fun doParseId (state, lst) = let
          val (state' as (tok, _), id) = parseIdentifierSym state
+         val lst' = (id, Symbol.mangle id)::lst
       in
          (* We don't know exactly where parseId is going to be called, so the
           * subtable is going to be wrong some of the time.  Callers will need
           * to modify this return value appropriately.
           *)
-         if #3 tok == Dot then doParseId (checkTok state' [Dot], (id, Symbol.mangle id)::lst)
-         else (state', (rev lst, Symbol.VALUE))
+         if #3 tok == Dot then doParseId (checkTok state' [Dot], lst')
+         else (state', (rev lst', Symbol.VALUE))
       end
    in
       doParseId (state, [])
