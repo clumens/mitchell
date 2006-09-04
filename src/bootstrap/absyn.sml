@@ -162,8 +162,8 @@ structure Absyn = struct
         | writeBaseExpr i (FunCallExp{function, args, tyArgs, ...}) =
              (indent i ; sayln "function = {" ;
               writeSymbol (i+1) function ;
-              << (i+1) "args" (printLst args writeExpr) ;
-              << (i+1) "tyArgs" (printLst tyArgs writeTy) ;
+              if length args > 0 then << (i+1) "args" (printLst args writeExpr) else () ;
+              if length tyArgs > 0 then << (i+1) "tyArgs" (printLst tyArgs writeTy) else () ;
               indent i ; sayln "}")
         | writeBaseExpr i (IdExp v) =
              writeSymbol i v
@@ -200,8 +200,8 @@ structure Absyn = struct
              (indent i ; sayln "fun_decl = {" ;
               writeSymbol (i+1) sym ;
               Option.app (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) retval ;
-              << (i+1) "formals" (printLst formals writeTypedId) ;
-              << (i+1) "tyFormals" (printLst tyFormals writeSymbol) ;
+              if length formals > 0 then << (i+1) "formals" (printLst formals writeTypedId) else () ;
+              if length tyFormals > 0 then << (i+1) "tyFormals" (printLst tyFormals writeSymbol)  else () ;
               indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;
               indent i ; sayln "}")
         | writeDecl i (ModuleDecl{sym, decls, ...}) =
