@@ -79,7 +79,7 @@ structure Absyn = struct
        * the start as well.  f should be a curried function whose last param is
        * the indentation level.
        *)
-      fun << i hdr f = ( indent i ; sayln (hdr ^ " = { ") ; f (i+1) )
+      fun << i hdr f = ( indent i ; sayln (hdr ^ " = { ") ; f (i+1) ; indent i ; sayln "}" )
 
       (* Print a list by calling the function f over each element of lst.  f
        * should be a curried function whose last parameter is the indentation
@@ -92,13 +92,10 @@ structure Absyn = struct
       (* AST PRINTING HELPER FUNCTIONS *)
 
       fun writeTypedId i (sym, ty, _) =
-         (writeSymbol i sym ;
-          indent i ; sayln "ty = " ; writeTy (i+1) ty ;
-          indent i ; say ",")
+         ( writeSymbol i sym ; indent i ; sayln "ty = " ; writeTy (i+1) ty )
 
       and writeOptTypedId i (sym, ty, _) = 
-         (writeSymbol i sym ; Option.app (fn v => (indent i ; sayln "ty = " ; writeTy (i+1) v)) ty ;
-          indent i ; say ",")
+         (writeSymbol i sym ; Option.app (fn v => (indent i ; sayln "ty = " ; writeTy (i+1) v)) ty)
 
       and writeOneBranch i (branch, expr) =
          (indent i ; sayln "branch = " ; writeBranch (i+1) branch ;
@@ -224,6 +221,6 @@ structure Absyn = struct
               indent (i+1) ; sayln "init =" ; writeExpr (i+2) init ;
               indent i ; sayln "}")
    in
-      sayln ("\n" ^ hdr ^ "\n========================================") ; writeDecl 0 ast
+      sayln ("\n" ^ hdr ^ "\n========================================") ; app (writeDecl 0) ast
    end
 end
