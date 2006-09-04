@@ -46,5 +46,6 @@ structure Symbol = struct
    fun toSymbol (unicodeSym, subtable) =
       ([(unicodeSym, mangle unicodeSym)], subtable)
 
-   fun toString sym = "FIXME"
+   fun toString ((lst, _): symbol) =
+      String.concatWith "." (map #2 lst)
 end
