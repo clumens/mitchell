@@ -11,7 +11,7 @@ structure Types = struct
     *        whatever type is expected for type checking purposes.
     *    BOTTOM is the type for when there's no other type.
     *    NONE_YET is what gets set in the AST while it's being built, but
-    *             typechecking has run.
+    *             typechecking has not yet run.
     *)
    datatype Type = ALIAS of Symbol.symbol * Finite
                  | ANY of Finite
