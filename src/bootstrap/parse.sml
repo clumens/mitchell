@@ -147,7 +147,7 @@ struct
    end
 
    (* start = module-decl+ *)
-   and parseStart state = let
+   and parseStart (state as (tok, _)) = let
       fun doParseStart (state as (tok, _), lst) =
          case #3 tok of
             Module    => let val (state', ast) = parseModuleDecl state
@@ -156,7 +156,9 @@ struct
           | EndOfFile => (state, rev lst)
           | _         => raise err (tok, [Module, EndOfFile])
    in
-      doParseStart (state, [])
+      case #3 tok of
+         Module => doParseStart (state, [])
+       | _      => raise err (tok, [Module])
    end
 
    (* decl = absorb-symbol id | fun-decl | ty-decl | val-decl *)
