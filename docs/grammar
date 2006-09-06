@@ -29,7 +29,7 @@ module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl
 
 /* Expressions */
 expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
-     | base-expr (handle-symbol enx-lst end-symbol)?
+     | base-expr (handle-symbol exn-lst end-symbol)?
 
 expr-lst = expr (comma-symbol expr)*
 
