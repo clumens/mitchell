@@ -1,0 +1,10 @@
+# Description:  Polymorphic function declaration and call
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ length(ty)(lst: list ty) ←
+      if List.empty(ty)(lst) then 0
+      else Integer.+()(1, length(ty)(List.tail(ty)(lst)))
+
+   ʋ foo ← length(integer)([1, 2, 3])
+end

@@ -1,0 +1,12 @@
+# Description:  Using absorb to open a module
+# Expected:  PASS
+
+ℳ Float ← decl
+   τ float ← { mantissa: integer, exponent: integer }
+end
+
+ℳ Main ← decl
+   absorb Float
+
+   ʋ x: float ← { mantissa ← 5, exponent ← 3 }
+end

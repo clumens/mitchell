@@ -1,0 +1,4 @@
+# Description:  Empty input file.
+# Expected:  FAIL
+# HowFail:  Parse error on input file.
+

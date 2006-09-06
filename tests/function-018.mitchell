@@ -1,0 +1,6 @@
+# Description:  Identity function declaration
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ asdf(ty)(x: ty): ty ← x
+end

@@ -1,0 +1,7 @@
+# Description:  Simple polymorphic function declaration
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ asdf(x)(): integer ←
+      47
+end

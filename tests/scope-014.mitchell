@@ -1,0 +1,8 @@
+# Description:  Empty decl expression in a function
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ƒ foo()(): integer ← decl
+   in
+   end
+end

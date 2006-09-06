@@ -1,0 +1,6 @@
+# Description:  Singleton list expression
+# Expected:  PASS
+
+ℳ Main ← decl
+   ʋ lst ← [47]
+end

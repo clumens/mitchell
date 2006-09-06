@@ -1,0 +1,6 @@
+# Description:  Empty exception handler list
+# Expected:  FAIL
+
+ℳ Main ← decl
+   ʋ len: integer ← List.length(integer)([1, 2, 3]) handle end
+end

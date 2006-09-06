@@ -1,0 +1,9 @@
+# Description:  Singleton branch list
+# Expected:  PASS
+
+ℳ Main ← decl
+   ƒ foo()(): boolean ←
+      case Main.asdf()() in
+         47 → t
+      end
+end

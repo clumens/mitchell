@@ -1,0 +1,6 @@
+# Description:  Create a new empty exception type
+# Expected:  FAIL
+
+ℳ Main ← decl
+   τ Empty ← ℰ { }
+end
