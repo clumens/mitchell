@@ -15,7 +15,7 @@ structure Absyn = struct
     * with value bindings for the elements in the constructor.
     *)
    and Branch = RegularBranch of BaseExpr
-              | UnionBranch of Symbol.symbol * Symbol.symbol list
+              | UnionBranch of Symbol.symbol * Symbol.symbol list * Symbol.symtab
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
@@ -117,7 +117,7 @@ structure Absyn = struct
           indent i ; sayln "}")
 
       and writeBranch i (RegularBranch expr) = writeBaseExpr i expr
-        | writeBranch i (UnionBranch (sym, lst)) =
+        | writeBranch i (UnionBranch (sym, lst, _)) =
              (indent i ; sayln "union_branch = {" ;
               writeSymbol (i+1) sym ;
               << (i+1) "bindings" (printLst lst writeSymbol) ;

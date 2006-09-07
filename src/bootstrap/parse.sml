@@ -308,7 +308,7 @@ struct
                         val (state', lst) = wrappedLst state' (LParen, RParen)
                                                        (lstMayBeEmpty RParen parseNameLst)
                      in
-                        (state', Absyn.UnionBranch (sym, lst))
+                        (state', Absyn.UnionBranch (sym, lst, Symbol.empty()))
                      end
                   else
                      (state', Absyn.RegularBranch (Absyn.IdExp sym))
