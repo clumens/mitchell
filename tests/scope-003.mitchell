@@ -4,5 +4,5 @@
 
 ℳ Main ← decl
    ʋ a: integer ← 47
-   ƒ a()(): boolean ← t
+   ƒ a(;): boolean ← t
 end

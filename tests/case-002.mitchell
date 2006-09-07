@@ -3,10 +3,10 @@
 # HowFail:  Type check error: Branch test must have the same type as the test expression.
 
 ℳ Main ← decl
-   ƒ asdf()(): string ← "asdf"
+   ƒ asdf(;): string ← "asdf"
 
-   ƒ foo()(): integer ←
-      case Main.asdf()() in
+   ƒ foo(;): integer ←
+      case Main.asdf(;) in
          "one" → 1,
          0 → 0,
          f → 0

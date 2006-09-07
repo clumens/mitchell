@@ -4,5 +4,5 @@
 ℳ Main ← decl
    ℳ a ← decl ʋ foo: boolean ← f end
    τ a ← list integer
-   ƒ a()(): boolean ← t
+   ƒ a(;): boolean ← t
 end

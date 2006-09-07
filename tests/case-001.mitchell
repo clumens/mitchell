@@ -3,9 +3,9 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ foo()(): integer ←
-      case Main.asdf()() in
-         Integer.+()(3, 4) → t,
+   ƒ foo(;): integer ←
+      case Main.asdf(;) in
+         Integer.+( ; 3, 4) → t,
          10 → f
       end
 end

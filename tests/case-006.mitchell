@@ -2,10 +2,10 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf()(): string ← "asdf"
+   ƒ asdf(;): string ← "asdf"
 
-   ƒ foo()(): boolean ←
-      case Main.asdf()() in
+   ƒ foo(;): boolean ←
+      case Main.asdf(;) in
          else → f
       end
 end

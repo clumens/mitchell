@@ -3,7 +3,7 @@
 # HowFail:  Parse error on input file.
 
 ℳ Outer ← decl
-   ƒ func()(): boolean ← decl
+   ƒ func(;): boolean ← decl
       ℳ Inner ← decl ʋ true: boolean ← t end
    in
       t

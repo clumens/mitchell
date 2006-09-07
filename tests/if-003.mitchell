@@ -3,8 +3,8 @@
 # Disabled
 
 ℳ Main ← decl
-   ƒ foo()(): integer ←
-      if Integer.=()(1, 0) then
+   ƒ foo(;): integer ←
+      if Integer.=( ; 1, 0) then
          47
       else
          if t then f else t

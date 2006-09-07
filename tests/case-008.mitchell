@@ -5,7 +5,7 @@
 ℳ Main ← decl
    ʋ lst: list integer ← [1, 2, 3]
 
-   ƒ foo()(): boolean ←
+   ƒ foo(;): boolean ←
       case lst in
          1 → t,
          else → f

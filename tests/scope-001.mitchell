@@ -4,7 +4,7 @@
 ℳ Main ← decl
    ʋ a: integer ← 47
 
-   ƒ foo()(): integer ← decl
+   ƒ foo(;): integer ← decl
       ʋ a: string ← "asdf"
    in
       47

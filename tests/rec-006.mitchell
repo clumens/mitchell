@@ -4,8 +4,8 @@
 ℳ Main ← decl
    τ rec ← { a: integer, b: string }
 
-   ƒ fun()(): rec ← 
+   ƒ fun(;): rec ← 
       { a ← 47, b ← "foo" }
 
-   ʋ v: integer ← fun()()|a
+   ʋ v: integer ← fun(;)|a
 end

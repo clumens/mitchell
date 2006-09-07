@@ -2,9 +2,9 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ int()() ← 47
+   ƒ int(;) ← 47
 
-   ƒ str()() ← "a string"
+   ƒ str(;) ← "a string"
 
-   ƒ rec()() ← { a ← 1, b ← f }
+   ƒ rec(;) ← { a ← 1, b ← f }
 end

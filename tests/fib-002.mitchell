@@ -3,10 +3,10 @@
 # Disabled
 
 ℳ Main ← decl
-   ƒ l()(n1: integer, n2: integer, n: integer): integer ←
-      if Integer.<()(n, 2) then n1
-      else l()(Integer.+()(n1, n2), n1, Integer.-()(n, 1))
+   ƒ l( ; n1: integer, n2: integer, n: integer): integer ←
+      if Integer.<( ; n, 2) then n1
+      else l( ; Integer.+( ; n1, n2), n1, Integer.-( ; n, 1))
 
-   ƒ fib()(n: integer): integer ←
-      l()(1, 1, n)
+   ƒ fib( ; n: integer): integer ←
+      l( ; 1, 1, n)
 end

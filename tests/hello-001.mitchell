@@ -2,7 +2,7 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-	ƒ main()(): string ←
+	ƒ main(;): string ←
 		"Hello, Mitchell!
 ¡Hola, Mitchell!
 Bonjour, Mitchell!

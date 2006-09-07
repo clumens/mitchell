@@ -2,11 +2,11 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ main()(): integer ←
+   ƒ main(;): integer ←
       47
 end
 
 ℳ Secondary ← decl
-   ƒ main()(): integer ←
+   ƒ main(;): integer ←
       47
 end

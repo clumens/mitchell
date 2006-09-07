@@ -3,7 +3,7 @@
 # Disabled
 
 ℳ Main ← decl
-   ƒ gcd()(a: integer, b: integer): integer ←
-      if Integer.=()(b, 0) then a
-      else gcd()(b, Integer.mod()(a, b))
+   ƒ gcd( ; a: integer, b: integer): integer ←
+      if Integer.=( ; b, 0) then a
+      else gcd( ; b, Integer.mod( ; a, b))
 end

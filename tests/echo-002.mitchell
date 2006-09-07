@@ -3,22 +3,22 @@
 # Disabled
 
 ℳ Main ← decl
-   ƒ recho()(strs: list string): string ←
-      if List.empty(string)(strs)
+   ƒ recho( ; strs: list string): string ←
+      if List.empty(string ; strs)
          then ""
-         else String.+()(String.+()
-            (" ", List.head(string)(strs)),
-            recho()(List.tail(string)(strs)))
+         else String.+( ; String.+( ;
+            " ", List.head(string ; strs)),
+            recho( ; List.tail(string ; strs)))
 
-   ƒ main()(cmd: string, args: list string): integer ←
-      if List.empty(string)(args)
-         then Console.print()("
+   ƒ main( ; cmd: string, args: list string): integer ←
+      if List.empty(string ; args)
+         then Console.print( ; "
 ")
-         else Console.print()
-            (String.+()
-               (String.+()
-                  (List.head(string)(args),
-                  recho()(List.tail(string)(args))),
+         else Console.print( ;
+            String.+( ;
+               String.+( ;
+                  List.head(string ; args),
+                  recho( ; List.tail(string ; args))),
                "
 "))
 end
