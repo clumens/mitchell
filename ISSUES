@@ -2,8 +2,6 @@ Known problems
 ==============
 - type checker
    - mutually recursive modules don't work
-   - empty lists don't work (probably require polymorphic type checking
-     before we can support this)
    - calling functions in the standard library doesn't work (no type
      information is associated with the functions in the symtab stubs)
 - scope

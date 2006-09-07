@@ -4,7 +4,7 @@
    - think about a better documentation format
    - type checking rules for polymorphism
    - audit all documentation for changes due to: union type, explicit
-     polymorphism, and module opening keyword
+     polymorphism, absorb, and function call grammar changes
 - grammar:
    - allow some sort of list pattern matching as a stop-gap for real
      pattern matching throughout
@@ -17,6 +17,5 @@
    - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
    - add type information to standard library stubs
-   - think about typing for empty lists
 - testing:
    - automatic AST & simplification testing
