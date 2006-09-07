@@ -2,6 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ one()(x: integer): integer ← two()(x)
-   ƒ two()(x: integer): integer ← one()(x)
+   ƒ one( ; x: integer): integer ← two( ; x)
+   ƒ two( ; x: integer): integer ← one( ; x)
 end

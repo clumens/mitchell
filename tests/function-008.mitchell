@@ -3,5 +3,5 @@
 # HowFail:  a: A formal parameter with this name already exists in the list.
 
 ℳ Main ← decl
-   ƒ asdf()(a: boolean, a: boolean): integer ← 47
+   ƒ asdf( ; a: boolean, a: boolean): integer ← 47
 end

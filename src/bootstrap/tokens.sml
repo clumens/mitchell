@@ -4,7 +4,7 @@ sig
                       | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
                       | Function | Handle | Identifier of UniChar.Data | If | In
                       | Integer of int | LBrace | LBrack | List | LParen | Mapsto
-                      | Module | Pipe | Raise | RBrace | RBrack | RParen
+                      | Module | Pipe | Raise | RBrace | RBrack | RParen | Semicolon
                       | String of UniChar.Data | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
@@ -27,7 +27,7 @@ struct
                       | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
                       | Function | Handle | Identifier of UniChar.Data | If | In
                       | Integer of int | LBrace | LBrack | List | LParen | Mapsto
-                      | Module | Pipe | Raise | RBrace | RBrack | RParen
+                      | Module | Pipe | Raise | RBrace | RBrack | RParen | Semicolon
                       | String of UniChar.Data | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
@@ -37,9 +37,9 @@ struct
    val lineno = ref 1
    val column = ref 0
 
-   val reserved = [0wx22, 0wx23, 0wx28, 0wx29, 0wx2c, 0wx2e, 0wx3a, 0wx5b, 0wx5d, 0wx7b,
-                   0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133, 0wx2190,
-                   0wx2192, 0wx222a, 0wx22a5]
+   val reserved = [0wx22, 0wx23, 0wx28, 0wx29, 0wx2c, 0wx2e, 0wx3a, 0wx3b, 0wx5b, 0wx5d,
+                   0wx7b, 0wx7c, 0wx7d, 0wx0192, 0wx028b, 0wx03c4, 0wx2130, 0wx2133,
+                   0wx2190, 0wx2192, 0wx222a, 0wx22a5]
 
    (* Convert a token datatype into a string representation. *)
    fun toString (_, _, Absorb) = "ABSORB"
@@ -73,6 +73,7 @@ struct
      | toString (_, _, RBrace) = "RBRACE"
      | toString (_, _, RBrack) = "RBRACK"
      | toString (_, _, RParen) = "RPAREN"
+     | toString (_, _, Semicolon) = "SEMICOLON"
      | toString (_, _, String s) = "STRING(" ^ UniChar.Data2String s ^ ")"
      | toString (_, _, Then) = "THEN"
      | toString (_, _, Type) = "TYPE"
@@ -219,6 +220,7 @@ struct
          0wx2190 => ((!lineno, !column, Assign), file')
        | 0wx22a5 => ((!lineno, !column, Bottom), file')
        | 0wx3a   => ((!lineno, !column, Colon), file')
+       | 0wx3b   => ((!lineno, !column, Semicolon), file')
        | 0wx2c   => ((!lineno, !column, Comma), file')
        | 0wx23   => nextToken (skipComments file')
        | 0wx22   => let

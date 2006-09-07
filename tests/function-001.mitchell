@@ -2,6 +2,6 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf()(): integer ←
+   ƒ asdf(;): integer ←
       47
 end

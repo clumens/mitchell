@@ -3,5 +3,5 @@
 # HowFail:  Parse error on input file.
 
 ℳ Main ← decl
-   ƒ asdf()(): integer
+   ƒ asdf(;): integer
 end

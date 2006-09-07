@@ -5,10 +5,10 @@
    τ bool2 ← bool
    τ bool ← boolean
 
-   ƒ one()(b: bool): boolean ← b
-   ƒ two()(b: boolean): bool2 ← f
-   ƒ three()(b: bool2): bool ← f
+   ƒ one( ; b: bool): boolean ← b
+   ƒ two( ; b: boolean): bool2 ← f
+   ƒ three( ; b: bool2): bool ← f
 
-   ʋ a: bool ← one()(f)
-   ʋ b: boolean ← two()(t)
+   ʋ a: bool ← one( ; f)
+   ʋ b: boolean ← two( ; t)
 end

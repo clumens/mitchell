@@ -169,16 +169,16 @@ struct
          (state', Absyn.Absorb{module=sym, pos=statePos state})
       end
 
-      (* fun-decl = function-symbol identifier-symbol ty-formals-lst formals-lst (colon-symbol ty)? assign-symbol expr *)
-      (* formals-lst = lparen-symbol typed-name-lst? rparen-symbol *)
-      (* ty-formals-lst = lparen-symbol name-lst? rparen-symbol *)
+      (* fun-decl = function-symbol identifier-symbol lparen-symbol ty-formals-lst semicolon-symbol formals-lst rparen-symbol (colon-symbol ty)? assign-symbol expr *)
+      (* formals-lst = typed-name-lst? *)
+      (* ty-formals-lst = name-lst? *)
       and parseFunDecl state = let
          val (state', id) = parseIdentifierSym (checkTok state [Function])
-         val (state', tyFormals) = wrappedLst state' (LParen, RParen)
-                                              (lstMayBeEmpty RParen parseNameLst)
-         val (state', formals) = wrappedLst state' (LParen, RParen)
-                                            (lstMayBeEmpty RParen parseTypedNameLst)
-         val (state', ty) = parseOptionalType state'
+         val (state', tyFormals) = lstMayBeEmpty Semicolon parseNameLst
+                                                 (checkTok state' [LParen])
+         val (state', formals) = lstMayBeEmpty RParen parseTypedNameLst
+                                               (checkTok state' [Semicolon])
+         val (state', ty) = parseOptionalType (checkTok state' [RParen])
          val (state', expr) = parseExpr (checkTok state' [Assign])
       in
          (state', Absyn.FunDecl{sym=Symbol.toSymbol (id, Symbol.FUNCTION), retval=ty,
@@ -478,7 +478,7 @@ struct
    end
 
    (* sym-ref = id
-    *         | id lparen-symbol ty-lst? rparen-symbol lparen-symbol expr-lst? rparen-symbol
+    *         | id lparen-symbol ty-lst? semicolon-symbol expr-lst? rparen-symbol
     *         | id record-literal
     *         | sym-ref record-ref
     *)
@@ -502,8 +502,10 @@ struct
             parseLst state [] Comma parseTy
 
          fun parseFunctionCall (state, name) = let
-             val (state', tyLst) = wrappedLst state (LParen, RParen) (lstMayBeEmpty RParen parseTyLst)
-             val (state', argLst) = wrappedLst state' (LParen, RParen) (lstMayBeEmpty RParen parseExprLst)
+            val (state', tyLst) = lstMayBeEmpty Semicolon parseTyLst (checkTok state [LParen])
+            val (state', argLst) = lstMayBeEmpty RParen parseExprLst
+                                                (checkTok state' [Semicolon])
+            val state' = checkTok state' [RParen]
          in
              (state', Absyn.FunCallExp{function=name, args=argLst, tyArgs=tyLst, frees=[]})
          end

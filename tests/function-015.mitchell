@@ -2,14 +2,14 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ one()(x: integer): boolean ←
+   ƒ one( ; x: integer): boolean ←
       case x in
          1 → t,
          47 → f,
          else → t
       end
 
-   ƒ two()(): integer ← 17
+   ƒ two(;): integer ← 17
 
-   ʋ val: boolean ← one()(two()())
+   ʋ val: boolean ← one( ; two(;))
 end

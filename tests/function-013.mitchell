@@ -5,11 +5,11 @@
    τ bool2 ← bool
    τ bool ← boolean
 
-   ƒ i()(): { x: integer, y: integer, z: integer } ←
+   ƒ i(;): { x: integer, y: integer, z: integer } ←
       { x ← 1, y ← 2, z ← 3 }
-   ƒ b()(): bool2 ← t
+   ƒ b(;): bool2 ← t
 
-   ʋ val1: boolean ← b()()
-   ʋ val2: bool ← b()()
-   ʋ val3: bool2 ← b()()
+   ʋ val1: boolean ← b(;)
+   ʋ val2: bool ← b(;)
+   ʋ val3: bool2 ← b(;)
 end

@@ -3,8 +3,8 @@
 # HowFail:  Type check error: Type of actual parameter does not match type of formal parameter.
 
 ℳ Main ← decl
-   ƒ asdf()(a: integer, b: string, c: boolean): integer ←
+   ƒ asdf( ; a: integer, b: string, c: boolean): integer ←
       a
 
-   ʋ val: integer ← asdf()(47, 47, f)
+   ʋ val: integer ← asdf( ; 47, 47, f)
 end

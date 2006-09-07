@@ -2,5 +2,5 @@
 # Expected:  PASS
 
 ℳ Main ← decl
-   ƒ asdf(ty)(x: ty): ty ← x
+   ƒ asdf(ty ; x: ty): ty ← x
 end

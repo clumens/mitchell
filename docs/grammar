@@ -107,14 +107,14 @@ record-ref = (pipe-symbol identifier-symbol)+
 
 
 /* Functions */
-fun-decl = function-symbol identifier-symbol ty-formals-lst formals-lst (colon-symbol ty)? assign-symbol expr
+fun-decl = function-symbol identifier-symbol lparen-symbol ty-formals-lst semicolon-symbol formals-lst rparen-symbol (colon-symbol ty)? assign-symbol expr
 
-ty-formals-lst = lparen-symbol name-lst? rparen-symbol
+ty-formals-lst = name-lst?
 
-formals-lst = lparen-symbol typed-name-lst? rparen-symbol
+formals-lst = typed-name-lst?
 
 sym-ref = id
-        | id lparen-symbol ty-lst? rparen-symbol lparen-symbol expr-lst? rparen-symbol
+        | id lparen-symbol ty-lst? semicolon-symbol expr-lst? rparen-symbol
         | sym-ref record-ref
         | id record-literal
 
@@ -181,6 +181,8 @@ rbrace-symbol = "}"
 rbrack-symbol = "]"
 
 rparen-symbol = ")"
+
+semicolon-symbol = ";"
 
 start-comment-symbol = "#"
 
