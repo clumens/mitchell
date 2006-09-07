@@ -191,8 +191,8 @@ struct
          val (state', id) = parseIdentifierSym (checkTok state [Type])
          val (state', ty) = parseTy (checkTok state' [Assign])
       in
-         (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.TYPE), ty=Types.NONE_YET,
-                               absynTy=ty, pos=statePos state})
+         (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.TYPE), ty=NONE, absynTy=ty,
+                               pos=statePos state})
       end
 
       (* val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr *)
@@ -201,8 +201,8 @@ struct
          val (state', ty) = parseOptionalType state'
          val (state', expr) = parseExpr (checkTok state' [Assign])
       in
-         (state', Absyn.ValDecl{sym=Symbol.toSymbol (id, Symbol.VALUE), ty=Types.NONE_YET,
-                                absynTy=ty, pos=statePos state, init=expr})
+         (state', Absyn.ValDecl{sym=Symbol.toSymbol (id, Symbol.VALUE), ty=NONE, absynTy=ty,
+                                pos=statePos state, init=expr})
       end
    in
       case #3 tok of
@@ -223,7 +223,7 @@ struct
          val (state', expr) = parseExpr state'
       in
          (state', Absyn.ExnHandler {sym=NONE, id=id, expr=expr, symtab=Symbol.empty(),
-                                     ty=Types.NONE_YET, pos=statePos state})
+                                     ty=NONE, pos=statePos state})
       end
 
       fun parseOneExn state = let
@@ -235,15 +235,14 @@ struct
           * with the real subtable of the thing.
           *)
          (state', Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN), id=id, expr=expr,
-                                     symtab=Symbol.empty(), ty=Types.NONE_YET,
-                                     pos=statePos state})
+                                     symtab=Symbol.empty(), ty=NONE, pos=statePos state})
       end
 
       val (state', (lst, default)) = parseDefaultLst state [] [Identifier[]]
                                                      Comma parseOneExn handleElseBranch
    in
       if length lst = 0 andalso not (Option.isSome default) then raise ParseError ("FIXME", #1 tok, #2 tok, "exception handlers must have at least one branch or else clause")
-      else (state', SOME {handlers=lst, default=default, ty=Types.NONE_YET, pos=statePos state})
+      else (state', SOME {handlers=lst, default=default, ty=NONE, pos=statePos state})
    end
 
    (* expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
@@ -379,7 +378,7 @@ struct
       val (state', lst) = if #3 tok' == Handle then wrappedLst state' (Handle, End) parseExnLst
                           else (state', NONE)
    in
-      (state', Absyn.Expr{expr=expr, pos=statePos state, ty=Types.NONE_YET, exnHandler=lst})
+      (state', Absyn.Expr{expr=expr, pos=statePos state, ty=NONE, exnHandler=lst})
    end
 
    (* expr-lst = expr (comma-symbol expr)* *)
@@ -515,7 +514,7 @@ struct
              val lst = case r of Absyn.RecordAssnExp l => l
                                | _ => raise InternalError "parseRecordLiteral returned something besides a RecordAssnExp"
          in
-             (state', Absyn.ExnExp{sym=name, ty=Types.NONE_YET, values=lst})
+             (state', Absyn.ExnExp{sym=name, ty=NONE, values=lst})
          end
 
          val (state' as (tok, file), sym) = parseId state

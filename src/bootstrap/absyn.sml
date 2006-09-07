@@ -6,10 +6,9 @@ structure Absyn = struct
     * where we handle all types of exceptions and therefore aren't given
     * an exception type.
     *)
-   datatype ExnHandler = ExnHandler of {sym: Symbol.symbol option,
-                                        id: UniChar.Data, expr: Expr,
-                                        symtab: Symbol.symtab, ty: Types.Type,
-                                        pos: pos}
+   datatype ExnHandler = ExnHandler of {sym: Symbol.symbol option, id: UniChar.Data,
+                                        expr: Expr, symtab: Symbol.symtab,
+                                        ty: Types.Type option, pos: pos}
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
@@ -20,18 +19,17 @@ structure Absyn = struct
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
     *)
-   and Expr = Expr of {expr: BaseExpr, pos: pos, ty: Types.Type,
+   and Expr = Expr of {expr: BaseExpr, pos: pos, ty: Types.Type option,
                        exnHandler: {handlers: ExnHandler list,
                                     default: ExnHandler option,
-                                    ty: Types.Type, pos: pos} option}
+                                    ty: Types.Type option, pos: pos} option}
 
    and BaseExpr = BooleanExp of bool
                 | BottomExp
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
-                | DeclExp of {decls: Decl list, expr: Expr,
-                              symtab: Symbol.symtab}
-                | ExnExp of {sym: Symbol.symbol, ty: Types.Type,
+                | DeclExp of {decls: Decl list, expr: Expr, symtab: Symbol.symtab}
+                | ExnExp of {sym: Symbol.symbol, ty: Types.Type option,
                              values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
                 | FunCallExp of {function: Symbol.symbol, args: Expr list,
@@ -59,9 +57,9 @@ structure Absyn = struct
                           calls: Expr list, body: Expr, symtab: Symbol.symtab}
             | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
                              symtab: Symbol.symtab}
-            | TyDecl of {sym: Symbol.symbol, ty: Types.Type, absynTy: Ty,
+            | TyDecl of {sym: Symbol.symbol, ty: Types.Type option, absynTy: Ty,
                          pos: pos}
-            | ValDecl of {sym: Symbol.symbol, ty: Types.Type,
+            | ValDecl of {sym: Symbol.symbol, ty: Types.Type option,
                           absynTy: Ty option, init: Expr, pos: pos}
 
    (* Given a TextIO.outstream * string * Decl list (where a Decl list is
