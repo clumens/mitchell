@@ -181,18 +181,35 @@ struct
          val (state', ty) = parseOptionalType (checkTok state' [RParen])
          val (state', expr) = parseExpr (checkTok state' [Assign])
       in
-         (state', Absyn.FunDecl{sym=Symbol.toSymbol (id, Symbol.FUNCTION), retval=ty,
+         (state', Absyn.FunDecl{sym=Symbol.toSymbol (id, Symbol.FUN_TYCON), retval=ty,
                                 pos=statePos state, formals=formals, tyFormals=tyFormals,
                                 calls=[], symtab=Symbol.empty(), body=expr})
       end
 
-      (* ty-decl = type-symbol identifier-symbol assign-symbol ty *)
+      (* ty-decl = type-symbol identifier-symbol (lparen-symbol name-lst rparen-symbol)? assign-symbol ty *)
       and parseTyDecl state = let
-         val (state', id) = parseIdentifierSym (checkTok state [Type])
-         val (state', ty) = parseTy (checkTok state' [Assign])
+         fun parseParaTy (state, id) = let
+            val (state', lst) = parseNameLst (checkTok state [LParen])
+            val (state', ty) = parseTy (checkTok state' [RParen, Assign])
+         in
+            (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.EXN_TYPE), ty=NONE,
+                                  absynTy=ty, tyvars=SOME lst, symtab=SOME (Symbol.empty()),
+                                  pos=statePos state})
+         end
+
+         fun parseSimpleTy (state, id) = let
+            val (state', ty) = parseTy (checkTok state [Assign])
+         in
+            (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.EXN_TYPE), ty=NONE,
+                                  absynTy=ty, tyvars=NONE, symtab=NONE, pos=statePos state})
+         end
+
+         val (state' as (tok, _), id) = parseIdentifierSym (checkTok state [Type])
       in
-         (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.TYPE), ty=NONE, absynTy=ty,
-                               pos=statePos state})
+         case #3 tok of
+            LParen => parseParaTy (state, id)
+          | Assign => parseSimpleTy (state, id)
+          | _      => raise err (tok, [Assign, LParen])
       end
 
       (* val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr *)
@@ -234,7 +251,7 @@ struct
          (* For the sym, we need to replace the default that parseId gave us
           * with the real subtable of the thing.
           *)
-         (state', Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN), id=id, expr=expr,
+         (state', Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN_TYPE), id=id, expr=expr,
                                      symtab=Symbol.empty(), ty=NONE, pos=statePos state})
       end
 
@@ -575,7 +592,7 @@ struct
                val (state', id) = parseIdentifierSym state
                val (state', ty) = parseOptionalType state'
             in
-               (state', (Symbol.toSymbol (id, Symbol.TYPE), ty, statePos state))
+               (state', (Symbol.toSymbol (id, Symbol.EXN_TYPE), ty, statePos state))
             end
          in
             parseLst state [] Comma parseOneTycon

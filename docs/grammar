@@ -77,7 +77,7 @@ top-decl = decl
 
 
 /* Types */
-ty-decl = type-symbol identifier-symbol assign-symbol ty
+ty-decl = type-symbol identifier-symbol (lparen-symbol name-lst rparen-symbol)? assign-symbol ty
 
 ty = bottom-symbol
    | list-symbol ty
@@ -88,8 +88,7 @@ ty = bottom-symbol
 
 ty-lst = ty (comma-symbol ty)*
 
-tycon-lst = identifier-symbol colon-symbol ty (comma-symbol tycon-lst)*
-          | identifier-symbol (comma-symbol tycon-lst)*
+tycon-lst = identifier-symbol (colon-symbol ty)? (comma-symbol tycon-lst)*
 
 typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)*
 

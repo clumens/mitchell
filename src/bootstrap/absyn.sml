@@ -58,6 +58,7 @@ structure Absyn = struct
             | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
                              symtab: Symbol.symtab}
             | TyDecl of {sym: Symbol.symbol, ty: Types.Type option, absynTy: Ty,
+                         tyvars: Symbol.symbol list option, symtab: Symbol.symtab option,
                          pos: pos}
             | ValDecl of {sym: Symbol.symbol, ty: Types.Type option,
                           absynTy: Ty option, init: Expr, pos: pos}
