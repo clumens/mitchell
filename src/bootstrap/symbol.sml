@@ -8,11 +8,10 @@
 structure Symbol = struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
 
-   (* Actual symbol from the source file, mangled representation for
-    * output, what kind of symbol it is.  The list is so we can have
-    * dot-separated module element references.
+   (* Actual symbol from the source file, mangled representation for output,
+    * what kind of symbol it is.
     *)
-   type symbol = (UniChar.Data * string) list * Subtable
+   type symbol = UniChar.Data * string * Subtable
 
    (* FIXME *)
    type symtab = bool
@@ -27,8 +26,12 @@ structure Symbol = struct
    val mangle = UniChar.Data2String
 
    fun toSymbol (unicodeSym, subtable) =
-      ([(unicodeSym, mangle unicodeSym)], subtable)
+      (unicodeSym, mangle unicodeSym, subtable)
 
-   fun toString ((lst, _): symbol) =
-      String.concatWith "." (map #2 lst)
+   fun toString (sym: symbol) =
+      (case #3 sym of EXN_TYPE => "EXN_TYPE: "
+                    | FUN_TYCON => "FUN_TYCON: "
+                    | MODULE => "MODULE: "
+                    | VALUE => "VALUE: "
+                    | _ => "") ^ #2 sym
 end

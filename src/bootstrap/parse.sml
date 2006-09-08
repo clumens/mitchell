@@ -235,24 +235,26 @@ struct
     *)
    and parseExnLst (state as (tok, _)) = let
       fun handleElseBranch state = let
-         val (state', id) = parseIdentifierSym state
+         val (state', sym) = parseIdentifierSym state
          val state' = checkTok state' [Mapsto]
          val (state', expr) = parseExpr state'
       in
-         (state', Absyn.ExnHandler {sym=NONE, id=id, expr=expr, symtab=Symbol.empty(),
-                                     ty=NONE, pos=statePos state})
+         (state', Absyn.ExnHandler {exnKind=NONE, sym=Symbol.toSymbol (sym, Symbol.EXN_TYPE),
+                                    expr=expr, symtab=Symbol.empty(), ty=NONE,
+                                    pos=statePos state})
       end
 
       fun parseOneExn state = let
-         val (state', sym) = parseId state
-         val (state', id) = parseIdentifierSym state'
+         val (state', id) = parseId state
+         val (state', sym) = parseIdentifierSym state'
          val (state', expr) = parseExpr (checkTok state' [Mapsto])
       in
          (* For the sym, we need to replace the default that parseId gave us
           * with the real subtable of the thing.
           *)
-         (state', Absyn.ExnHandler {sym=SOME (#1 sym, Symbol.EXN_TYPE), id=id, expr=expr,
-                                     symtab=Symbol.empty(), ty=NONE, pos=statePos state})
+         (state', Absyn.ExnHandler {exnKind=SOME id, expr=expr, pos=statePos state,
+                                    sym=Symbol.toSymbol (sym, Symbol.EXN_TYPE),
+                                    symtab=Symbol.empty(), ty=NONE})
       end
 
       val (state', (lst, default)) = parseDefaultLst state [] [Identifier[]]
@@ -416,14 +418,14 @@ struct
    and parseId state = let
       fun doParseId (state, lst) = let
          val (state' as (tok, _), id) = parseIdentifierSym state
-         val lst' = (id, Symbol.mangle id)::lst
+         val lst' = id::lst
       in
          (* We don't know exactly where parseId is going to be called, so the
           * subtable is going to be wrong some of the time.  Callers will need
           * to modify this return value appropriately.
           *)
          if #3 tok == Dot then doParseId (checkTok state' [Dot], lst')
-         else (state', (rev lst', Symbol.VALUE))
+         else (state', Absyn.Id (rev lst'))
       end
    in
       doParseId (state, [])
@@ -503,7 +505,7 @@ struct
       fun parseRecordRef state = let
          fun doParseRecordRef (state, lst) = let
             val (state' as (tok, _), id) = parseIdentifierSym (checkTok state [Pipe])
-            val lst' = (id, Symbol.mangle id)::lst
+            val lst' = Symbol.toSymbol (id, Symbol.VALUE)::lst
          in
             if #3 tok == Pipe then doParseRecordRef (state', lst')
             else (state', rev lst')
@@ -523,7 +525,7 @@ struct
                                                 (checkTok state' [Semicolon])
             val state' = checkTok state' [RParen]
          in
-             (state', Absyn.FunCallExp{function=name, args=argLst, tyArgs=tyLst, frees=[]})
+             (state', Absyn.FunCallExp{id=name, args=argLst, tyArgs=tyLst, frees=[]})
          end
 
          fun parseExnExpr (state, name) = let
@@ -531,15 +533,15 @@ struct
              val lst = case r of Absyn.RecordAssnExp l => l
                                | _ => raise InternalError "parseRecordLiteral returned something besides a RecordAssnExp"
          in
-             (state', Absyn.ExnExp{sym=name, ty=NONE, values=lst})
+             (state', Absyn.ExnExp{id=name, ty=NONE, values=lst})
          end
 
-         val (state' as (tok, file), sym) = parseId state
+         val (state' as (tok, file), id) = parseId state
       in
          case #3 tok of
-            LParen => parseFunctionCall (state', sym)
-          | LBrace => parseExnExpr (state', sym)
-          | _      => (state', Absyn.IdExp sym)
+            LParen => parseFunctionCall (state', id)
+          | LBrace => parseExnExpr (state', id)
+          | _      => (state', Absyn.IdExp id)
       end
 
       val (state' as (tok, _), expr) = doParseSymRef state
@@ -547,7 +549,7 @@ struct
       if #3 tok == Pipe then let
             val (state', ele) = parseRecordRef state'
          in
-            (state', Absyn.RecordRefExp{record=expr, ele=(ele, Symbol.VALUE)})
+            (state', Absyn.RecordRefExp{record=expr, ele=ele})
          end
       else
          (state', expr)
@@ -568,9 +570,9 @@ struct
       end
 
       fun parseIdentifierTy state = let
-         val (state', sym) = parseId state
+         val (state', id) = parseId state
       in
-         (state', Absyn.IdTy{sym=sym, pos=statePos state})
+         (state', Absyn.IdTy{id=id, pos=statePos state})
       end
 
       fun parseListTy state = let
@@ -592,7 +594,7 @@ struct
                val (state', id) = parseIdentifierSym state
                val (state', ty) = parseOptionalType state'
             in
-               (state', (Symbol.toSymbol (id, Symbol.EXN_TYPE), ty, statePos state))
+               (state', (Symbol.toSymbol (id, Symbol.FUN_TYCON), ty, statePos state))
             end
          in
             parseLst state [] Comma parseOneTycon

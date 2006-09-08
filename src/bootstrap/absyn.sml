@@ -2,19 +2,25 @@
 structure Absyn = struct
    type pos = int * int
 
-   (* Exception handler expression.  sym is optional in the default case,
+   (* Exception handler expression.  exnKind is optional in the default case,
     * where we handle all types of exceptions and therefore aren't given
     * an exception type.
     *)
-   datatype ExnHandler = ExnHandler of {sym: Symbol.symbol option, id: UniChar.Data,
+   datatype ExnHandler = ExnHandler of {exnKind: IdRef option, sym: Symbol.symbol,
                                         expr: Expr, symtab: Symbol.symtab,
                                         ty: Types.Type option, pos: pos}
+
+   (* A reference to a (hopefully) existing identifier.  This is something we
+    * will look up in the symbol table later on, not something to be stored in
+    * the symbol table.
+    *)
+   and IdRef = Id of UniChar.Data list
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
     *)
    and Branch = RegularBranch of BaseExpr
-              | UnionBranch of Symbol.symbol * Symbol.symbol list * Symbol.symtab
+              | UnionBranch of IdRef * Symbol.symbol list * Symbol.symtab
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
@@ -29,27 +35,27 @@ structure Absyn = struct
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
                 | DeclExp of {decls: Decl list, expr: Expr, symtab: Symbol.symtab}
-                | ExnExp of {sym: Symbol.symbol, ty: Types.Type option,
+                | ExnExp of {id: IdRef, ty: Types.Type option,
                              values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
-                | FunCallExp of {function: Symbol.symbol, args: Expr list,
-                                 tyArgs: Ty list, frees: Symbol.symbol list}
-                | IdExp of Symbol.symbol
+                | FunCallExp of {id: IdRef, args: Expr list, tyArgs: Ty list,
+                                 frees: Symbol.symbol list}
+                | IdExp of IdRef
                 | IfExp of {test: Expr, then': Expr, else': Expr}
                 | IntegerExp of int
                 | RaiseExp of Expr
                 | RecordAssnExp of (Symbol.symbol * Expr) list
-                | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol}
+                | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol list}
                 | StringExp of UniChar.Data
 
    and Ty = BottomTy of pos
           | ExnTy of {exn': (Symbol.symbol * Ty * pos) list, pos: pos}
-          | IdTy of {sym: Symbol.symbol, pos: pos}
+          | IdTy of {id: IdRef, pos: pos}
           | ListTy of {lst: Ty, pos: pos}
           | RecordTy of {record: (Symbol.symbol * Ty * pos) list, pos: pos}
           | UnionTy of {tycons: (Symbol.symbol * Ty option * pos) list, pos: pos}
 
-   and Decl = Absorb of {module: Symbol.symbol, pos: pos}
+   and Decl = Absorb of {module: IdRef, pos: pos}
               (* Each element of calls must be a FunCallExp. *)
             | FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
@@ -91,10 +97,10 @@ structure Absyn = struct
       (* AST PRINTING HELPER FUNCTIONS *)
 
       fun writeTypedId i (sym, ty, _) =
-         ( writeSymbol i sym ; indent i ; sayln "ty = " ; writeTy (i+1) ty )
+         ( writeSymbol i sym ; writeTy (i+1) ty )
 
       and writeOptTypedId i (sym, ty, _) = 
-         (writeSymbol i sym ; Option.app (fn v => (indent i ; sayln "ty = " ; writeTy (i+1) v)) ty)
+         (writeSymbol i sym ; Option.app (writeTy (i+1)) ty)
 
       and writeOneBranch i (branch, expr) =
          (indent i ; sayln "branch = " ; writeBranch (i+1) branch ;
@@ -105,20 +111,23 @@ structure Absyn = struct
 
       and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
+      and writeIdRef i (Id id) =
+         ( indent i ; sayln ("id = " ^ String.concatWith "." (map Symbol.mangle id)) )
+
 
       (* AST PRINTING FUNCTIONS *)
 
-      and writeExnHandler i (ExnHandler{sym, id, expr, ...}) =
+      and writeExnHandler i (ExnHandler{exnKind, sym, expr, ...}) =
          (indent i ; sayln "exn_handler = {" ;
-          Option.app (fn v => writeSymbol (i+1) v) sym ;
-          indent (i+1) ; sayln ("id = " ^ UniChar.Data2String id) ;
+          Option.app (fn v => writeIdRef (i+1) v) exnKind ;
+          writeSymbol (i+1) sym ;
           indent (i+1) ; sayln "expr =" ; writeExpr (i+2) expr ;
           indent i ; sayln "}")
 
       and writeBranch i (RegularBranch expr) = writeBaseExpr i expr
-        | writeBranch i (UnionBranch (sym, lst, _)) =
+        | writeBranch i (UnionBranch (id, lst, _)) =
              (indent i ; sayln "union_branch = {" ;
-              writeSymbol (i+1) sym ;
+              writeIdRef (i+1) id ;
               << (i+1) "bindings" (printLst lst writeSymbol) ;
               indent i ; sayln "}")
 
@@ -151,21 +160,21 @@ structure Absyn = struct
               << (i+1) "decls" (printLst decls writeDecl) ;
               indent (i+1) ; say "expr =" ; writeExpr (i+2) expr ;
               indent i ; say "}")
-        | writeBaseExpr i (ExnExp{sym, values, ...}) =
+        | writeBaseExpr i (ExnExp{id, values, ...}) =
              (indent i ; say "exn_expr = {" ;
-              writeSymbol (i+1) sym ;
+              writeIdRef (i+1) id ;
               << (i+1) "values" (printLst values writeAssnExpr) ;
               indent i ; sayln "}")
         | writeBaseExpr i (ExprLstExp lst) =
              << i "expr_lst" (printLst lst writeExpr)
-        | writeBaseExpr i (FunCallExp{function, args, tyArgs, ...}) =
+        | writeBaseExpr i (FunCallExp{id, args, tyArgs, ...}) =
              (indent i ; sayln "function = {" ;
-              writeSymbol (i+1) function ;
-              if length args > 0 then << (i+1) "args" (printLst args writeExpr) else () ;
+              writeIdRef (i+1) id ;
               if length tyArgs > 0 then << (i+1) "tyArgs" (printLst tyArgs writeTy) else () ;
+              if length args > 0 then << (i+1) "args" (printLst args writeExpr) else () ;
               indent i ; sayln "}")
         | writeBaseExpr i (IdExp v) =
-             writeSymbol i v
+             writeIdRef i v
         | writeBaseExpr i (IfExp{test, then', else'}) =
              (indent i ; sayln "if = {" ;
               indent (i+1) ; sayln "test = " ; writeExpr (i+2) test ;
@@ -181,26 +190,26 @@ structure Absyn = struct
         | writeBaseExpr i (RecordRefExp{record, ele}) =
              (indent i ; sayln "record_expr = {" ;
               indent (i+1) ; sayln "record =" ; writeBaseExpr (i+2) record ;
-              writeSymbol (i+1) ele ;
+              << i "element =" ; (printLst ele writeSymbol) ;
               indent i ; sayln "}")
         | writeBaseExpr i (StringExp v) =
              (indent i ; sayln ("STRING(" ^ UniChar.Data2String v ^ ")"))
 
       and writeTy i (BottomTy _) = (indent i ; sayln "ty = BOTTOM")
         | writeTy i (ExnTy{exn', ...}) = << i "ty = EXN" (printLst exn' writeTypedId)
-        | writeTy i (IdTy{sym, ...}) = (indent i ; sayln ("ty = " ^ Symbol.toString sym))
+        | writeTy i (IdTy{id, ...}) = (indent i ; sayln "ty = " ; writeIdRef (i+1) id)
         | writeTy i (ListTy{lst, ...}) = (indent i ; sayln "ty = LIST " ; writeTy (i+1) lst)
         | writeTy i (RecordTy{record, ...}) = << i "ty = RECORD " (printLst record writeTypedId)
         | writeTy i (UnionTy{tycons, ...}) = << i "ty = UNION" (printLst tycons writeOptTypedId)
 
       and writeDecl i (Absorb{module, ...}) =
-             (indent i ; sayln ("absorb = " ^ Symbol.toString module))
+             (indent i ; sayln "absorb = " ; writeIdRef (i+1) module)
         | writeDecl i (FunDecl{sym, retval, formals, tyFormals, body, ...}) =
              (indent i ; sayln "fun_decl = {" ;
               writeSymbol (i+1) sym ;
               Option.app (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) retval ;
-              if length formals > 0 then << (i+1) "formals" (printLst formals writeTypedId) else () ;
               if length tyFormals > 0 then << (i+1) "tyFormals" (printLst tyFormals writeSymbol)  else () ;
+              if length formals > 0 then << (i+1) "formals" (printLst formals writeTypedId) else () ;
               indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;
               indent i ; sayln "}")
         | writeDecl i (ModuleDecl{sym, decls, ...}) =
@@ -211,7 +220,7 @@ structure Absyn = struct
         | writeDecl i (TyDecl{sym, absynTy, ...}) =
              (indent i ; sayln "ty_decl = {" ;
               writeSymbol (i+1) sym ;
-              indent (i+1) ; sayln "ty =" ; writeTy (i+2) absynTy ;
+              writeTy (i+1) absynTy ;
               indent i ; sayln "}")
         | writeDecl i (ValDecl{sym, absynTy, init, ...}) =
              (indent i ; sayln "val_decl = {" ;
