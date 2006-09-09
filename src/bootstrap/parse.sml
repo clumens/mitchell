@@ -405,7 +405,7 @@ struct
       parseLst state [] Comma parseExpr
 
    (* A subtle distinction between this and parseId.  This function just
-    * returns the UniChar.Data from the Identifier token.  This can then be
+    * returns the BaseTy.mstring from the Identifier token.  This can then be
     * wrapped up into whatever kind of symbol.  Use this when the production
     * takes a single name, not a dot-separated path.  Use parseId in that case.
     *)

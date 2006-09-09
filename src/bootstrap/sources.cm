@@ -1,5 +1,6 @@
 Group is
    absyn.sml
+   basety.sml
    error.sml
    parse.sml
    symbol.sml

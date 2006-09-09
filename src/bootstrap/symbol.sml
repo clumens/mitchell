@@ -5,16 +5,16 @@ signature SYMBOL = sig
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
 
    (* The key for symbol table operations. *)
-   type symbol = UniChar.Data * Subtable
+   type symbol = BaseTy.mstring * Subtable
 
-   val toSymbol: UniChar.Data * Subtable -> symbol
+   val toSymbol: BaseTy.mstring * Subtable -> symbol
    val toString: symbol -> string
 end
 
 structure Symbol :> SYMBOL = struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
 
-   type symbol = UniChar.Data * Subtable
+   type symbol = BaseTy.mstring * Subtable
 
    (* A wrapper around the symbol representation so callers don't have to know
     * about the internals.
@@ -27,7 +27,7 @@ structure Symbol :> SYMBOL = struct
                     | FUN_TYCON => "FUN_TYCON: "
                     | MODULE => "MODULE: "
                     | VALUE => "VALUE: "
-                    | _ => "") ^ UniChar.Data2String (#1 sym)
+                    | _ => "") ^ BaseTy.mstringToString (#1 sym)
 end
 
 signature SYMTAB = sig

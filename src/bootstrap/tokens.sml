@@ -2,10 +2,10 @@ signature TOKENS =
 sig
    datatype TokenKind = Absorb | Assign | Boolean of bool | Bottom | Case | Colon
                       | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
-                      | Function | Handle | Identifier of UniChar.Data | If | In
+                      | Function | Handle | Identifier of BaseTy.mstring | If | In
                       | Integer of int | LBrace | LBrack | List | LParen | Mapsto
                       | Module | Pipe | Raise | RBrace | RBrack | RParen | Semicolon
-                      | String of UniChar.Data | Then | Type | Union | Val
+                      | String of BaseTy.mstring | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
    type State = Tokens * Decode.DecFile
@@ -25,10 +25,10 @@ structure Tokens :> TOKENS =
 struct
    datatype TokenKind = Absorb | Assign | Boolean of bool | Bottom | Case | Colon
                       | Comma | Dblquote | Decl | Dot | Else | End | EndOfFile | Exn
-                      | Function | Handle | Identifier of UniChar.Data | If | In
+                      | Function | Handle | Identifier of BaseTy.mstring | If | In
                       | Integer of int | LBrace | LBrack | List | LParen | Mapsto
                       | Module | Pipe | Raise | RBrace | RBrack | RParen | Semicolon
-                      | String of UniChar.Data | Then | Type | Union | Val
+                      | String of BaseTy.mstring | Then | Type | Union | Val
 
    type Tokens = (int * int * TokenKind)
    type State = Tokens * Decode.DecFile
@@ -58,7 +58,7 @@ struct
      | toString (_, _, Exn) = "EXN"
      | toString (_, _, Function) = "FUNCTION"
      | toString (_, _, Handle) = "HANDLE"
-     | toString (_, _, Identifier i) = "IDENTIFIER(" ^ UniChar.Data2String i ^ ")"
+     | toString (_, _, Identifier i) = "IDENTIFIER(" ^ BaseTy.mstringToString i ^ ")"
      | toString (_, _, If) = "IF"
      | toString (_, _, In) = "IN"
      | toString (_, _, Integer i) = "INTEGER(" ^ Int.toString(i) ^ ")"
@@ -74,7 +74,7 @@ struct
      | toString (_, _, RBrack) = "RBRACK"
      | toString (_, _, RParen) = "RPAREN"
      | toString (_, _, Semicolon) = "SEMICOLON"
-     | toString (_, _, String s) = "STRING(" ^ UniChar.Data2String s ^ ")"
+     | toString (_, _, String s) = "STRING(" ^ BaseTy.mstringToString s ^ ")"
      | toString (_, _, Then) = "THEN"
      | toString (_, _, Type) = "TYPE"
      | toString (_, _, Union) = "UNION"
@@ -134,7 +134,7 @@ struct
        * not, must be some crazy new user-defined identifier.
        *)
       fun handleWord (lst, lineno, column) =
-         case UniChar.Data2String lst of
+         case BaseTy.mstringToString lst of
             "absorb" => (lineno, column, Absorb)
           | "case"   => (lineno, column, Case)
           | "decl"   => (lineno, column, Decl)
@@ -151,7 +151,7 @@ struct
           | _        => (lineno, column, Identifier lst)
 
       fun handleInteger lst =
-         Option.valOf (Int.fromString (UniChar.Data2String lst)) handle Option => raise Error.TokenizeError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
+         Option.valOf (Int.fromString (BaseTy.mstringToString lst)) handle Option => raise Error.TokenizeError ("FIXME", !lineno, !column, "Unable to perform numeric conversion.")
 
       (* Tokenizing strings is the hardest part of this whole process because
        * of the escape sequences, multiple lines, etc.  Too bad they can't be
@@ -165,7 +165,7 @@ struct
              *)
             fun list2Int lst =
                if not (List.all UniClasses.isHex lst) then raise Error.TokenizeError ("FIXME", !lineno, !column, "Invalid escaped Unicode character sequence.")
-               else StringCvt.scanString (Int.scan StringCvt.HEX) (UniChar.Data2String lst)
+               else StringCvt.scanString (Int.scan StringCvt.HEX) (BaseTy.mstringToString lst)
          in
             if List.length lst = 4 then
                case list2Int (rev lst) of
