@@ -7,7 +7,7 @@ structure Absyn = struct
     * an exception type.
     *)
    datatype ExnHandler = ExnHandler of {exnKind: IdRef option, sym: Symbol.symbol,
-                                        expr: Expr, symtab: Symbol.symtab,
+                                        expr: Expr, symtab: Symtab.table,
                                         ty: Types.Type option, pos: pos}
 
    (* A reference to a (hopefully) existing identifier.  This is something we
@@ -20,7 +20,7 @@ structure Absyn = struct
     * with value bindings for the elements in the constructor.
     *)
    and Branch = RegularBranch of BaseExpr
-              | UnionBranch of IdRef * Symbol.symbol list * Symbol.symtab
+              | UnionBranch of IdRef * Symbol.symbol list * Symtab.table
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
@@ -34,7 +34,7 @@ structure Absyn = struct
                 | BottomExp
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
-                | DeclExp of {decls: Decl list, expr: Expr, symtab: Symbol.symtab}
+                | DeclExp of {decls: Decl list, expr: Expr, symtab: Symtab.table}
                 | ExnExp of {id: IdRef, ty: Types.Type option,
                              values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
@@ -60,11 +60,11 @@ structure Absyn = struct
             | FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
                           tyFormals: Symbol.symbol list,
-                          calls: Expr list, body: Expr, symtab: Symbol.symtab}
+                          calls: Expr list, body: Expr, symtab: Symtab.table}
             | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
-                             symtab: Symbol.symtab}
+                             symtab: Symtab.table}
             | TyDecl of {sym: Symbol.symbol, ty: Types.Type option, absynTy: Ty,
-                         tyvars: Symbol.symbol list option, symtab: Symbol.symtab option,
+                         tyvars: Symbol.symbol list option, symtab: Symtab.table option,
                          pos: pos}
             | ValDecl of {sym: Symbol.symbol, ty: Types.Type option,
                           absynTy: Ty option, init: Expr, pos: pos}
@@ -112,7 +112,7 @@ structure Absyn = struct
       and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
       and writeIdRef i (Id id) =
-         ( indent i ; sayln ("id = " ^ String.concatWith "." (map Symbol.mangle id)) )
+         ( indent i ; sayln ("id = " ^ String.concatWith "." (map UniChar.Data2String id)) )
 
 
       (* AST PRINTING FUNCTIONS *)

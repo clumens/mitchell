@@ -1,37 +1,63 @@
-(* This file defines the structures that make up symbol tables.  We are using
- * a hash table for each symbol table, and a stack of those tables to
- * represent lexical scope.  The topmost table on the stack represents the
- * current level of scope we're at, and will be the first to be examined.
- * This will also be the table where most new symbols will be added.  Leaving
- * a level of scope corresponds to removing this topmost table from the stack.
+(* This file defines the data structures and operations required for symbol
+ * table manipulation.  This consists of symbols and symbol tables.
  *)
-structure Symbol = struct
+signature SYMBOL = sig
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
 
-   (* Actual symbol from the source file, mangled representation for output,
-    * what kind of symbol it is.
+   (* The key for symbol table operations. *)
+   type symbol = UniChar.Data * Subtable
+
+   val toSymbol: UniChar.Data * Subtable -> symbol
+   val toString: symbol -> string
+end
+
+structure Symbol :> SYMBOL = struct
+   datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
+
+   type symbol = UniChar.Data * Subtable
+
+   (* A wrapper around the symbol representation so callers don't have to know
+    * about the internals.
     *)
-   type symbol = UniChar.Data * string * Subtable
-
-   (* FIXME *)
-   type symtab = bool
-
-   (* FIXME - kill this *)
-   fun empty () : symtab = false
-
-   (* Convert a Mitchell identifier and given Subtable into a symbol,
-    * mangling the unicode char list down into a string suitable for printing
-    * out into an assembly file later on.
-    *)
-   val mangle = UniChar.Data2String
-
    fun toSymbol (unicodeSym, subtable) =
-      (unicodeSym, mangle unicodeSym, subtable)
+      (unicodeSym, subtable): symbol
 
    fun toString (sym: symbol) =
-      (case #3 sym of EXN_TYPE => "EXN_TYPE: "
+      (case #2 sym of EXN_TYPE => "EXN_TYPE: "
                     | FUN_TYCON => "FUN_TYCON: "
                     | MODULE => "MODULE: "
                     | VALUE => "VALUE: "
-                    | _ => "") ^ #2 sym
+                    | _ => "") ^ UniChar.Data2String (#1 sym)
+end
+
+signature SYMTAB = sig
+   (* The structure stored in the hash table, keyed on Symbol.symbol. *)
+   type entry = bool
+
+   (* Thrown by the hash table internals. *)
+   exception NotFound
+
+   (* A symbol table is a polymorphic HashTable mapping Symbol.symbols to
+    * entrys.
+    *)
+   type table = (Symbol.symbol, entry) HashTable.hash_table
+
+   (* Create a new empty symbol table. *)
+   val mkTable: unit -> table
+end
+
+structure Symtab :> SYMTAB = struct
+   type entry = bool
+
+   exception NotFound
+
+   type table = (Symbol.symbol, entry) HashTable.hash_table
+
+   fun hashSymbol (sym:Symbol.symbol) = UniChar.hashData (#1 sym)
+
+   fun compareSymbol (a:Symbol.symbol, b:Symbol.symbol) =
+      (#2 a = #2 b) andalso UniChar.compareData (#1 a, #1 b) = EQUAL
+
+   fun mkTable () =
+      HashTable.mkTable (hashSymbol, compareSymbol) (47, NotFound)
 end

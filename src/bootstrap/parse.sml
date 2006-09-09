@@ -183,7 +183,7 @@ struct
       in
          (state', Absyn.FunDecl{sym=Symbol.toSymbol (id, Symbol.FUN_TYCON), retval=ty,
                                 pos=statePos state, formals=formals, tyFormals=tyFormals,
-                                calls=[], symtab=Symbol.empty(), body=expr})
+                                calls=[], symtab=Symtab.mkTable(), body=expr})
       end
 
       (* ty-decl = type-symbol identifier-symbol (lparen-symbol name-lst rparen-symbol)? assign-symbol ty *)
@@ -193,7 +193,7 @@ struct
             val (state', ty) = parseTy (checkTok state' [RParen, Assign])
          in
             (state', Absyn.TyDecl{sym=Symbol.toSymbol (id, Symbol.EXN_TYPE), ty=NONE,
-                                  absynTy=ty, tyvars=SOME lst, symtab=SOME (Symbol.empty()),
+                                  absynTy=ty, tyvars=SOME lst, symtab=SOME (Symtab.mkTable()),
                                   pos=statePos state})
          end
 
@@ -240,7 +240,7 @@ struct
          val (state', expr) = parseExpr state'
       in
          (state', Absyn.ExnHandler {exnKind=NONE, sym=Symbol.toSymbol (sym, Symbol.EXN_TYPE),
-                                    expr=expr, symtab=Symbol.empty(), ty=NONE,
+                                    expr=expr, symtab=Symtab.mkTable(), ty=NONE,
                                     pos=statePos state})
       end
 
@@ -254,7 +254,7 @@ struct
           *)
          (state', Absyn.ExnHandler {exnKind=SOME id, expr=expr, pos=statePos state,
                                     sym=Symbol.toSymbol (sym, Symbol.EXN_TYPE),
-                                    symtab=Symbol.empty(), ty=NONE})
+                                    symtab=Symtab.mkTable(), ty=NONE})
       end
 
       val (state', (lst, default)) = parseDefaultLst state [] [Identifier[]]
@@ -326,7 +326,7 @@ struct
                         val (state', lst) = wrappedLst state' (LParen, RParen)
                                                        (lstMayBeEmpty RParen parseNameLst)
                      in
-                        (state', Absyn.UnionBranch (sym, lst, Symbol.empty()))
+                        (state', Absyn.UnionBranch (sym, lst, Symtab.mkTable()))
                      end
                   else
                      (state', Absyn.RegularBranch (Absyn.IdExp sym))
@@ -377,7 +377,7 @@ struct
          val (state', expr) = parseExpr (checkTok state' [In])
          val state' = checkTok state' [End]
       in
-         (state', Absyn.DeclExp{decls=decls, expr=expr, symtab=Symbol.empty()})
+         (state', Absyn.DeclExp{decls=decls, expr=expr, symtab=Symtab.mkTable()})
       end
 
       (* if-expr = if-symbol expr then-symbol expr else-symbol expr *)
@@ -453,7 +453,7 @@ struct
    in
       if length declLst = 0 then raise ParseError ("FIXME", #1 tok, #2 tok, "modules must have at least one declaration")
       else (state', Absyn.ModuleDecl{sym=Symbol.toSymbol (id, Symbol.MODULE), decls=declLst,
-                                     pos=statePos state, symtab=Symbol.empty()})
+                                     pos=statePos state, symtab=Symtab.mkTable()})
    end
 
    (* name-lst = identifier-symbol (comma-symbol identifier-symbol)* *)
