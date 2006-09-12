@@ -21,4 +21,28 @@ structure Types = struct
                  | RECORD of (Symbol.symbol * Type) list * Finite
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
+
+   fun toString (ALIAS (sym, _)) = Symbol.toString sym
+     | toString (ANY _) = "any"
+     | toString BOOLEAN = "boolean"
+     | toString BOTTOM = "bottom"
+     | toString (EXN (lst, _)) = 
+          "exn { " ^
+          String.concatWith ", " (map (fn (sym, ty) => Symbol.toString sym ^ ": " ^
+                                                       toString ty) lst) ^
+          "}"
+     | toString INTEGER = "integer"
+     | toString (LIST (ty, _)) = "list " ^ toString ty
+     | toString (RECORD (lst, _)) =
+          "record { " ^
+          String.concatWith ", " (map (fn (sym, ty) => Symbol.toString sym ^ ": " ^
+                                                       toString ty) lst) ^
+          "}"
+     | toString STRING = "string"
+     | toString (UNION (lst, _)) = 
+          "union { " ^
+          String.concatWith ", " (map (fn (sym, ty) => Symbol.toString sym ^
+                                                       (case ty of SOME t => ": " ^ toString t
+                                                                 | NONE => "")) lst) ^
+          "}"
 end
