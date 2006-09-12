@@ -2,7 +2,7 @@
  * table manipulation.  This consists of symbols and symbol tables.
  *)
 signature SYMBOL = sig
-   datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
+   datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    (* The key for symbol table operations. *)
    type symbol = BaseTy.mstring * Subtable
@@ -12,7 +12,7 @@ signature SYMBOL = sig
 end
 
 structure Symbol :> SYMBOL = struct
-   datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE | NONE
+   datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    type symbol = BaseTy.mstring * Subtable
 
@@ -26,8 +26,7 @@ structure Symbol :> SYMBOL = struct
       (case #2 sym of EXN_TYPE => "EXN_TYPE: "
                     | FUN_TYCON => "FUN_TYCON: "
                     | MODULE => "MODULE: "
-                    | VALUE => "VALUE: "
-                    | _ => "") ^ BaseTy.mstringToString (#1 sym)
+                    | VALUE => "VALUE: ") ^ BaseTy.mstringToString (#1 sym)
 end
 
 signature SYMTAB = sig
@@ -53,7 +52,17 @@ structure Symtab :> SYMTAB = struct
 
    type table = (Symbol.symbol, entry) HashTable.hash_table
 
-   fun hashSymbol (sym:Symbol.symbol) = UniChar.hashData (#1 sym)
+   fun hashSymbol (sym:Symbol.symbol) = let
+      (* Add a character to the front of the symbol to discriminate among
+       * subtables.
+       *)
+      val discrim = case #2 sym of Symbol.EXN_TYPE => chr 1
+                                 | Symbol.FUN_TYCON => chr 2
+                                 | Symbol.MODULE => chr 3
+                                 | Symbol.VALUE => chr 4
+   in
+      UniChar.hashData ([UniChar.char2Char discrim] @ #1 sym)
+   end
 
    fun compareSymbol (a:Symbol.symbol, b:Symbol.symbol) =
       (#2 a = #2 b) andalso UniChar.compareData (#1 a, #1 b) = EQUAL
