@@ -4,6 +4,7 @@ Group is
    error.sml
    parse.sml
    symbol.sml
+   symtab.sml
    tokens.sml
    types.sml
 
