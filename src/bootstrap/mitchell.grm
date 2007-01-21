@@ -1,0 +1,14 @@
+%name MitchellParse;
+
+%tokens
+   : ABSORB | ASSIGN | BOOLEAN of bool | BOTTOM | CASE | COLON | COMMA |
+     DBLQUOTE | DECL | DOT | ELSE | END | ENDOFFILE | EXN | FUNCTION |
+     HANDLE | IDENTIFIER of BaseTy.mstring | IF | IN | INTEGER of int |
+     LBRACE | LBRACK | LIST | LPAREN | MAPSTO | MODULE | PIPE | RAISE |
+     RBRACE | RBRACK | RPAREN | SEMICOLON | STRING of BaseTy.mstring |
+     THEN | TYPE | UNION | VAL
+   ;
+
+exp(env)
+   : MODULE
+   ;
