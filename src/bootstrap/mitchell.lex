@@ -7,7 +7,7 @@
 %let hex = [0-9A-Za-z];
 %let id = [^{digit}].*;
 %let int = {digit}+;
-%let ws = ("\t"|"\n"|" ");
+%let ws = [\t\n ];
 
 %defs (
    open MitchellTokens
@@ -20,8 +20,6 @@
    fun clrText () = ( text := [] )
    fun getText () = rev (!text)
 );
-
-{ws}+ => ( continue() );
 
 <INITIAL> "#"     => ( YYBEGIN COMMENTS ; continue() );
 <COMMENTS> "\n"   => ( YYBEGIN INITIAL ; continue() );
@@ -36,10 +34,11 @@
 <STRINGS> "\\".         => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown escape sequence") );
 <STRINGS> [^"\\]        => ( addText yyunicode; continue() );
 
-<WSESCAPE> {ws}+  => ( continue() );
-<WSESCAPE> "\\"   => ( YYBEGIN STRINGS ; continue() );
-<WSESCAPE> .      => ( raise Error.TokenizeError ("FIXME", yypos, "String whitespace escape sequences must end with '\\'.") );
+<WSESCAPE> " "|\n|\t => ( continue() );
+<WSESCAPE> "\\"      => ( YYBEGIN STRINGS ; continue() );
+<WSESCAPE> .         => ( raise Error.TokenizeError ("FIXME", yypos, "String whitespace escape sequences must end with '\\'.") );
 
+<INITIAL> " "|\n|\t  => ( continue() );
 <INITIAL> "absorb"   => ( ABSORB );
 <INITIAL> "←"        => ( ASSIGN );
 <INITIAL> "f"        => ( BOOLEAN false );
