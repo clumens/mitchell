@@ -3,24 +3,21 @@
  *
  * Usage: readFile <filename>
  *)
-CM.make ("../sources.cm");
-
-fun openFile filename =
-   Decode.decOpenUni (SOME(Uri.String2Uri filename), Encoding.UTF8)
-
-fun posStr (tok:Tokens.tokens) = Int.toString (#1 tok) ^ ":" ^ Int.toString (#2 tok)
-
-fun printToken (tok:Tokens.tokens) =
-   print (Tokens.toString tok ^ " " ^ posStr tok ^ "\n")
 
 fun readFile filename = let
-   fun doRead file = let
-      val (tok, file') = Tokens.nextToken file
+   fun openFile filename =
+      TextIO.openIn filename
+
+   fun printToken tok = print (MitchellTokens.toString tok ^ "\n")
+
+   val strm = openFile filename
+   val lex = MitchellLex.lex (StreamPos.mkSourcemap())
+
+   fun doRead strm = let
+      val (tok, pos, strm') = lex strm
    in
-      case (#3 tok) of
-         Tokens.EndOfFile => ()
-       | _  => ( printToken tok ; doRead file' )
+      printToken tok ; if MitchellTokens.isEOF tok then () else doRead strm'
    end
 in
-   doRead (openFile filename)
+   doRead (MitchellLex.streamifyInstream strm)
 end
