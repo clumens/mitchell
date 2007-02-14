@@ -5,10 +5,17 @@
  *)
 
 fun readFile filename = let
+   open MitchellTokens
+
    fun openFile filename =
       TextIO.openIn filename
 
-   fun printToken tok = print (MitchellTokens.toString tok ^ "\n")
+   fun printToken tok =
+      case tok of
+         IDENTIFIER str => ( print "IDENTIFIER(" ; app (fn c => print (UTF8.toString c))
+                                                       str ;
+                             print ")\n" )
+       | _              => print (toString tok ^ "\n")
 
    val strm = openFile filename
    val lex = MitchellLex.lex (StreamPos.mkSourcemap())
@@ -16,7 +23,7 @@ fun readFile filename = let
    fun doRead strm = let
       val (tok, pos, strm') = lex strm
    in
-      printToken tok ; if MitchellTokens.isEOF tok then () else doRead strm'
+      printToken tok ; if isEOF tok then () else doRead strm'
    end
 in
    doRead (MitchellLex.streamifyInstream strm)
