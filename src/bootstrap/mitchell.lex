@@ -10,32 +10,35 @@
 %let ws = ("\t"|"\n"|" ");
 
 %defs (
-   open MitchellParse.Tok
+   open MitchellTokens
+   type lex_result = token
+   fun eof() = EOF
 
-   val text: string list ref = ref []
-   fun addText s = ( text := s::(!text) )
+   val text: BaseTy.mstring ref = ref []
+   fun addText s = ( text := List.revAppend (s, !text))
+   fun addChar ch = ( text := ch::(!text))
    fun clrText () = ( text := [] )
-   fun getText () = concat (rev !text)
+   fun getText () = rev (!text)
 );
 
 {ws}+ => ( continue() );
 
-<INITIAL> "#"     => ( YYBEGIN COMMENTS );
-<COMMENTS> "\n"   => ( YYBEGIN INITIAL );
+<INITIAL> "#"     => ( YYBEGIN COMMENTS ; continue() );
+<COMMENTS> "\n"   => ( YYBEGIN INITIAL ; continue() );
 <COMMENTS> .      => ( continue() );
 
-<INITIAL> "\""          => ( clrText() ; YYBEGIN STRINGS );
-<STRINGS> "\""          => ( YYBEGIN INITIAL ; STRING getText() );
-<STRINGS> "\n"          => ( YYBEGIN WSESCAPE );
-<STRINGS> "\\n"         => ( addText "\n" ; continue() );
-<STRINGS> "\\t"         => ( addText "\t" ; continue() );
-<STRINGS> "\\u"{hex}{4} => ( addText yytext() ; continue() );
-<STRINGS> "\\".         => ( raise Errors.TokenizeError ("FIXME", yylineno, yypos, "Unknown escape sequence") );
-<STRINGS> [^"\\]        => ( addText yytext() ; continue() );
+<INITIAL> "\""          => ( clrText() ; YYBEGIN STRINGS ; continue() );
+<STRINGS> "\""          => ( YYBEGIN INITIAL ; STRING (getText()) );
+<STRINGS> "\n"          => ( YYBEGIN WSESCAPE ; continue() );
+<STRINGS> "\\n"         => ( addChar (UTF8.fromAscii #"\n") ; continue() );
+<STRINGS> "\\t"         => ( addChar (UTF8.fromAscii #"\t") ; continue() );
+<STRINGS> "\\u"{hex}{4} => ( addText yyunicode; continue() );
+<STRINGS> "\\".         => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown escape sequence") ; eof() );
+<STRINGS> [^"\\]        => ( addText yyunicode; continue() );
 
 <WSESCAPE> {ws}+  => ( continue() );
-<WSESCAPE> "\\"   => ( YYBEGIN STRINGS );
-<WSESCAPE> .      => ( raise Errors.TokenizeError ("FIXME", yylineno, yypos, "String whitespace escape sequences must end with '\\'.") );
+<WSESCAPE> "\\"   => ( YYBEGIN STRINGS ; continue() );
+<WSESCAPE> .      => ( raise Error.TokenizeError ("FIXME", yypos, "String whitespace escape sequences must end with '\\'.") );
 
 <INITIAL> "absorb"   => ( ABSORB );
 <INITIAL> "←"        => ( ASSIGN );
@@ -55,11 +58,11 @@
 <INITIAL> "if"       => ( IF );
 <INITIAL> "in"       => ( IN );
 <INITIAL> {int}      => ( let
-                             val i = Int.fromString yytext()
+                             val i = Int.fromString yytext
                           in
                              case i of
                                 SOME v => INTEGER v
-                              | NONE   => raise Errors.TokenizeError ("FIXME", yylineno, yypos, "Unable to perform numeric conversion")
+                              | NONE   => ( raise Error.TokenizeError ("FIXME", yypos, "Unable to perform numeric conversion") ; eof() )
                           end );
 <INITIAL> "{"        => ( LBRACE );
 <INITIAL> "["        => ( LBRACK );
@@ -77,4 +80,4 @@
 <INITIAL> "τ"        => ( TYPE );
 <INITIAL> "∪"        => ( UNION );
 <INITIAL> "ʋ"        => ( VAL ) ;
-<INITIAL> {id}       => ( IDENTIFIER yyunicode() );
+<INITIAL> {id}       => ( IDENTIFIER yyunicode );
