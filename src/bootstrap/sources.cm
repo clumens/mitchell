@@ -1,14 +1,17 @@
 Group is
+(*
    absyn.sml
-   basety.sml
-   error.sml
-   parse.sml
    symbol.sml
    symtab.sml
-   tokens.sml
    types.sml
+*)
 
-   Unicode/unicode.cm
+   basety.sml
+   error.sml
+
+   mitchell.lex: ml-ulex
+   mitchell.grm: ml-antlr
 
    $/basis.cm
    $/smlnj-lib.cm
+   $/ml-lpt-lib.cm
