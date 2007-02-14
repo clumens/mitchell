@@ -33,7 +33,7 @@
 <STRINGS> "\\n"         => ( addChar (UTF8.fromAscii #"\n") ; continue() );
 <STRINGS> "\\t"         => ( addChar (UTF8.fromAscii #"\t") ; continue() );
 <STRINGS> "\\u"{hex}{4} => ( addText yyunicode; continue() );
-<STRINGS> "\\".         => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown escape sequence") ; eof() );
+<STRINGS> "\\".         => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown escape sequence") );
 <STRINGS> [^"\\]        => ( addText yyunicode; continue() );
 
 <WSESCAPE> {ws}+  => ( continue() );
@@ -62,7 +62,7 @@
                           in
                              case i of
                                 SOME v => INTEGER v
-                              | NONE   => ( raise Error.TokenizeError ("FIXME", yypos, "Unable to perform numeric conversion") ; eof() )
+                              | NONE   => ( raise Error.TokenizeError ("FIXME", yypos, "Unable to perform numeric conversion") )
                           end );
 <INITIAL> "{"        => ( LBRACE );
 <INITIAL> "["        => ( LBRACK );
