@@ -19,26 +19,28 @@
    fun addChar ch = ( text := ch::(!text))
    fun clrText () = ( text := [] )
    fun getText () = rev (!text)
+
+   fun convertEscaped esc pos =
+      case Word32.fromString (String.extract (esc, 2, NONE)) of
+         SOME i => i
+       | NONE   => raise Error.TokenizeError (pos, "Invalid escaped Unicode character sequence.")
 );
 
 <INITIAL> "#"     => ( YYBEGIN COMMENTS ; continue() );
 <COMMENTS> \n     => ( YYBEGIN INITIAL ; continue() );
 <COMMENTS> .      => ( continue() );
 
-(*
 <INITIAL> "\""          => ( clrText() ; YYBEGIN STRINGS ; continue() );
 <STRINGS> "\""          => ( YYBEGIN INITIAL ; STRING (getText()) );
-<STRINGS> \n            => ( YYBEGIN WSESCAPE ; continue() );
+<STRINGS> "\\"\n        => ( YYBEGIN WSESCAPE ; continue() );
 <STRINGS> "\\n"         => ( addChar (UTF8.fromAscii #"\n") ; continue() );
 <STRINGS> "\\t"         => ( addChar (UTF8.fromAscii #"\t") ; continue() );
-<STRINGS> "\\u"{hex}{4} => ( addText yyunicode; continue() );
-<STRINGS> "\\".         => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown escape sequence") );
-<STRINGS> [^"\\]        => ( addText yyunicode; continue() );
+<STRINGS> "\\u"{hex}{4} => ( addChar (convertEscaped yytext yypos); continue() );
+<STRINGS> .             => ( addText yyunicode; continue() );
 
 <WSESCAPE> {ws}      => ( continue() );
 <WSESCAPE> "\\"      => ( YYBEGIN STRINGS ; continue() );
-<WSESCAPE> .         => ( raise Error.TokenizeError ("FIXME", yypos, "String whitespace escape sequences must end with '\\'.") );
-*)
+<WSESCAPE> .         => ( raise Error.TokenizeError (yypos, "String whitespace escape sequences must end with '\\'.") );
 
 <INITIAL> absorb     => ( ABSORB );
 <INITIAL> f          => ( BOOLEAN false );
@@ -81,7 +83,7 @@
                           in
                              case i of
                                 SOME v => INTEGER v
-                              | NONE   => ( raise Error.TokenizeError ("FIXME", yypos, "Unable to perform numeric conversion") )
+                              | NONE   => ( raise Error.TokenizeError (yypos, "Unable to perform numeric conversion") )
                           end );
 <INITIAL> {id}       => ( IDENTIFIER yyunicode );
-<INITIAL> .          => ( raise Error.TokenizeError ("FIXME", yypos, "Unknown character") );
+<INITIAL> .          => ( raise Error.TokenizeError (yypos, "Unknown character") );
