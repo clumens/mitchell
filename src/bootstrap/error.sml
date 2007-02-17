@@ -6,6 +6,6 @@ struct
    (* source file * position * error message *)
    exception ParseError of string * StreamPos.pos * string
 
-   (* source file * position * error message *)
-   exception TokenizeError of string * StreamPos.pos * string
+   (* position * error message *)
+   exception TokenizeError of StreamPos.pos * string
 end
