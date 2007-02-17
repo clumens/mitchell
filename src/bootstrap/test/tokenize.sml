@@ -18,7 +18,7 @@ fun readFile filename = let
        | BOOLEAN true   => print "BOOLEAN(t)\n"
        | IDENTIFIER v   => ( print "IDENTIFIER(" ; app printFn v ; print ")\n" )
        | INTEGER v      => ( print ("INTEGER(" ^ Int.toString v ^ ")\n" ) )
-       | STRING v       => ( print "STRING(" ; app printFn v ; print ")\n" )
+       | STRING v       => ( print "STRING(\"" ; app printFn v ; print "\")\n" )
        | _              => print (toString tok ^ "\n")
    end
 
@@ -33,6 +33,6 @@ fun readFile filename = let
    end
 in
    doRead (MitchellLex.streamifyInstream strm)
-   handle Error.TokenizeError e => print (#1 e ^ ": " ^ (StreamPos.toString sm (#2 e)) ^
-                                          ": " ^ #3 e)
+   handle Error.TokenizeError e => print (filename ^ " " ^ (StreamPos.toString sm (#1 e)) ^
+                                          ": " ^ #2 e ^ "\n")
 end
