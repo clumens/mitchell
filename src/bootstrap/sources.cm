@@ -1,13 +1,10 @@
 Group is
-(*
    absyn.sml
+   basety.sml
+   error.sml
    symbol.sml
    symtab.sml
    types.sml
-*)
-
-   basety.sml
-   error.sml
 
    mitchell.lex: ml-ulex
    mitchell.grm: ml-antlr
