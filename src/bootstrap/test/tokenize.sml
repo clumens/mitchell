@@ -10,15 +10,21 @@ fun readFile filename = let
    fun openFile filename =
       TextIO.openIn filename
 
-   fun printToken tok =
+   fun printToken tok = let
+      val printFn = fn c => print (UTF8.toString c)
+   in
       case tok of
-         IDENTIFIER str => ( print "IDENTIFIER(" ; app (fn c => print (UTF8.toString c))
-                                                       str ;
-                             print ")\n" )
+         BOOLEAN false  => print "BOOLEAN(f)\n"
+       | BOOLEAN true   => print "BOOLEAN(t)\n"
+       | IDENTIFIER v   => ( print "IDENTIFIER(" ; app printFn v ; print ")\n" )
+       | INTEGER v      => ( print ("INTEGER(" ^ Int.toString v ^ ")\n" ) )
+       | STRING v       => ( print "STRING(" ; app printFn v ; print ")\n" )
        | _              => print (toString tok ^ "\n")
+   end
 
    val strm = openFile filename
-   val lex = MitchellLex.lex (StreamPos.mkSourcemap())
+   val sm = StreamPos.mkSourcemap()
+   val lex = MitchellLex.lex sm
 
    fun doRead strm = let
       val (tok, pos, strm') = lex strm
@@ -27,4 +33,6 @@ fun readFile filename = let
    end
 in
    doRead (MitchellLex.streamifyInstream strm)
+   handle Error.TokenizeError e => print (#1 e ^ ": " ^ (StreamPos.toString sm (#2 e)) ^
+                                          ": " ^ #3 e)
 end
