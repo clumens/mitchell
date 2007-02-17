@@ -1,8 +1,8 @@
 signature SYMTAB = sig
    (* The structure stored in the hash table, keyed on Symbol.symbol. *)
    datatype Entry = SYM_EXN of {ty: Types.Type}
-                  | SYM_FUN of {ty: Types.Type, formals: (Symbol.symbol * Types.Type) list,
-                                tyFormals: Symbol.symbol list}
+                  | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
+                                     formals: (Symbol.symbol * Types.Type) list}
                   | SYM_MODULE
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
                   | SYM_TYPE of {ty: Types.Type}
@@ -18,12 +18,16 @@ signature SYMTAB = sig
 
    (* Create a new empty symbol table. *)
    val mkTable: unit -> table
+
+   (* Compare two symbols for equality. *)
+   val symbolsEqual: Symbol.symbol * Symbol.symbol -> bool
 end
 
 structure Symtab :> SYMTAB = struct
+   open BaseTy
    datatype Entry = SYM_EXN of {ty: Types.Type}
-                  | SYM_FUNCTION of {ty: Types.Type, formals: (Symbol.symbol * Types.Type) list,
-                                     tyFormals: Symbol.symbol list}
+                  | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
+                                     formals: (Symbol.symbol * Types.Type) list}
                   | SYM_MODULE
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
                   | SYM_TYPE of {ty: Types.Type}
@@ -42,12 +46,15 @@ structure Symtab :> SYMTAB = struct
                                  | Symbol.MODULE => chr 3
                                  | Symbol.VALUE => chr 4
    in
-      UniChar.hashData ([UniChar.char2Char discrim] @ #1 sym)
+      HashString.hashString (str discrim ^ mstringToString (#1 sym))
    end
 
-   fun compareSymbol (a:Symbol.symbol, b:Symbol.symbol) =
-      (#2 a = #2 b) andalso UniChar.compareData (#1 a, #1 b) = EQUAL
+   (* Two symbols are equal only if they are in the same subtable and if their
+    * string representations are the same.
+    *)
+   fun symbolsEqual (a:Symbol.symbol, b:Symbol.symbol) =
+      (#2 a = #2 b) andalso (String.compare (mstringToString (#1 a), mstringToString (#1 b))) = EQUAL
 
    fun mkTable () =
-      HashTable.mkTable (hashSymbol, compareSymbol) (47, NotFound)
+      HashTable.mkTable (hashSymbol, symbolsEqual) (47, NotFound)
 end
