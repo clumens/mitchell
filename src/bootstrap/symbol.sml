@@ -8,7 +8,15 @@ signature SYMBOL = sig
    (* The key for symbol table operations. *)
    type symbol = BaseTy.mstring * Subtable
 
+   (* Convert a string into a symbol that can be inserted into a symbol table.
+    * The subtable is used to discriminate between the various kinds of symbols
+    * that can all have the same name but live in the same table.
+    *)
    val toSymbol: BaseTy.mstring * Subtable -> symbol
+
+   (* Perform the reverse operation - convert a symbol into a string that
+    * is suitable for printing.
+    *)
    val toString: symbol -> string
 end
 
@@ -18,7 +26,7 @@ structure Symbol :> SYMBOL = struct
    type symbol = BaseTy.mstring * Subtable
 
    (* A wrapper around the symbol representation so callers don't have to know
-    * about the internals.
+    * about the internals.  The internal format could change in the future.
     *)
    fun toSymbol (unicodeSym, subtable) =
       (unicodeSym, subtable): symbol
