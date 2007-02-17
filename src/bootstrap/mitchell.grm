@@ -9,6 +9,13 @@
      THEN | TYPE | UNION | VAL
    ;
 
+%defs (
+   (* A span gives us both the start and ending position, but we really only
+    * care about the start.
+    *)
+   fun span2pos (span: StreamPos.span) = #1 span
+);
+
 (* START *)
 
 module_decl(env):
@@ -21,17 +28,20 @@ expr(env):
  | base_expr@(env) => ( Absyn.Expr );
 
 base_expr(env):
-   record_literal@(env) => ( Absyn.BottomExp )
- | LBRACK expr_lst@(env)? RBRACK => ( Absyn.BottomExp )
- | case_expr@(env) => ( Absyn.BottomExp )
- | decl_expr@(env) => ( Absyn.BottomExp )
- | if_expr@(env) => ( if_expr )
- | sym_ref@(env) => ( Absyn.BottomExp )
- | RAISE expr@(env) => ( Absyn.RaiseExp expr )
- | INTEGER => ( Absyn.IntegerExp INTEGER )
- | STRING => ( Absyn.StringExp STRING )
- | BOOLEAN => ( Absyn.BooleanExp BOOLEAN )
- | BOTTOM => ( Absyn.BottomExp );
+   record_literal@(env)          => ( Absyn.BottomExp )
+ | LBRACK expr_lst@(env)? RBRACK => ( let val lst = Option.getOpt (expr_lst, [])
+                                      in Absyn.ExprLstExp (rev lst)
+                                      end
+                                     )
+ | case_expr@(env)               => ( Absyn.BottomExp )
+ | decl_expr@(env)               => ( Absyn.BottomExp )
+ | if_expr@(env)                 => ( if_expr )
+ | sym_ref@(env)                 => ( Absyn.BottomExp )
+ | RAISE expr@(env)              => ( Absyn.RaiseExp expr )
+ | INTEGER                       => ( Absyn.IntegerExp INTEGER )
+ | STRING                        => ( Absyn.StringExp STRING )
+ | BOOLEAN                       => ( Absyn.BooleanExp BOOLEAN )
+ | BOTTOM                        => ( Absyn.BottomExp );
 
 record_literal(env):
    LBRACE record_assn_lst@(env) RBRACE => ();
@@ -40,7 +50,7 @@ record_assn_lst(env):
    IDENTIFIER ASSIGN expr@(env) (COMMA record_assn_lst@(env))? => ();
 
 expr_lst(env):
-   expr@(env) (COMMA expr@(env))* => ();
+   expr@(env) (COMMA expr@(env))* => ( expr::SR );
 
 case_expr(env):
    CASE expr@(env) IN branch_lst@(env) END => ();
@@ -89,10 +99,11 @@ name_lst(env):
    IDENTIFIER (COMMA IDENTIFIER)* => ();
 
 typed_name_lst(env):
-   typed_name@(env) (COMMA typed_name@(env))* => ();
+   typed_name@(env) (COMMA typed_name@(env))* => ( typed_name::SR );
 
 typed_name(env):
-   IDENTIFIER COLON ty@(env) => ();
+   IDENTIFIER COLON ty@(env) => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), ty,
+                                   span2pos IDENTIFIER_SPAN) );
 
 
 (* DECLARATIONS *)
@@ -126,15 +137,23 @@ val_decl(env):
 (* TYPES *)
 
 ty(env):
-   BOTTOM => ()
- | EXN LBRACE typed_name_lst@(env) RBRACE => ()
- | id@(env) => ()
- | LBRACE typed_name_lst@(env) RBRACE => ()
- | LIST ty@(env) => ()
- | UNION LBRACE tycon_lst@(env) RBRACE => ();
+   BOTTOM                                 => ( Absyn.BottomTy (span2pos BOTTOM_SPAN) )
+ | EXN LBRACE typed_name_lst@(env) RBRACE => ( Absyn.ExnTy{exn'=rev typed_name_lst,
+                                                           pos=span2pos EXN_SPAN} )
+ | id@(env)                               => ( Absyn.BottomTy (span2pos id_SPAN) )
+ | LBRACE typed_name_lst@(env) RBRACE     => ( Absyn.RecordTy{record=rev typed_name_lst,
+                                                              pos=span2pos LBRACE_SPAN} )
+ | LIST ty@(env)                          => ( Absyn.ListTy{lst=ty,
+                                                            pos=span2pos LIST_SPAN} )
+ | UNION LBRACE tycon_lst@(env) RBRACE    => ( Absyn.UnionTy{tycons=rev tycon_lst,
+                                                             pos=span2pos UNION_SPAN} );
 
 tycon_lst(env):
-   tycon@(env) (COMMA tycon@(env))* => ();
+   tycon@(env) (COMMA tycon@(env))* => ( tycon::SR );
 
 tycon(env):
-   IDENTIFIER (COLON ty@(env))? => ();
+   IDENTIFIER (COLON ty@(env))? => ( let val sym = Symbol.toSymbol (IDENTIFIER,
+                                                                    Symbol.FUN_TYCON)
+                                     in (sym, SR, span2pos IDENTIFIER_SPAN)
+                                     end
+                                   );
