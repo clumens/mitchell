@@ -1,14 +1,110 @@
-%name MitchellParse;
+%name Mitchell;
 
 %tokens
    : ABSORB | ASSIGN | BOOLEAN of bool | BOTTOM | CASE | COLON | COMMA |
-     DBLQUOTE | DECL | DOT | ELSE | END | ENDOFFILE | EXN | FUNCTION |
+     DBLQUOTE | DECL | DOT | ELSE | END | EXN | FUNCTION |
      HANDLE | IDENTIFIER of BaseTy.mstring | IF | IN | INTEGER of int |
      LBRACE | LBRACK | LIST | LPAREN | MAPSTO | MODULE | PIPE | RAISE |
      RBRACE | RBRACK | RPAREN | SEMICOLON | STRING of BaseTy.mstring |
      THEN | TYPE | UNION | VAL
    ;
 
-exp(env)
-   : MODULE
-   ;
+(* START *)
+
+module_decl(env): MODULE IDENTIFIER ASSIGN DECL top_decl@(env)+ END => ();
+
+(* EXPRESSIONS *)
+
+expr(env): LPAREN base_expr@(env) RPAREN handle_expr@(env)? => ()
+         | base_expr@(env) => ();
+
+base_expr(env): record_literal@(env) => ()
+              | LBRACK expr_lst@(env)? RBRACK => ()
+              | case_expr@(env) => ()
+              | decl_expr@(env) => ()
+              | if_expr@(env) => ()
+              | sym_ref@(env) => ()
+              | RAISE expr@(env) => ()
+              | INTEGER => ()
+              | STRING => ()
+              | BOOLEAN => ()
+              | BOTTOM => ();
+
+record_literal(env): LBRACE record_assn_lst@(env) RBRACE => ();
+
+record_assn_lst(env): IDENTIFIER ASSIGN expr@(env) (COMMA record_assn_lst@(env))? => ();
+
+expr_lst(env): expr@(env) (COMMA expr@(env))* => ();
+
+case_expr(env): CASE expr@(env) IN branch_lst@(env) END => ();
+
+branch_lst(env): branch_expr@(env) MAPSTO expr@(env) (COMMA branch_expr@(env) MAPSTO expr@(env))* => ()
+               | ELSE MAPSTO expr@(env) => ();
+
+branch_expr(env): id@(env) (LPAREN name_lst@(env)? RPAREN)? => ()
+                | INTEGER => ()
+                | STRING => ()
+                | BOOLEAN => ();
+
+decl_expr(env): DECL decl@(env)+ IN expr@(env) END => ();
+
+if_expr(env): IF expr@(env) THEN expr@(env) ELSE expr@(env) => ();
+
+sym_ref(env): id@(env) complex_sym_ref@(env)? (PIPE IDENTIFIER)* => ();
+
+complex_sym_ref(env): LPAREN ty@(env) (COMMA ty@(env))* SEMICOLON expr_lst@(env)? RPAREN => ()
+                    | record_literal@(env) => ();
+
+
+(* EXCEPTIONS *)
+
+exn_lst(env): id@(env) IDENTIFIER MAPSTO expr@(env) (COMMA exn_lst@(env))? => ()
+            | ELSE IDENTIFIER MAPSTO expr@(env) => ();
+
+handle_expr(env): HANDLE exn_lst@(env) END => ();
+
+
+(* IDENTIFIERS *)
+
+id(env): IDENTIFIER (DOT IDENTIFIER)* => ();
+
+name_lst(env): IDENTIFIER (COMMA IDENTIFIER)* => ();
+
+typed_name_lst(env): typed_name@(env) (COMMA typed_name@(env))* => ();
+
+typed_name(env): IDENTIFIER COLON ty@(env) => ();
+
+
+(* DECLARATIONS *)
+
+decl(env): ABSORB IDENTIFIER => ()
+         | fun_decl@(env) => ()
+         | ty_decl@(env) => ()
+         | val_decl@(env) => ();
+
+fun_decl(env): FUNCTION IDENTIFIER LPAREN ty_formals_lst@(env) SEMICOLON formals_lst@(env) RPAREN (COLON ty@(env))? ASSIGN expr@(env) => ();
+
+formals_lst(env): typed_name_lst@(env)? => ();
+
+top_decl(env): decl@(env) => ()
+             | module_decl@(env) => ();
+
+ty_decl(env): TYPE IDENTIFIER (LPAREN name_lst@(env) RPAREN)? ASSIGN ty@(env) => ();
+
+ty_formals_lst(env): name_lst@(env)? => ();
+
+val_decl(env): VAL IDENTIFIER (COLON ty@(env))? ASSIGN expr@(env) => ();
+
+
+(* TYPES *)
+
+ty(env): BOTTOM => ()
+       | EXN LBRACE typed_name_lst@(env) RBRACE => ()
+       | id@(env) => ()
+       | LBRACE typed_name_lst@(env) RBRACE => ()
+       | LIST ty@(env) => ()
+       | UNION LBRACE tycon_lst@(env) RBRACE => ();
+
+tycon_lst(env): tycon@(env) (COMMA tycon@(env))* => ();
+
+tycon(env): IDENTIFIER (COLON ty@(env))? => ();
