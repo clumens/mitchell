@@ -4,5 +4,7 @@ structure BaseTy = struct
     *)
    type mstring = UTF8.wchar list
 
-   val mstringToString = UTF8.toString
+   (* Convert a mitchell string into an ML string that can be printed. *)
+   fun mstringToString str =
+      String.concat (map UTF8.toString str)
 end
