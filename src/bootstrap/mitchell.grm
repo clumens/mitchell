@@ -99,14 +99,31 @@ complex_sym_ref(env):
 
 (* EXCEPTIONS *)
 
-exn_lst(env):
-   id@(env) IDENTIFIER MAPSTO expr@(env) (COMMA exn_lst@(env))? => ( [] )
- | ELSE IDENTIFIER MAPSTO expr@(env) => ( [] );
-
 handle_expr(env):
-   HANDLE exn_lst@(env) END => ( {handlers=exn_lst, default=NONE, ty=NONE,
-                                  pos=span2pos HANDLE_SPAN}
-                               );
+   HANDLE ELSE IDENTIFIER MAPSTO expr@(env) END =>
+      ( {handlers=[], ty=NONE, pos=span2pos HANDLE_SPAN,
+         default=SOME (Absyn.ExnHandler{exnKind=NONE, expr=expr, ty=NONE,
+                                        pos=span2pos IDENTIFIER_SPAN,
+                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
+                                        symtab=Symtab.mkTable()})} )
+ | HANDLE exn_lst@(env) (COMMA ELSE IDENTIFIER MAPSTO expr@(env) =>
+                           ( Absyn.ExnHandler{exnKind=NONE, expr=expr, ty=NONE,
+                                              pos=span2pos ELSE_SPAN,
+                                              sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
+                                              symtab=Symtab.mkTable()}
+                           )
+                        )? END =>
+      ( {handlers=exn_lst, default=SR, ty=NONE, pos=span2pos HANDLE_SPAN} );
+
+exn_lst(env):
+   single_exn@(env) (COMMA single_exn@(env))* => ( [single_exn] @ SR );
+
+single_exn(env):
+   id@(env) IDENTIFIER MAPSTO expr@(env) =>
+      ( Absyn.ExnHandler{exnKind=SOME id, expr=expr, pos=span2pos id_SPAN, 
+                         sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
+                         symtab=Symtab.mkTable(), ty=NONE}
+      );
 
 
 (* IDENTIFIERS *)
@@ -116,7 +133,7 @@ id(env):
 
 (* FIXME: broken for the list case *)
 name_lst(env):
-   IDENTIFIER (COMMA IDENTIFIER)* => ( [Symbol.toSymbol (IDENTIFIER, Symbol.VALUE)]);
+   IDENTIFIER (COMMA IDENTIFIER)* => ( [Symbol.toSymbol (IDENTIFIER, Symbol.VALUE)] );
 (*
    IDENTIFIER (COMMA IDENTIFIER)* => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE))::SR );
 *)
