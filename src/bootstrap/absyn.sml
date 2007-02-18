@@ -1,6 +1,6 @@
 (* This structure defines the format of the abstact syntax tree. *)
 structure Absyn = struct
-   type pos = int * int
+   type pos = StreamPos.pos
 
    (* Exception handler expression.  exnKind is optional in the default case,
     * where we handle all types of exceptions and therefore aren't given
