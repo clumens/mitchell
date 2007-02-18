@@ -1,12 +1,14 @@
 %name Mitchell;
 
 %tokens
-   : ABSORB | ASSIGN | BOOLEAN of bool | BOTTOM | CASE | COLON | COMMA |
-     DBLQUOTE | DECL | DOT | ELSE | END | EXN | FUNCTION |
-     HANDLE | IDENTIFIER of BaseTy.mstring | IF | IN | INTEGER of int |
-     LBRACE | LBRACK | LIST | LPAREN | MAPSTO | MODULE | PIPE | RAISE |
-     RBRACE | RBRACK | RPAREN | SEMICOLON | STRING of BaseTy.mstring |
-     THEN | TYPE | UNION | VAL
+   : ABSORB ("absorb") | ASSIGN ("←") | BOOLEAN of bool | BOTTOM ("⊥") | CASE ("case") |
+     COLON (":") | COMMA (",") | DBLQUOTE ("\"") | DECL ("decl") | DOT (".") |
+     ELSE ("else") | END ("end") | EXN ("ℰ") | FUNCTION ("ƒ") | HANDLE ("handle") |
+     IDENTIFIER of BaseTy.mstring | IF ("if") | IN ("in") | INTEGER of int |
+     LBRACE ("{") | LBRACK ("[") | LIST ("list") | LPAREN ("(") | MAPSTO ("→") |
+     MODULE ("ℳ") | PIPE ("|") | RAISE ("raise") | RBRACE ("}") | RBRACK ("]") |
+     RPAREN (")") | SEMICOLON (";") | STRING of BaseTy.mstring | THEN ("then") |
+     TYPE ("τ") | UNION ("∪") | VAL ("ʋ")
    ;
 
 %defs (
