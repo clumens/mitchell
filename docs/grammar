@@ -46,7 +46,6 @@ base-expr = record-literal
           | bottom-symbol
 
 branch-lst = branch-expr mapsto-symbol expr (comma-symbol branch-lst)?
-           | else-symbol mapsto-symbol expr
 
 branch-expr = id
             | id lparen-symbol name-lst? rparen-symbol
@@ -54,7 +53,7 @@ branch-expr = id
             | string-symbol
             | boolean-symbol
 
-case-expr = case-symbol expr in-symbol branch-lst end-symbol
+case-expr = case-symbol expr in-symbol branch-lst (comma-symbol else-symbol mapsto-symbol expr)? end-symbol
 
 decl-expr = decl-symbol decl+ in-symbol expr end-symbol
 
