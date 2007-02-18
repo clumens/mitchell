@@ -19,22 +19,23 @@
 (* START *)
 
 module_decl(env):
-   MODULE IDENTIFIER ASSIGN DECL top_decl@(env)+ END => ();
+   MODULE IDENTIFIER ASSIGN DECL top_decl@(env)+ END => ( top_decl );
+
 
 (* EXPRESSIONS *)
 
 expr(env):
-   LPAREN base_expr@(env) RPAREN handle_expr@(env)? => ( Absyn.Expr )
- | base_expr@(env) => ( Absyn.Expr );
+   (* FIXME:  finish exnHandler case *)
+   LPAREN base_expr@(env) RPAREN handle_expr@(env)? =>
+      ( Absyn.Expr{expr=base_expr, pos=span2pos LPAREN_SPAN, ty=NONE, exnHandler=NONE} )
+ | base_expr@(env) => ( Absyn.Expr{expr=base_expr, pos=span2pos base_expr_SPAN,
+                                   ty=NONE, exnHandler=NONE} );
 
 base_expr(env):
    record_literal@(env)          => ( Absyn.BottomExp )
- | LBRACK expr_lst@(env)? RBRACK => ( let val lst = Option.getOpt (expr_lst, [])
-                                      in Absyn.ExprLstExp (rev lst)
-                                      end
-                                     )
+ | LBRACK expr_lst@(env)? RBRACK => ( Absyn.ExprLstExp (Option.getOpt (expr_lst, [])))
  | case_expr@(env)               => ( Absyn.BottomExp )
- | decl_expr@(env)               => ( Absyn.BottomExp )
+ | decl_expr@(env)               => ( decl_expr )
  | if_expr@(env)                 => ( if_expr )
  | sym_ref@(env)                 => ( Absyn.BottomExp )
  | RAISE expr@(env)              => ( Absyn.RaiseExp expr )
@@ -50,7 +51,7 @@ record_assn_lst(env):
    IDENTIFIER ASSIGN expr@(env) (COMMA record_assn_lst@(env))? => ();
 
 expr_lst(env):
-   expr@(env) (COMMA expr@(env))* => ( expr::SR );
+   expr@(env) (COMMA expr@(env))* => ( [expr] @ SR );
 
 case_expr(env):
    CASE expr@(env) IN branch_lst@(env) END => ();
@@ -60,13 +61,18 @@ branch_lst(env):
  | ELSE MAPSTO expr@(env) => ();
 
 branch_expr(env):
-   id@(env) (LPAREN name_lst@(env)? RPAREN)? => ()
- | INTEGER => ()
- | STRING => ()
- | BOOLEAN => ();
+   id@(env) (LPAREN name_lst@(env)? RPAREN)? =>
+      ( let val syms = Option.getOpt (Option.getOpt (SR, NONE), [])
+        in Absyn.UnionBranch (id, syms, Symtab.mkTable())
+        end
+      )
+ | INTEGER  => ( Absyn.RegularBranch (Absyn.IntegerExp INTEGER) )
+ | STRING   => ( Absyn.RegularBranch (Absyn.StringExp STRING) )
+ | BOOLEAN  => ( Absyn.RegularBranch (Absyn.BooleanExp BOOLEAN) );
 
 decl_expr(env):
-   DECL decl@(env)+ IN expr@(env) END => ();
+   DECL decl@(env)+ IN expr@(env) END => ( Absyn.DeclExp{decls=decl, expr=expr,
+                                                         symtab=Symtab.mkTable()} );
 
 if_expr(env):
    IF expr@(env) THEN expr@(env) ELSE expr@(env) =>
@@ -93,13 +99,17 @@ handle_expr(env):
 (* IDENTIFIERS *)
 
 id(env):
-   IDENTIFIER (DOT IDENTIFIER)* => ();
+   IDENTIFIER (DOT IDENTIFIER)* => ( Absyn.Id ([IDENTIFIER] @ SR) );
 
+(* FIXME: broken for fun-decls *)
 name_lst(env):
-   IDENTIFIER (COMMA IDENTIFIER)* => ();
+   IDENTIFIER (COMMA IDENTIFIER)* => ( [Symbol.toSymbol (IDENTIFIER, Symbol.VALUE)]);
+(*
+   IDENTIFIER (COMMA IDENTIFIER)* => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE))::SR );
+*)
 
 typed_name_lst(env):
-   typed_name@(env) (COMMA typed_name@(env))* => ( typed_name::SR );
+   typed_name@(env) (COMMA typed_name@(env))* => ( [typed_name] @ SR );
 
 typed_name(env):
    IDENTIFIER COLON ty@(env) => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), ty,
@@ -109,47 +119,58 @@ typed_name(env):
 (* DECLARATIONS *)
 
 decl(env):
-   ABSORB IDENTIFIER => ()
- | fun_decl@(env) => ()
- | ty_decl@(env) => ()
- | val_decl@(env) => ();
+   ABSORB id@(env)   => ( Absyn.Absorb{module=id, pos=span2pos ABSORB_SPAN} )
+ | fun_decl@(env)    => ( fun_decl )
+ | ty_decl@(env)     => ( ty_decl )
+ | val_decl@(env)    => ( val_decl );
 
 fun_decl(env):
-   FUNCTION IDENTIFIER LPAREN ty_formals_lst@(env) SEMICOLON formals_lst@(env) RPAREN (COLON ty@(env))? ASSIGN expr@(env) => ();
+   FUNCTION IDENTIFIER LPAREN ty_formals_lst@(env) SEMICOLON formals_lst@(env) RPAREN (COLON ty@(env))? ASSIGN expr@(env) =>
+      ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON), retval=SR,
+                      pos=span2pos FUNCTION_SPAN, formals=formals_lst,
+                      tyFormals=ty_formals_lst, calls=[], body=expr,
+                      symtab=Symtab.mkTable()}
+      );
 
 formals_lst(env):
-   typed_name_lst@(env)? => ();
+   typed_name_lst@(env)? => ( Option.getOpt (typed_name_lst, []) );
 
 top_decl(env):
-   decl@(env) => ()
+   decl@(env)=> ()
  | module_decl@(env) => ();
 
 ty_decl(env):
-   TYPE IDENTIFIER (LPAREN name_lst@(env) RPAREN)? ASSIGN ty@(env) => ();
+   TYPE IDENTIFIER (LPAREN name_lst@(env) RPAREN)? ASSIGN ty@(env) =>
+      ( Absyn.TyDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE), ty=NONE,
+                     absynTy=ty, tyvars=SR, symtab=SOME (Symtab.mkTable()),
+                     pos=span2pos TYPE_SPAN}
+      );
 
 ty_formals_lst(env):
-   name_lst@(env)? => ();
+   name_lst@(env)? => ( Option.getOpt (name_lst, []) );
 
 val_decl(env):
-   VAL IDENTIFIER (COLON ty@(env))? ASSIGN expr@(env) => ();
+   VAL IDENTIFIER (COLON ty@(env))? ASSIGN expr@(env) =>
+      ( Absyn.ValDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), ty=NONE,
+                      absynTy=SR, init=expr, pos=span2pos VAL_SPAN} );
 
 
 (* TYPES *)
 
 ty(env):
    BOTTOM                                 => ( Absyn.BottomTy (span2pos BOTTOM_SPAN) )
- | EXN LBRACE typed_name_lst@(env) RBRACE => ( Absyn.ExnTy{exn'=rev typed_name_lst,
+ | EXN LBRACE typed_name_lst@(env) RBRACE => ( Absyn.ExnTy{exn'=typed_name_lst,
                                                            pos=span2pos EXN_SPAN} )
- | id@(env)                               => ( Absyn.BottomTy (span2pos id_SPAN) )
- | LBRACE typed_name_lst@(env) RBRACE     => ( Absyn.RecordTy{record=rev typed_name_lst,
+ | id@(env)                               => ( Absyn.IdTy{id=id, pos=span2pos id_SPAN} )
+ | LBRACE typed_name_lst@(env) RBRACE     => ( Absyn.RecordTy{record=typed_name_lst,
                                                               pos=span2pos LBRACE_SPAN} )
  | LIST ty@(env)                          => ( Absyn.ListTy{lst=ty,
                                                             pos=span2pos LIST_SPAN} )
- | UNION LBRACE tycon_lst@(env) RBRACE    => ( Absyn.UnionTy{tycons=rev tycon_lst,
+ | UNION LBRACE tycon_lst@(env) RBRACE    => ( Absyn.UnionTy{tycons=tycon_lst,
                                                              pos=span2pos UNION_SPAN} );
 
 tycon_lst(env):
-   tycon@(env) (COMMA tycon@(env))* => ( tycon::SR );
+   tycon@(env) (COMMA tycon@(env))* => ( [tycon] @ SR );
 
 tycon(env):
    IDENTIFIER (COLON ty@(env))? => ( let val sym = Symbol.toSymbol (IDENTIFIER,
