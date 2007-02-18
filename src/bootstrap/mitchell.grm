@@ -99,9 +99,9 @@ sym_ref:
       );
 
 complex_sym_ref(id):
-   LPAREN ty (COMMA ty)* SEMICOLON expr_lst? RPAREN =>
-      ( Absyn.FunCallExp{id=id, tyArgs=[ty] @ SR, args=Option.getOpt(expr_lst, []),
-                         frees=[]}
+   LPAREN (ty (COMMA ty)* => ([ty] @ SR))? SEMICOLON expr_lst? RPAREN =>
+      ( Absyn.FunCallExp{id=id, tyArgs=Option.getOpt(SR, []),
+                         args=Option.getOpt(expr_lst, []), frees=[]}
       )
  | record_literal => ( record_literal );
 
