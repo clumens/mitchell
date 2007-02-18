@@ -138,12 +138,9 @@ single_exn:
 id:
    IDENTIFIER (DOT IDENTIFIER)* => ( Absyn.Id ([IDENTIFIER] @ SR) );
 
-(* FIXME: broken for the list case *)
 name_lst:
-   IDENTIFIER (COMMA IDENTIFIER)* => ( [Symbol.toSymbol (IDENTIFIER, Symbol.VALUE)] );
-(*
-   IDENTIFIER (COMMA IDENTIFIER)* => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE))::SR );
-*)
+   IDENTIFIER (COMMA IDENTIFIER)* =>
+      ( map (fn s => Symbol.toSymbol (s, Symbol.VALUE)) ([IDENTIFIER] @ SR) );
 
 typed_name_lst:
    typed_name (COMMA typed_name)* => ( [typed_name] @ SR );
