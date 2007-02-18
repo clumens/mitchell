@@ -19,22 +19,25 @@
 (* START *)
 
 module_decl(env):
-   MODULE IDENTIFIER ASSIGN DECL top_decl@(env)+ END => ( top_decl );
+   MODULE IDENTIFIER ASSIGN DECL top_decl@(env)+ END =>
+      ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE), decls=top_decl,
+                         pos=span2pos MODULE_SPAN, symtab=Symtab.mkTable()}
+      );
 
 
 (* EXPRESSIONS *)
 
 expr(env):
-   (* FIXME:  finish exnHandler case *)
    LPAREN base_expr@(env) RPAREN handle_expr@(env)? =>
-      ( Absyn.Expr{expr=base_expr, pos=span2pos LPAREN_SPAN, ty=NONE, exnHandler=NONE} )
+      ( Absyn.Expr{expr=base_expr, pos=span2pos LPAREN_SPAN, ty=NONE,
+                   exnHandler=handle_expr} )
  | base_expr@(env) => ( Absyn.Expr{expr=base_expr, pos=span2pos base_expr_SPAN,
                                    ty=NONE, exnHandler=NONE} );
 
 base_expr(env):
-   record_literal@(env)          => ( Absyn.BottomExp )
+   record_literal@(env)          => ( record_literal )
  | LBRACK expr_lst@(env)? RBRACK => ( Absyn.ExprLstExp (Option.getOpt (expr_lst, [])))
- | case_expr@(env)               => ( Absyn.BottomExp )
+ | case_expr@(env)               => ( case_expr )
  | decl_expr@(env)               => ( decl_expr )
  | if_expr@(env)                 => ( if_expr )
  | sym_ref@(env)                 => ( Absyn.BottomExp )
@@ -45,20 +48,28 @@ base_expr(env):
  | BOTTOM                        => ( Absyn.BottomExp );
 
 record_literal(env):
-   LBRACE record_assn_lst@(env) RBRACE => ();
+   LBRACE record_assn_lst@(env) RBRACE => ( Absyn.RecordAssnExp record_assn_lst );
 
 record_assn_lst(env):
-   IDENTIFIER ASSIGN expr@(env) (COMMA record_assn_lst@(env))? => ();
+   single_record_assn@(env) (COMMA single_record_assn@(env))* =>
+      ( [single_record_assn] @ SR );
+
+single_record_assn(env):
+   IDENTIFIER ASSIGN expr@(env) =>
+      ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), expr) );
 
 expr_lst(env):
    expr@(env) (COMMA expr@(env))* => ( [expr] @ SR );
 
 case_expr(env):
-   CASE expr@(env) IN branch_lst@(env) END => ();
+   CASE expr@(env) IN branch_lst@(env) (COMMA ELSE MAPSTO expr@(env))? END =>
+      ( Absyn.CaseExp{test=expr, branches=branch_lst, default=SR} );
 
 branch_lst(env):
-   branch_expr@(env) MAPSTO expr@(env) (COMMA branch_expr@(env) MAPSTO expr@(env))* => ()
- | ELSE MAPSTO expr@(env) => ();
+   single_branch@(env) (COMMA single_branch@(env))* => ( [single_branch] @ SR );
+
+single_branch(env):
+   branch_expr@(env) MAPSTO expr@(env) => ( (branch_expr, expr) );
 
 branch_expr(env):
    id@(env) (LPAREN name_lst@(env)? RPAREN)? =>
@@ -89,11 +100,13 @@ complex_sym_ref(env):
 (* EXCEPTIONS *)
 
 exn_lst(env):
-   id@(env) IDENTIFIER MAPSTO expr@(env) (COMMA exn_lst@(env))? => ()
- | ELSE IDENTIFIER MAPSTO expr@(env) => ();
+   id@(env) IDENTIFIER MAPSTO expr@(env) (COMMA exn_lst@(env))? => ( [] )
+ | ELSE IDENTIFIER MAPSTO expr@(env) => ( [] );
 
 handle_expr(env):
-   HANDLE exn_lst@(env) END => ();
+   HANDLE exn_lst@(env) END => ( {handlers=exn_lst, default=NONE, ty=NONE,
+                                  pos=span2pos HANDLE_SPAN}
+                               );
 
 
 (* IDENTIFIERS *)
@@ -101,7 +114,7 @@ handle_expr(env):
 id(env):
    IDENTIFIER (DOT IDENTIFIER)* => ( Absyn.Id ([IDENTIFIER] @ SR) );
 
-(* FIXME: broken for fun-decls *)
+(* FIXME: broken for the list case *)
 name_lst(env):
    IDENTIFIER (COMMA IDENTIFIER)* => ( [Symbol.toSymbol (IDENTIFIER, Symbol.VALUE)]);
 (*
@@ -136,8 +149,8 @@ formals_lst(env):
    typed_name_lst@(env)? => ( Option.getOpt (typed_name_lst, []) );
 
 top_decl(env):
-   decl@(env)=> ()
- | module_decl@(env) => ();
+   decl@(env)        => ( decl )
+ | module_decl@(env) => ( module_decl );
 
 ty_decl(env):
    TYPE IDENTIFIER (LPAREN name_lst@(env) RPAREN)? ASSIGN ty@(env) =>
