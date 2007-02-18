@@ -9,16 +9,18 @@ fun parseFile filename = let
    fun openFile filename =
       TextIO.openIn filename
 
+   (* Adapted from repair.sml in the ml-lpt sources. *)
+   fun repairToString tokToString sm (pos, repair) = 
+      (filename ^ StreamPos.toString sm pos ^ ": Parse error: " ^
+       Repair.actionToString tokToString repair)
+
    fun parse lex strm sm = let
       val (result, strm', errs) = Parser.parse lex strm
-      (* filename [line.col]: Parse error: repair *)
-      val errStrs = map (Repair.repairToString MitchellTokens.toString sm) errs
+      val errStrs = map (repairToString MitchellTokens.toString sm) errs
    in
       case result of
-         SOME r => if length errStrs > 0 then
-                      app (fn s => print (filename ^ " " ^ s ^ "\n")) errStrs
-                   else
-                      ()
+         SOME r => if length errStrs > 0 then app (fn s => print (s ^ "\n")) errStrs
+                   else ()
        | NONE => print "unrecoverable error!\n"
    end
 
