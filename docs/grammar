@@ -1,11 +1,9 @@
-/* EBNF for the mitchell language.  No guarantees are made that this grammar
- * is LL(1).  Being that restrictive can mean an awkward grammar, and since
- * I'm not even using a parser generator, I can play as fast and loose as I
- * want with the token lookahead.  So here's the grammar, whatever it may be.
+/* EBNF for the mitchell language.  This grammar is LL(k) as recognized by
+ * ml-antlr.
  */
 
 /* mitchell - the bootstrapping compiler
- * Copyright (C) 2004-2006 Chris Lumens
+ * Copyright (C) 2004-2007 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -28,10 +26,8 @@ module-decl = module-symbol identifier-symbol assign-symbol decl-symbol top-decl
 
 
 /* Expressions */
-expr = lparen-symbol base-expr rparen-symbol (handle-symbol exn-lst end-symbol)?
-     | base-expr (handle-symbol exn-lst end-symbol)?
-
-expr-lst = expr (comma-symbol expr)*
+expr = lparen-symbol base-expr rparen-symbol handle-expr?
+     | base-expr
 
 base-expr = record-literal
           | lbrack-symbol expr-lst? rbrack-symbol
@@ -45,24 +41,52 @@ base-expr = record-literal
           | boolean-symbol
           | bottom-symbol
 
-branch-lst = branch-expr mapsto-symbol expr (comma-symbol branch-lst)?
+record-literal = lbrace-symbol record-assn-lst rbrace-symbol
 
-branch-expr = id
-            | id lparen-symbol name-lst? rparen-symbol
+record-assn-lst = single-record-assn (comma-symbol single-record-assn)*
+
+single-record-assn = identifier-symbol assign-symbol expr
+
+expr-lst = expr (comma-symbol expr)*
+
+case-expr = case-symbol expr in-symbol branch-lst (comma-symbol else-symbol mapsto-symbol expr)? end-symbol
+
+branch-lst = single-branch (comma-symbol single-branch)*
+
+single-branch = branch-expr MAPSTO expr
+
+branch-expr = id (lparen-symbol name-lst? rparen-symbol)?
             | integer-symbol
             | string-symbol
             | boolean-symbol
 
-case-expr = case-symbol expr in-symbol branch-lst (comma-symbol else-symbol mapsto-symbol expr)? end-symbol
-
 decl-expr = decl-symbol decl+ in-symbol expr end-symbol
-
-exn-lst = id identifier-symbol mapsto-symbol expr (comma-symbol exn-lst)?
-        | else-symbol identifier-symbol mapsto-symbol expr
 
 if-expr = if-symbol expr then-symbol expr else-symbol expr
 
-record-literal = lbrace-symbol record-assn-lst rbrace-symbol
+sym-ref = id complex-sym-ref? (pipe-symbol identifier-symbol)*
+
+complex-sym-ref = lparen-symbol (ty (comma-symbol ty)*)? semicolon-symbol expr-lst? rparen-symbol
+                | record-literal
+
+
+/* Exceptions */
+handle-expr = handle-symbol else-symbol identifier-symbol mapsto-symbol expr end-symbol
+            | handle-symbol exn-lst (comma-symbol else-symbol identifier-symbol mapsto-symbol expr)? end-symbol
+
+exn-lst = single-exn (comma-symbol single-exn)*
+
+single-exn = id identifier-symbol mapsto-symbol expr
+
+
+/* Identifiers */
+id = identifier-symbol (dot-symbol identifier-symbol)*
+
+name-lst = identifier-symbol (comma-symbol identifier-symbol)*
+
+typed-name-lst = typed-name (comma-symbol typed-name)*
+
+typed-name = identifier-symbol colon-symbol ty
 
 
 /* Declarations */
@@ -71,13 +95,21 @@ decl = ty-decl
      | fun-decl
      | absorb-symbol id
 
+fun-decl = function-symbol identifier-symbol lparen-symbol ty-formals-lst semicolon-symbol formals-lst rparen-symbol (colon-symbol ty)? assign-symbol expr
+
+formals-lst = typed-name-lst?
+
 top-decl = decl
          | module-decl
 
-
-/* Types */
 ty-decl = type-symbol identifier-symbol (lparen-symbol name-lst rparen-symbol)? assign-symbol ty
 
+ty-formals-lst = name-lst?
+
+val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr
+
+
+/* Types */
 ty = bottom-symbol
    | list-symbol ty
    | exn-symbol lbrace-symbol typed-name-lst rbrace-symbol
@@ -85,36 +117,9 @@ ty = bottom-symbol
    | lbrace-symbol typed-name-lst rbrace-symbol
    | id
 
-ty-lst = ty (comma-symbol ty)*
+tycon-lst = tycon (comma-symbol tycon)*
 
-tycon-lst = identifier-symbol (colon-symbol ty)? (comma-symbol tycon-lst)*
-
-typed-name-lst = identifier-symbol colon-symbol ty (comma-symbol identifier-symbol colon-symbol ty)*
-
-name-lst = identifier-symbol (comma-symbol identifier-symbol)*
-
-record-assn-lst = identifier-symbol assign-symbol expr (comma-symbol record-assn-lst)*
-
-
-/* Values */
-val-decl = val-symbol identifier-symbol (colon-symbol ty)? assign-symbol expr
-
-id = identifier-symbol (dot-symbol identifier-symbol)*
-
-record-ref = (pipe-symbol identifier-symbol)+
-
-
-/* Functions */
-fun-decl = function-symbol identifier-symbol lparen-symbol ty-formals-lst semicolon-symbol formals-lst rparen-symbol (colon-symbol ty)? assign-symbol expr
-
-ty-formals-lst = name-lst?
-
-formals-lst = typed-name-lst?
-
-sym-ref = id
-        | id lparen-symbol ty-lst? semicolon-symbol expr-lst? rparen-symbol
-        | sym-ref record-ref
-        | id record-literal
+tycon = identifier-symbol (colon-symbol ty)?
 
 
 /* Misc */
