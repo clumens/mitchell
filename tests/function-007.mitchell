@@ -1,6 +1,6 @@
 # Description:  Function with a more complicated but empty body
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: syntax error at in
 
 ℳ Main ← decl
    ƒ asdf(;): integer ← decl

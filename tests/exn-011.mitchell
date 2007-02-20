@@ -5,5 +5,5 @@
 ℳ Main ← decl
    τ Exn ← ℰ { val: integer }
 
-   ʋ z: boolean ← raise Exn { val ← 47 } handle Exn e → 47 end
+   ʋ z: boolean ← ( raise Exn { val ← 47 } ) handle Exn e → 47 end
 end

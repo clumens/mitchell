@@ -1,6 +1,6 @@
 # Description:  Modules have a prototype section, like in the old days
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: deleting
 
 ℳ Main ← decl
    ƒ main(;): integer

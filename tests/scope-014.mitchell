@@ -1,5 +1,6 @@
 # Description:  Empty decl expression in a function
 # Expected:  FAIL
+# HowFail: Parse error: syntax error at in
 
 ℳ Main ← decl
    ƒ foo(;): integer ← decl

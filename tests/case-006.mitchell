@@ -1,5 +1,6 @@
 # Description:  case expression with just a default
-# Expected:  PASS
+# HowFail: Parse error: syntax error at else
+# Expected:  FAIL
 
 ℳ Main ← decl
    ƒ asdf(;): string ← "asdf"

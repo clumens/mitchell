@@ -1,6 +1,6 @@
 # Description:  Single empty module declaration.
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: syntax error at end
 
 ℳ Main ← decl
 end

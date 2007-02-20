@@ -1,6 +1,6 @@
 # Description:  Function that takes multiple arguments, mangled argument list
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: inserting ,
 
 ℳ Main ← decl
    ƒ asdf( ; a: integer, b: string c: boolean): integer ←

@@ -1,5 +1,6 @@
 # Description:  Create a new empty record type
 # Expected:  FAIL
+# HowFail: Parse error: syntax error at }
 
 ℳ Main ← decl
    τ rec ← { }

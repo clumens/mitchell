@@ -1,6 +1,6 @@
 # Description:  Empty branch-lst
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: syntax error at end
 
 ℳ Main ← decl
    ƒ foo(;): integer ←

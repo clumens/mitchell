@@ -1,6 +1,6 @@
 # Description:  Record definition missing types
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: inserting
 
 ℳ Main ← decl
    τ person ← {name, age}

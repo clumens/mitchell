@@ -1,9 +1,9 @@
 # Description:  Handler without binding
 # Expected:  FAIL
-# HowFail:  Parse error on input file.
+# HowFail:  Parse error: inserting else
 
 ℳ Main ← decl
    τ Empty ← ℰ { msg: string }
 
-   ʋ len: integer ← List.length(integer ; [1, 2, 3]) handle Empty → 0 end
+   ʋ len: integer ← ( List.length(integer ; [1, 2, 3]) ) handle Empty → 0 end
 end
