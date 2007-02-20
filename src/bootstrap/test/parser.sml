@@ -18,10 +18,8 @@ fun parseFile filename = let
       val (result, strm', errs) = Parser.parse lex strm
       val errStrs = map (repairToString MitchellTokens.toString sm) errs
    in
-      case result of
-         SOME r => if length errStrs > 0 then app (fn s => print (s ^ "\n")) errStrs
-                   else ()
-       | NONE => print "unrecoverable error!\n"
+      if length errStrs > 0 then app (fn s => print (s ^ "\n")) errStrs
+      else ()
    end
 
    val strm = openFile filename
