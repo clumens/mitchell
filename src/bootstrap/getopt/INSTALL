@@ -1,0 +1,39 @@
+REQUIREMENTS
+
+This project uses the SML/NJ compilation manager (CM), available in SML/NJ
+version 110.40 or newer.  Besides functions from the Basis library, GetOpt,
+from smlnj-lib, is needed.
+
+
+BUILDING
+
+I haven't figured out a good way to get CM to play with the rest of Unix, so
+building and installing is still a strangely interactive process.
+
+To build, use the provided .cm file:
+
+sml -m getopt.cm
+
+This will start an interactive SML session, from which you can run the
+stabilize command to generate a single heap image for the library
+
+CM.stabilize true "getopt.cm";
+
+
+INSTALLING
+
+Stabilize the library will result in a file .cm/<heap-suffix>/getopt.cm.
+Install this file with your SML libraries as 
+<library path>/getopt.cm/.cm/<heap-suffix>/getopt.cm.
+
+Add either to your CM_PATHCONFIG or CM_LOCAL_PATHCONFIG the line
+
+getopt.cm <path to getopt.cm>
+
+You can now use the extended GetOpt structure by adding $/getopt.cm to your CM
+sources.
+
+
+USAGE / BUGS / CONTACT
+
+See REAMDE.  Please report bugs or send comments to david@gophernet.org.

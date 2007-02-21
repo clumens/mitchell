@@ -1,0 +1,225 @@
+ABOUT
+
+SML/NJ includes a port of Sven Panne's Haskell getOpt implementation for
+parsing command-line arguments.  This implementation includes a couple of
+interesting features not found in GNU getopt, such as automatically generated
+usage information.  Though this is a great idea, the usageInfo function that
+comes with GetOpt kind of sucks.  This library is an augmentation of the
+SML/NJ GetOpt structure, offering a new "help" function that can wrap usage
+information within specified column widths and replacing usageInfo, using help
+as the backend.
+
+
+USING
+
+The new GetOpt exports the same functions as the old GetOpt, so it acts as a
+drop-in replacement.  Simply include getopt.cm in your project, and the GetOpt
+structure will be replaced.
+
+The new function, help, is of the following type:
+
+   val help : {optStart : int, optEnd : int, helpStart : int, helpEnd : int}
+               -> {header : string, options : 'a opt_descr list,
+                     footer : string} -> string
+
+optStart, optEnd, helpStart, and helpEnd are the columns within which the
+option and help columns should be written, counting from 1.  The option column
+is written before the help column.  They can overlap, but they probably
+shouldn't.  The function raises Span if helpStart < optStart or if either
+column is given a negative width.  The new usageInfo uses the values of 
+{optStart=3, optEnd=27, helpStart=30, helpEnd=79}.
+
+The main difference in the output of this function from the old usageInfo is
+that the help output is wrapped.  Rather than pushing the help output over,
+if a wide options column overflows into where help should be, a line in the
+help column is skipped.  This prevent both the stair-stepping of several GNU
+utilities and the usageInfo solution of pushing everything off the edge of the
+screen.  Another difference is in the handling of multiple arguments in a
+single opt_descr: rather than putting them all on the same line, help matches
+the short and long options in pairs and prints them one per line.  For
+example, the option
+
+  {short="bnI", long=["binary", "not-text"], desc=OptArg (_, "FILE"),...}
+
+would become something like the following:
+
+  -b, --binary=[FILE]        Open FILE (or standard input if none given) in
+  -n, --not-test=[FILE]      binary mode
+  -I [FILE]
+
+Other differences in the output are the addition of a footer, and the lack of
+an implicit newline between the header and body (as well as the footer and
+body).  The new usageInfo duplicates the old behavior by concatenating a
+newline to the end of the given header.
+
+
+USING GETOPT
+
+There's a woeful lack of documentation for SML/NJ GetOpt, so I'll try to
+provide some here.
+
+The examples includes are for a sort program that I found among my old CS
+homework.  It took three arguments, -s <sort_method> to control the sort
+algorithm used, -n <num> to specify the number of numbers to read before
+sorting and outputing them, and -r to reverse the direction of the sort.  In C
+getopt notation, the arguments were "rs:n:".
+
+GetOpt is similar to the getopt function in C in that takes a definition of
+the arguments to expect on the command line and executes actions for each of
+these arguments.  SML GetOpt is a little different in that the actions are
+functions that return values of a data type of your choosing.  The getOpt
+function takes a list of option defintions and the command line arguments and
+returns a list of option results.
+
+The option result is usually something that you make up to suit the program.
+Something like the following:
+	
+	(* Used for the SortMethod (-s) option below *)
+	datatype sort_method = BubbleSort
+			     | QuickSort
+			     | MergeSort
+			     | ShellSort
+
+	datatype option_result = SortMethod of sort_method (* -s *)
+	                       | ArraySize of int          (* -n *)
+			       | Reverse                   (* -r *)
+
+Each individual option is described by a record of type GetOpt.opt_descr.  An
+"option" here is actually an action, since each record can include several
+long and short arguments to do the same thing.  In the output example in the
+previous section, any of -b, -n, -I, --binary or --not-test on the command
+line would result in the same function call.
+
+The fields of the record are short, a string containing all the short option
+character, long, a list of long option strings, help, a string of usage
+information, and desc, which is a GetOpt.arg_descr constructor containing the
+function to call when the option is matched.  Here's the definition of the
+datatype:
+
+  datatype 'a arg_descr = 
+      NoArg of unit -> 'a
+    | OptArg of (string option -> 'a) * string
+    | ReqArg of (string -> 'a) * string
+
+
+The 'a is the option_result type that you create.  There are three
+constructors provided: NoArg for options that take no additional arguments,
+ReqArg for options that require an argument, and OptArg for options which
+might have an argument (this idea comes from GNU getopt; POSIX does not
+support such a construct in C).  All of the functions provided with these
+constructors return a value of your option_result type.  In addition to this,
+the ReqArg and OptArg constructors take a string describing what the option
+does, to use in the help output.
+
+Continuing the example, here's a list of opt_descr records for mysort:
+
+    (* Raised if invalid arguments provided *)
+    exception ArgumentException of string 
+
+    val options = [ {short="s",
+                     long=["sort-method"],
+		     help="Specify the sorting algorithm to use",
+		     desc=GetOpt.ReqArg (* First part of the tuple is
+		                           called with the argument to -s, 
+					   second part is for the usage 
+					   description *)
+		     		((fn "b" => SortMethod BubbleSort
+				  | "q" => SortMethod QuickSort
+				  | "m" => SortMethod MergeSort
+				  | "s" => SortMethod ShellSort
+				  | invalid => raise ArgumentException
+				  	("Invalid sort method specification: "
+						^ invalid) ), 
+				 "METHOD") },
+                    {short="n",
+                     long=["number", "size"],
+                     help="Size of the array to sort",
+                     desc=GetOpt.ReqArg
+                              ((fn i =>
+                                 case (Int.fromString i) of
+                                    SOME number => ArraySize number
+                                  | NONE => raise ArgumentException
+                                       ("Argument to -n not an integer: " ^
+                                          i)),
+                                 "SIZE") },
+                    {short="r",
+                     long=["reverse"],
+                     help="Sort in descending order instead of ascending",
+                     desc=GetOpt.NoArg (fn () => Reverse) } ]
+
+
+As you can see, all the code that you might have put inside a case block in C
+goes inside that arg_descr lambda.  Now that you have this, you're halfway to
+actually parsing something.  getOpt requires two things besides the options
+and command-line arguments: there's errFn, which is a lambda called if an
+invalid argument is seen (usually prints a message or raises an exception),
+and a argOrder parameter which tells getOpt how to handle non-options.  There
+are three possible values for argOrder.  Permute is the GNU behavior, in which
+options and non-options are interleaved, allowing for commands like 
+"cp source/* dest/ -r".  -r is seen as an option, and source/* and dest are
+returned as the remaining non-option arguments.  The RequireOrder value is the
+POSIX behavior, where option parsing stops on the first non-option.
+ReturnInOrder is a weird thing that the Haskell implementation added; if a
+non-option is seen, it runs it through a function that converts strings to
+option results, so the entire command-line is parsed as options and the
+remaining argument list is always empty.
+
+Continuing the example, mysort could now call getOpt to parse its command
+line:
+
+   val (opts, args) = 
+      GetOpt.getOpt {argOrder=GetOpt.Permute,
+                     errFn=(fn opt => raise ArgumentException
+                                       ("Invalid option: " ^ opt)),
+                     options=options} args
+
+...but that's not all.  Searching a list each time you want to check for an
+option isn't exactly efficient, so I like to get all the options into a
+record.  Records are nice since accessing elements is a constant-time
+operation, and they can be pattern-matched.  Converting from a list to a
+record using something like List.foldl is a bit hairy, though (the record
+needs be duplicated on each call of the lambda), so I like to use intermediate
+refs to keep track of the options.  Feel free to send me ideas for better ways
+on handling this.
+
+Anyhow, here's what I do:
+
+   val option_rec =
+      let (* Start with default settings *)
+         val sortMethod = ref ShellSort
+         val arraySize = ref 16
+         val reverse = ref false
+      in
+         List.app (fn SortMethod method => sortMethod := method
+                    | ArraySize size => arraySize := size
+                    | Reverse => reverse := true) 
+                  opts ;
+         {sortMethod = !sortMethod,
+          arraySize = !arraySize,
+          reverse = !reverse}
+      end
+
+
+To print out the help (since that's the whole point of this project), just use
+the same opt_descr as passed as options to getOpt, as well as a header string.
+usageInfo will return a string which can be printed as help.
+
+   GetOpt.usageInfo {header="mysort [OPTIONS]\n" ^
+                            "Sorts an array of integers\n",
+                     options=options}
+
+The modified usageInfo would return:
+
+mysort [OPTIONS]
+Sorts an array of integers
+
+  -s, --sort-method=METHOD   Specify the sorting algorithm to use
+  -n, --number=SIZE          Size of the array to sort
+      --size=SIZE
+  -r, --reverse              Sort in descending order instead of ascending
+
+
+
+BUGS
+
+Please send bug reports or comments to david@gophernet.org

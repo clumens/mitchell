@@ -1,0 +1,8 @@
+Library (0.1)
+   signature GET_OPT
+   structure GetOpt
+is
+   betterinfo-sig.sml
+   betterinfo.sml
+   $/smlnj-lib.cm
+   $/basis.cm

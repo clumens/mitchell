@@ -1,0 +1,30 @@
+2004-08-05 23:59  das-cvs
+
+	* betterinfo.sml: Hey, I've got an idea, why don't I try actually
+	  trying to compile the code.
+
+	  I apparently forgot to change the signature that GetOpt
+	  implements from GET_OPT' to GET_OPT.	Fixed.
+
+2004-08-05 19:47  das-cvs
+
+	* NEWS, betterinfo-sig.sml, getopt.cm: Renamed the GET_OPT'
+	  signature to GET_OPT, since this makes a bit more sense.
+
+2004-08-02 23:27  das-cvs
+
+	* INSTALL: Added building and installation instructions.
+
+2004-08-02 02:08  das-cvs
+
+	* NEWS, README, betterinfo.sml: Added some documentation.  Still
+	  need make an INSTALL file before release.
+
+	  Added some range checks to help so that it actually does what I
+	  say it does.
+
+2004-08-02 00:46  das-cvs
+
+	* .cvsignore, betterinfo-sig.sml, betterinfo.sml, getopt.cm: Added
+	  the intial version of the getopt augmentation.
+

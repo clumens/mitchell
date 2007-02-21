@@ -1,0 +1,9 @@
+getopt: an augmentation to the smlnj-lib GetOpt structure, using an improved
+        usageInfo
+
+0.1.1 (5 August 2004):
+   Oh, hey, I can override signatures, too.  getopt.cm now exports the GET_OPT
+   signature instead of GET_OPT'.
+
+0.1 (2 August 2004):
+   Initial version.  See README and INSTALL for more information.
