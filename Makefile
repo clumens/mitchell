@@ -1,15 +1,14 @@
 all:
-	@echo No default target at this time.
 
-tags:
-	( cd src && ctags -R )
+compiler:
+	$(MAKE) -C src/bootstrap heap
+	sed -e 's|###HEAPFILE###|src/bootstrap/obj/mitchell.$(shell uname -m)-linux|' mitchell.in > mitchell
+	chmod 755 mitchell
 
 # Targets for testing.
-test: test-compiler
-
-test-compiler: compiler
-	@LANG=en_US.UTF-8 run-tests.sh
+test: compiler
 
 # Targets for cleaning.
-distclean:
-	-rm src/tags
+clean:
+	-rm mitchell
+	$(MAKE) -C src/bootstrap clean

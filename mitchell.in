@@ -1,0 +1,15 @@
+#!/bin/sh
+#
+# Mitchell compiler wrapper
+
+HEAP=###HEAPFILE###
+
+# make sure the heap exists
+if [ ! -r $HEAP ]; then
+   echo "$0: Missing compiler heap $HEAP"
+   exit 1
+fi
+
+sml @SMLload=$HEAP $*
+
+exit 0
