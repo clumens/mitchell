@@ -55,6 +55,6 @@ struct
 
       val ast = parseFile (hd extra)
    in
-      ()
+      OS.Process.exit OS.Process.success
    end
 end
