@@ -2,12 +2,17 @@ Group is
    absyn.sml
    basety.sml
    error.sml
+   main.sml
+   options.sml
    symbol.sml
    symtab.sml
    types.sml
 
    mitchell.lex: ml-ulex
    mitchell.grm: ml-antlr
+
+   getopt/betterinfo-sig.sml
+   getopt/betterinfo.sml
 
    $/basis.cm
    $/smlnj-lib.cm
