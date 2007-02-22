@@ -102,7 +102,7 @@ struct
 
    (* Prints the help output to the screen and quit. *)
    fun printHelp () =
-      ( print ( GetOpt.usageInfo {header=CommandLine.name() ^ " <infile> [OPTIONS]\n" ^
+      ( print ( GetOpt.usageInfo {header="mitchell <infile> [OPTIONS]\n" ^
                                         "Compiler for the mitchell programming language.\n",
                                  options=options}) ;
        Error.quit false )
