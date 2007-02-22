@@ -15,7 +15,7 @@ struct
     *)
    fun quit failure = raise (Fail "mitchell encountered an error, dropping back to sml")
 (*
-   fun quit failure = if failure then OS.Process.exit OS.failure
-                      else OS.Process.exit OS.success
+   fun quit failure = if failure then OS.Process.exit OS.Process.failure
+                      else OS.Process.exit OS.Process.success
 *)
 end

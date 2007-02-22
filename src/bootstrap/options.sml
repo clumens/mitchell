@@ -105,11 +105,11 @@ struct
       ( print ( GetOpt.usageInfo {header=CommandLine.name() ^ " <infile> [OPTIONS]\n" ^
                                         "Compiler for the mitchell programming language.\n",
                                  options=options}) ;
-       OS.Process.exit OS.Process.success )
+       Error.quit false )
 
    (* Print the version information and quit. *)
    fun printVersion () =
-      ( print (version ^ "\n" ^ copyright ^ "\n") ; OS.Process.exit OS.Process.success )
+      ( print (version ^ "\n" ^ copyright ^ "\n") ; Error.quit false )
 
    (* Handle various error cases that can occur in option processing and
     * quit.  This is only split out from option parsing so that the called can
@@ -117,9 +117,9 @@ struct
     *)
    fun badOpts (ArgumentExn opt) = ( print ("Invalid option: " ^ opt ^ "\n") ;
                                      printHelp () ;
-                                     OS.Process.exit OS.Process.failure )
+                                     Error.quit true )
 
-     | badOpts NullArgExn = ( printHelp () ; OS.Process.exit OS.Process.failure)
+     | badOpts NullArgExn = ( printHelp () ; Error.quit true )
      | badOpts e = raise e
 
    (* Returns a list of argument results and a list of extra arguments.  Input
