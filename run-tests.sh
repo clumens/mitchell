@@ -1,15 +1,13 @@
 #!/bin/bash
-# $Id: run-tests.sh,v 1.4 2005/07/01 04:40:40 chris Exp $
 
 # Options to pass to the mitchell compiler for all tests.
 GLOBAL_OPTS="-Werror"
 
-dumped=0
 failed=0
 passed=0
 skipped=0
 
-# The result of our test - 1 = pass, 2 = fail, 3 = core dump
+# The result of our test - 1 = pass, 2 = fail
 result=0
 
 crunch() {
@@ -36,9 +34,7 @@ for t in tests/*.mitchell; do
    retval=$?
 
    # Interpret return code.
-   if [[ $retval > 128 ]]; then
-      result=3
-   elif [[ $retval == 0 && $EXPECTED == "PASS" ]]; then
+   if [[ $retval == 0 && $EXPECTED == "PASS" ]]; then
       result=1
    elif [[ $retval == 1 && $EXPECTED == "FAIL" ]]; then
       # If we were supposed to fail, check to see what reason was given and if
@@ -64,15 +60,10 @@ for t in tests/*.mitchell; do
       2) (( failed++ ))
          echo "FAIL"
          ;;
-
-      3) (( dumped++ ))
-         echo "FAIL (CORE DUMPED)"
-         ;;
    esac
 done
 
 echo "---------------"
 echo "$passed tests passed"
 echo "$failed tests failed"
-echo "$dumped tests dumped core"
 echo "$skipped tests skipped"
