@@ -178,7 +178,13 @@ structure GetOpt' :> GET_OPT' =
 	    | get (arg::rest, nonOpts, mapping) = let
 		val arg' = SS.full arg
 		fun addOpt (Opt opt, rest) = let
-			val mapping' = StringMap.insert' ((arg, opt), mapping)
+			(* Trim off the leading - or -- from the argument as well
+			 * as any option and equal sign.
+                         *)
+			val key = if (SS.isPrefix "--" arg') then SS.triml 2 arg'
+                                  else SS.triml 1 arg'
+			val (key', _) = breakeq key
+			val mapping' = StringMap.insert' ((SS.string key', opt), mapping)
 			in
 			  get(rest, nonOpts, mapping')
 			end
