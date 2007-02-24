@@ -1,8 +1,12 @@
 Library (0.1)
    signature GET_OPT
    structure GetOpt
+   structure StringMap
 is
    betterinfo-sig.sml
    betterinfo.sml
+   getopt-sig.sml
+   getopt.sml
+   stringmap.sml
    $/smlnj-lib.cm
    $/basis.cm
