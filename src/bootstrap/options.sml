@@ -19,8 +19,8 @@ struct
     * inputfile.ext.
     *)
    datatype output_file = Stdout
-                 | Default
-                 | File of string
+                        | Default
+                        | File of string
 
    (* Specify which compilation phase should be the last one. *)
    datatype last_phase = Parser
@@ -29,8 +29,7 @@ struct
    datatype warnings = Werror
 
    (* The main datatype for option processing. *)
-   datatype option_result = NoResult
-                          | AbsynFile of output_file
+   datatype option_result = AbsynFile of output_file
                           | FreeValsFile of output_file
                           | LastPhase of last_phase
                           | PrintHelp
@@ -127,11 +126,11 @@ struct
     *)
    fun parse argv =
       if List.null argv then raise NullArgExn
-      else let val (opts, extra) = GetOpt.getOpt {argOrder=GetOpt.Permute,
-                                                  errFn=(fn opt => raise ArgumentExn opt),
-                                                  options=options} argv
+      else let val (mapping, extra) = GetOpt.getOpt {argOrder=GetOpt.Permute,
+                                                     errFn=(fn opt => raise ArgumentExn opt),
+                                                     options=options} argv
            in
-              if List.length argv <> 1 then raise NullArgExn
-              else (opts, extra)
+              if List.length extra <> 1 then raise NullArgExn
+              else (mapping, extra)
            end
 end
