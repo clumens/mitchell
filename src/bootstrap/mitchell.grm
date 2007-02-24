@@ -20,6 +20,9 @@
 
 (* START *)
 
+start:
+   module_decl+ => ( module_decl );
+
 module_decl:
    MODULE IDENTIFIER ASSIGN DECL top_decl+ END =>
       ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE), decls=top_decl,
