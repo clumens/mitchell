@@ -42,18 +42,39 @@ struct
       val strm = openFile filename
       val sm = StreamPos.mkSourcemap ()
       val lexer = MitchellLex.lex sm
+
+      val ast = parse lexer (MitchellLex.streamifyInstream strm) sm
+                handle TokenizeError e => ( print (filename ^ " " ^
+                                                  (StreamPos.toString sm (#1 e)) ^ ": " ^
+                                                  #2 e ^ "\n") ;
+                                            quit true )
    in
-      parse lexer (MitchellLex.streamifyInstream strm) sm
-      handle TokenizeError e => ( print (filename ^ " " ^ (StreamPos.toString sm (#1 e)) ^
-                                         ": " ^ #2 e ^ "\n") ;
-                                  quit true
-                                )
+      (* What cases will cause parse to return NONE for the ast?  Perhaps we're
+       * already handling those cases with TokenizeError and repairToString
+       * above and don't need to worry about this.
+       *)
+      case ast of
+         SOME lst => lst
+       | NONE     => raise InternalError "Parser returned NONE for abstract syntax tree"
    end
 
+   (* This is where the magic happens. *)
    fun main (name, argv) = let
-      val (opts, extra) = Options.parse argv handle e => Options.badOpts e
+      (* Wrapper around Absyn.write to handle specifying a destination. *)
+      fun printAST ast inFile hdr (SOME (Options.AbsynFile (Options.Stdout))) =
+             Absyn.write TextIO.stdOut hdr ast
+        | printAST ast inFile hdr (SOME (Options.AbsynFile (Options.Default))) =
+             Absyn.write (TextIO.openOut (inFile ^ ".ast")) hdr ast
+        | printAST ast inFile hdr (SOME (Options.AbsynFile (Options.File f))) =
+             Absyn.write (TextIO.openOut f) hdr ast
+        | printAST ast inFile hdr _ = ()
 
-      val ast = parseFile (hd extra)
+      val (optsMap, extra) = Options.parse argv handle e => Options.badOpts e
+      val inFile = hd extra handle Empty => Options.badOpts Options.NullArgExn
+
+      val ast = parseFile inFile
+      val _   = printAST ast inFile "Initial abstract syntax tree"
+                         (StringMap.find (optsMap, "Idump-absyn"))
    in
       OS.Process.exit OS.Process.success
    end
