@@ -4,7 +4,7 @@
  *)
 structure Options = 
 struct
-   val version = "mitchell version 20070221"
+   val version = "mitchell version 20070224"
    val copyright = "© 2004-2007 Chris Lumens"
 
    (* Raised if invalid arguments provided *)
@@ -126,11 +126,18 @@ struct
     *)
    fun parse argv =
       if List.null argv then raise NullArgExn
-      else let val (mapping, extra) = GetOpt.getOpt {argOrder=GetOpt.Permute,
+      else let val (optsMap, extra) = GetOpt.getOpt {argOrder=GetOpt.Permute,
                                                      errFn=(fn opt => raise ArgumentExn opt),
                                                      options=options} argv
+
+               (* Handle a couple options right away. *)
+               val _ = case StringMap.find (optsMap, "help") of
+                          SOME _ => printHelp ()
+                        | NONE   => ()
+               val _ = case StringMap.find (optsMap, "version") of
+                          SOME _ => printVersion ()
+                        | NONE   => ()
            in
-              if List.length extra <> 1 then raise NullArgExn
-              else (mapping, extra)
+              (optsMap, extra)
            end
 end
