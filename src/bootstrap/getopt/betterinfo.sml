@@ -36,7 +36,7 @@
 
 structure GetOpt :> GET_OPT =
 struct
-   open GetOpt
+   open GetOpt'
 
    (* splitAt is a char -> bool function that returns true on characters
     * that can be used for a line boundary.  Whitespace is always stripped,

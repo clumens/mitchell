@@ -29,7 +29,7 @@
 
 signature GET_OPT =
 sig
-   include GET_OPT
+   include GET_OPT'
 
    (* Rather than basing column positions on the size of the options column
     * and writing help all on one line, this function attempts to wrap 
