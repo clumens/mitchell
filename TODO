@@ -13,8 +13,6 @@
      suck in a symbol table for them during semantic analysis (preview-5)
    - proposal for C interface module
    - outline contents for runtime library
-- output:
-   - parser error messages can always be better (context, replacements, etc)
 - symbol table / type checker:
    - add type information to standard library stubs
 - testing:

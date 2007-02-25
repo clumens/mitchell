@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # Options to pass to the mitchell compiler for all tests.
-GLOBAL_OPTS="-Werror"
+GLOBAL_OPTS="--Werror"
 
 failed=0
 passed=0

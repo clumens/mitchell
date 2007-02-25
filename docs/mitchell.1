@@ -1,6 +1,5 @@
 .\" Manual page for the Mitchell compiler
-.\" $Id: mitchell.1,v 1.17 2006/01/12 04:36:40 chris Exp $
-.TH mitchell 1 "January 11, 2006" "mitchell preview 5"
+.TH mitchell 1 "February 24, 2007" "mitchell preview 5"
 .SH NAME
 mitchell \- compiler for the mitchell programming language
 .SH SYNOPSIS
@@ -34,18 +33,15 @@ These options control the amount and type of help output from the
 compiler.  The compiler exits immediately after processing each of these
 options.
 .TP
-.B \-h | \-help
-Print a brief help summary of the most important options.
+.B \-h | \--help
+Print a brief help summary of the command line options.
 .TP
-.B \-v | \-version
+.B \-v | \--version
 Print the version and configuration information of the compiler.
-.TP
-.B -verbose-help
-Print all command line options and a one-line summary of each.
 .SS General Options
 These options control the general compliation process.
 .TP
-.B \-last-phase=\fR\fIphase\fR
+.B \--last-phase=\fR\fIphase\fR
 Stops compilation after the given required phase.  If this option is not given,
 compilation will proceed until it terminates.  If it is given, compilation will
 halt after the given phase leaving any temporary or debugging output files.
@@ -72,21 +68,10 @@ are not intended for general purpose use.  They affect things like the
 amount of internal debugging output.  Enable if you are developing the
 compiler or are just entirely too curious.  All internal options begin
 with
-.B \-I
+.B \--I
 which strangely enough stands for "Internal".
 .TP
-.B \-Idebug-parser=\fR\fIN\fR
-Sets the debug level for the tokenizer and parser stages of the front end.
-Possible values for \fR\fIN\fR:
-.RS
-.IP 0
-Normal use; no debugging output.
-.IP 1
-Emit debugging output upon consuming a token, entering a parser rule, and
-leaving a parser rule.
-.RE
-.TP
-.B \-Idump-absyn[=\fR\fIastfile\fR]
+.B \--Idump-absyn[=\fR\fIastfile\fR]
 Writes a representation of the abstract syntax tree to \fR\fIastfile\fR, or
 \fR\fIinfile\fR.ast if no filename is provided.  If \fR\fI-\fR is given as
 a filename, the abstract syntax tree is written on stdout.
@@ -97,7 +82,7 @@ analysis passes to \fR\fIfreevalfile\fR, or \fR\fIinfile\fR.free if no filename
 is provided.  If \fR\fI-\fR is given as a filename, the free value analysis
 results are written on stdout.
 .TP
-.B \-Idump-symtab[=\fR\fIsymtabfile\fR]
+.B \--Idump-symtab[=\fR\fIsymtabfile\fR]
 On exit from a level of scope (module, function, decl block), writes a
 string representation of the block's symbol table to \fR\fIsymtabfile\fR,
 or \fR\fIinfile\fR.symtab if no filename is provided.  If \fR\fI-\fR is
@@ -110,7 +95,7 @@ source program.  In general, the mitchell compiler will handle more problems as
 errors rather than warnings in order to keep the number of runtime errors to
 a minimum.
 .TP
-.B \-Werror
+.B \--Werror
 Handle warnings as errors.  That is, all warnings will cause compilation to
 terminate as if an error had occurred.
 .SH ENVIRONMENT
