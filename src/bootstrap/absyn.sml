@@ -74,7 +74,7 @@ structure Absyn = struct
 
    and Decl = Absorb of {module: IdRef, pos: pos}
               (* Each element of calls must be a FunCallExp. *)
-            | FunDecl of {sym: Symbol.symbol, retval: Ty option, pos: pos,
+            | FunDecl of {sym: Symbol.symbol, absynTy: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
                           tyFormals: Symbol.symbol list,
                           calls: Expr list, body: Expr, symtab: Symtab.table}
@@ -221,10 +221,10 @@ structure Absyn = struct
 
       and writeDecl i (Absorb{module, ...}) =
              (indent i ; sayln "absorb = " ; writeIdRef (i+1) module)
-        | writeDecl i (FunDecl{sym, retval, formals, tyFormals, body, ...}) =
+        | writeDecl i (FunDecl{sym, absynTy, formals, tyFormals, body, ...}) =
              (indent i ; sayln "fun_decl = {" ;
               writeSymbol (i+1) sym ;
-              Option.app (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) retval ;
+              Option.app (fn v => (indent (i+1) ; sayln "retval = " ; writeTy (i+2) v)) absynTy ;
               if length tyFormals > 0 then << (i+1) "tyFormals" (printLst tyFormals writeSymbol)  else () ;
               if length formals > 0 then << (i+1) "formals" (printLst formals writeTypedId) else () ;
               indent (i+1) ; sayln "body = " ; writeExpr (i+2) body ;

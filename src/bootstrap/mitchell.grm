@@ -181,7 +181,7 @@ decl:
 
 fun_decl:
    FUNCTION IDENTIFIER LPAREN ty_formals_lst SEMICOLON formals_lst RPAREN (COLON ty)? ASSIGN expr =>
-      ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON), retval=SR,
+      ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON), absynTy=SR,
                       pos=span2pos FUNCTION_SPAN, formals=formals_lst,
                       tyFormals=ty_formals_lst, calls=[], body=expr,
                       symtab=Symtab.mkTable()}
