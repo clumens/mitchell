@@ -4,6 +4,7 @@ Group is
    error.sml
    main.sml
    options.sml
+   semant.sml
    symbol.sml
    symtab.sml
    types.sml
