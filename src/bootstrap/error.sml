@@ -25,6 +25,12 @@ struct
    (* position * error message *)
    exception TokenizeError of StreamPos.pos * string
 
+   (* error message * expected message * expected ty * got message * got ty *)
+   exception TypeError of string * string * Types.Type * string * Types.Type
+
+   (* error message * problem symbol *)
+   exception SymbolError of string * Symbol.symbol
+
    (* A function to kill the compiler.  failure is a boolean for whether this
     * is an error case or not.  This function mainly exists to easily turn off
     * during development when we don't want to kill sml.
