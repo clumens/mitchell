@@ -40,6 +40,8 @@ structure Types = struct
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
 
+   fun tyEqual (tyA:Type, tyB:Type) = true
+
    fun toString (ALIAS (sym, _)) = Symbol.toString sym
      | toString (ANY _) = "any"
      | toString BOOLEAN = "boolean"
