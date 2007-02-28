@@ -35,6 +35,8 @@ signature SYMBOL = sig
     * is suitable for printing.
     *)
    val toString: symbol -> string
+
+   val symNameCmp: symbol * symbol -> bool
 end
 
 structure Symbol :> SYMBOL = struct
@@ -53,4 +55,10 @@ structure Symbol :> SYMBOL = struct
                     | FUN_TYCON => "FUN_TYCON: "
                     | MODULE => "MODULE: "
                     | VALUE => "VALUE: ") ^ BaseTy.mstringToString (#1 sym)
+
+   (* A function to compare two symbols based only on their name.  This
+    * function is most useful when passed to ListMisc.findDup.
+    *)
+   val symNameCmp = fn (a: symbol, b: symbol) =>
+                       BaseTy.mstringToString (#1 a) > BaseTy.mstringToString (#1 b)
 end
