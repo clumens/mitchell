@@ -3,6 +3,7 @@ Group is
    basety.sml
    error.sml
    main.sml
+   misc.sml
    options.sml
    semant.sml
    symbol.sml
