@@ -1,5 +1,5 @@
 (* mitchell - experimental compiler
- * Copyright (C) 2006, 2007 Chris Lumens
+ * Copyright (C) 2007 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of version 2 of the GNU General Public License as
@@ -19,36 +19,6 @@ structure Semant =
 struct
    open Absyn
    open Error
-
-
-   (* HELPER FUNCTIONS *)
-
-   (* Given a list and a comparison function (for sorting), return the first
-    * duplicate item.  The comparison function must return a boolean (not an
-    * order, sadly).  The function returns an option with the duplicate item.
-    *)
-   fun findDup cmp lst = let
-      fun areEq (ele::next::_) = cmp (ele, next)
-        | areEq _ = false
-
-      fun loop (ele::lst) = if areEq (ele::lst) then SOME(ele)
-                            else loop lst
-        | loop _ = NONE
-
-      (* Sorting the list first makes everything else work. *)
-      val lst' = ListMergeSort.sort cmp lst
-   in
-      loop lst'
-   end
-
-   (* findDup is nicely generic, but in this file we'll probably only ever need
-    * to do the following:
-    *)
-   val symCmpFunc = fn (a: Symbol.symbol, b:Symbol.symbol) =>
-                       BaseTy.mstringToString (#1 a) > BaseTy.mstringToString (#1 b)
-
-
-   (* SEMANTIC ANALYSIS FUNCTIONS *)
 
    fun checkExnHandler (ExnHandler{exnKind, sym, expr, symtab, ty, ...}) = ()
 
@@ -100,8 +70,8 @@ struct
      | checkBaseExpr (RaiseExp expr) = ( checkExpr expr ; Types.ANY Types.UNVISITED )
      | checkBaseExpr (RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
-          val _ = case findDup symCmpFunc (map #1 lst) of
-                     SOME dup => raise SymbolError ("A symbol with this name already exists in this record type.", dup)
+          val _ = case ListMisc.findDup Symbol.symNameCmp (map #1 lst) of
+                     SOME dup => raise SymbolError ("Record definition already includes a symbol with this name.", dup)
                    | NONE => ()
        in
           (* Construct a tuple for each element of the assignment expression and
@@ -112,12 +82,7 @@ struct
      | checkBaseExpr (RecordRefExp{record, ele}) = Types.BOTTOM
      | checkBaseExpr (StringExp s) = Types.STRING
 
-   and checkTy (BottomTy _) = ()
-     | checkTy (ExnTy{exn', ...}) = ()
-     | checkTy (IdTy{id, ...}) = ()
-     | checkTy (ListTy{lst, ...}) = ()
-     | checkTy (RecordTy{record, ...}) = ()
-     | checkTy (UnionTy{tycons, ...}) = ()
+   and checkTy ast = absynToTy ast
 
    and checkDecl (Absorb{module, ...}) = ()
      | checkDecl (FunDecl{sym, absynTy, formals, tyFormals, body, symtab, ...}) = ()
