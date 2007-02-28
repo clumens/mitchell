@@ -86,6 +86,39 @@ structure Absyn = struct
             | ValDecl of {sym: Symbol.symbol, ty: Types.Type option,
                           absynTy: Ty option, init: Expr, pos: pos}
 
+   (* Convert an AST subtree into a Types.Type.  This may perhaps belong in
+    * types.sml but that will create circular references between the two files.
+    * This is just as good a place.
+    *)
+   local
+      fun checkForDupes lst msg =
+         case ListMisc.findDup Symbol.symNameCmp lst of
+            SOME dup => raise Error.SymbolError (msg, dup)
+          | NONE => ()
+   in
+      fun absynToTy (BottomTy _) = Types.BOTTOM
+        | absynToTy (ExnTy{exn', ...}) = let
+             val _ = checkForDupes (map #1 exn')"Exception definition already includes a symbol with this name."
+          in
+             Types.EXN (map (fn ele => (#1 ele, absynToTy (#2 ele))) exn', Types.UNVISITED)
+          end
+        | absynToTy (IdTy{id, ...}) =
+             (* FIXME - write this one *)
+             Types.BOTTOM
+        | absynToTy (ListTy{lst, ...}) = Types.LIST (absynToTy lst, Types.UNVISITED)
+        | absynToTy (RecordTy{record, ...}) = let
+             val _ = checkForDupes (map #1 record) "Record definition already includes a symbol with this name."
+          in
+             Types.RECORD (map (fn ele => (#1 ele, absynToTy (#2 ele))) record, Types.UNVISITED)
+          end
+        | absynToTy (UnionTy{tycons, ...}) = let
+             val _ = checkForDupes (map #1 tycons) "Union type definition already includdes a symbol with this name."
+          in
+             Types.UNION (map (fn ele => (#1 ele, Option.map absynToTy (#2 ele))) tycons,
+                          Types.UNVISITED)
+          end
+   end
+
    (* Given a TextIO.outstream * string * Decl list (where a Decl list is
     * really an abstract syntax tree), print the AST.  This could be
     * considered a pretty printer, if the output was actually pretty.
