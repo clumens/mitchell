@@ -16,12 +16,17 @@
  *)
 
 (* Miscellaneous functions for handling lists of things. *)
-structure ListMisc =
-struct
-   (* Given a list and a comparison function (for sorting), return the first
-    * duplicate item.  The comparison function must return a boolean (not an
-    * order, sadly).  The function returns an option with the duplicate item.
+signature LISTMISC =
+sig
+   (* Given a comparison function and a list, return the first duplicate item
+    * in the list.  The comparison function must return a boolean as must
+    * act like the operator >.
     *)
+   val findDup: ('a * 'a -> bool) -> 'a list -> 'a option
+end
+
+structure ListMisc :> LISTMISC =
+struct
    fun findDup (op >) lst = let
       fun areEq (ele::next::_) = ele > next
         | areEq _ = false
