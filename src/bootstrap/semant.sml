@@ -14,21 +14,31 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
+signature SEMANT =
+sig
+   (* Type checking functions. *)
+   val checkExnHandler: Absyn.ExnHandler -> unit
+   val checkIdRef: Absyn.IdRef -> unit
+   val checkBranch: Absyn.Branch -> unit
+   val checkExpr: Absyn.Expr -> Types.Type
+   val checkBaseExpr: Absyn.BaseExpr -> Types.Type
+   val checkTy: Absyn.Ty -> Types.Type
+   val checkDecl: Absyn.Decl -> unit
+end
 
-structure Semant =
+structure Semant :> SEMANT =
 struct
-   open Absyn
    open Error
 
-   fun checkExnHandler (ExnHandler{exnKind, sym, expr, symtab, ty, ...}) = ()
+   fun checkExnHandler (Absyn.ExnHandler{exnKind, sym, expr, symtab, ty, ...}) = ()
 
-   and checkIdRef (Id lst) = ()
+   and checkIdRef (Absyn.Id lst) = ()
 
-   and checkBranch (RegularBranch expr) = ()
-     | checkBranch (UnionBranch (id, syms, symtab)) = ()
+   and checkBranch (Absyn.RegularBranch expr) = ()
+     | checkBranch (Absyn.UnionBranch (id, syms, symtab)) = ()
 
-   and checkExpr (Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr expr
-     | checkExpr (Expr{expr, exnHandler as SOME ({handlers, default, ...}), ...}) = let
+   and checkExpr (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr expr
+     | checkExpr (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, ...}), ...}) = let
           fun checkHandlers (handlers, default) = Types.BOTTOM
 
           val exprTy = checkBaseExpr expr
@@ -41,12 +51,12 @@ struct
              exprTy
        end
 
-   and checkBaseExpr (BooleanExp b) = Types.BOOLEAN
-     | checkBaseExpr (BottomExp) = Types.BOTTOM
-     | checkBaseExpr (CaseExp{test, default, branches}) = Types.BOTTOM
-     | checkBaseExpr (DeclExp{decls, expr, symtab}) = Types.BOTTOM
-     | checkBaseExpr (ExnExp{id, ty, values}) = Types.BOTTOM
-     | checkBaseExpr (ExprLstExp lst) = let
+   and checkBaseExpr (Absyn.BooleanExp b) = Types.BOOLEAN
+     | checkBaseExpr (Absyn.BottomExp) = Types.BOTTOM
+     | checkBaseExpr (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
+     | checkBaseExpr (Absyn.DeclExp{decls, expr, symtab}) = Types.BOTTOM
+     | checkBaseExpr (Absyn.ExnExp{id, ty, values}) = Types.BOTTOM
+     | checkBaseExpr (Absyn.ExprLstExp lst) = let
           (* All expressions in the list must have the same type.  Easiest way
            * to do that is to search for the first expr that doesn't have the
            * same type as the first expr.
@@ -60,9 +70,9 @@ struct
                                         "this expression type", e)
            | NONE   => hd tyList
        end
-     | checkBaseExpr (FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
-     | checkBaseExpr (IdExp id) = Types.BOTTOM
-     | checkBaseExpr (IfExp{test, then', else'}) = let
+     | checkBaseExpr (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
+     | checkBaseExpr (Absyn.IdExp id) = Types.BOTTOM
+     | checkBaseExpr (Absyn.IfExp{test, then', else'}) = let
           val testTy = checkExpr test
           val thenTy = checkExpr then'
           val elseTy = checkExpr else'
@@ -78,9 +88,9 @@ struct
              else
                 thenTy
        end
-     | checkBaseExpr (IntegerExp i) = Types.INTEGER
-     | checkBaseExpr (RaiseExp expr) = ( checkExpr expr ; Types.ANY Types.UNVISITED )
-     | checkBaseExpr (RecordAssnExp lst) = let
+     | checkBaseExpr (Absyn.IntegerExp i) = Types.INTEGER
+     | checkBaseExpr (Absyn.RaiseExp expr) = ( checkExpr expr ; Types.ANY Types.UNVISITED )
+     | checkBaseExpr (Absyn.RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
           val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
                      SOME dup => raise SymbolError ("Record definition already includes a symbol with this name.", dup)
@@ -91,14 +101,14 @@ struct
            *)
           Types.RECORD (map (fn (sym, expr) => (sym, checkExpr expr)) lst, Types.UNVISITED)
        end
-     | checkBaseExpr (RecordRefExp{record, ele}) = Types.BOTTOM
-     | checkBaseExpr (StringExp s) = Types.STRING
+     | checkBaseExpr (Absyn.RecordRefExp{record, ele}) = Types.BOTTOM
+     | checkBaseExpr (Absyn.StringExp s) = Types.STRING
 
-   and checkTy ast = absynToTy ast
+   and checkTy ast = Absyn.absynToTy ast
 
-   and checkDecl (Absorb{module, ...}) = ()
-     | checkDecl (FunDecl{sym, absynTy, formals, tyFormals, body, symtab, ...}) = ()
-     | checkDecl (ModuleDecl{sym, decls, symtab, ...}) = ()
-     | checkDecl (TyDecl{sym, ty, absynTy, tyvars, symtab, ...}) = ()
-     | checkDecl (ValDecl{sym, ty, absynTy, init, ...}) = ()
+   and checkDecl (Absyn.Absorb{module, ...}) = ()
+     | checkDecl (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, symtab, ...}) = ()
+     | checkDecl (Absyn.ModuleDecl{sym, decls, symtab, ...}) = ()
+     | checkDecl (Absyn.TyDecl{sym, ty, absynTy, tyvars, symtab, ...}) = ()
+     | checkDecl (Absyn.ValDecl{sym, ty, absynTy, init, ...}) = ()
 end

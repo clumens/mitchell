@@ -24,7 +24,8 @@ sig
    (* The symbol table is divided up into several subtables, which allows
     * different kinds of symbols to have the same name as long as we can figure
     * out from context which kind of symbol we're dealing with.  These are the
-    * allowed subtables.  This probably belongs in symtab.sml instead.
+    * allowed subtables.  This would probably be better in semant.sml, but that
+    * introduces circular references.
     *)
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
