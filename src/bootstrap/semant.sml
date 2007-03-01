@@ -27,7 +27,19 @@ struct
    and checkBranch (RegularBranch expr) = ()
      | checkBranch (UnionBranch (id, syms, symtab)) = ()
 
-   and checkExpr (Expr{expr, ty, exnHandler, ...}) = checkBaseExpr expr
+   and checkExpr (Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr expr
+     | checkExpr (Expr{expr, exnHandler as SOME ({handlers, default, ...}), ...}) = let
+          fun checkHandlers (handlers, default) = Types.BOTTOM
+
+          val exprTy = checkBaseExpr expr
+          val handlerTy = checkHandlers (handlers, default)
+       in
+          if not (Types.tyEqual (exprTy, handlerTy)) then
+             raise TypeError ("Type of exception handler does not match type of expression.",
+                              "expression type", exprTy, "exception handler type", handlerTy)
+          else
+             exprTy
+       end
 
    and checkBaseExpr (BooleanExp b) = Types.BOOLEAN
      | checkBaseExpr (BottomExp) = Types.BOTTOM
