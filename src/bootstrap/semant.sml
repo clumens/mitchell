@@ -44,7 +44,7 @@ struct
           val exprTy = checkBaseExpr expr
           val handlerTy = checkHandlers (handlers, default)
        in
-          if not (Types.tyEqual (exprTy, handlerTy)) then
+          if not (Types.eq (exprTy, handlerTy)) then
              raise TypeError ("Type of exception handler does not match type of expression.",
                               "expression type", exprTy, "exception handler type", handlerTy)
           else
@@ -62,7 +62,7 @@ struct
            * same type as the first expr.
            *)
           val tyList = map checkExpr lst
-          val badEle = List.find (fn ty => not (Types.tyEqual (ty, hd tyList))) tyList
+          val badEle = List.find (fn ty => not (Types.eq (ty, hd tyList))) tyList
        in
           case badEle of
              SOME e => raise TypeError ("Inconsistent types in expression list.",
@@ -77,11 +77,11 @@ struct
           val thenTy = checkExpr then'
           val elseTy = checkExpr else'
        in
-          if not (Types.tyEqual (Types.BOOLEAN, testTy)) then
+          if not (Types.eq (Types.BOOLEAN, testTy)) then
              raise TypeError ("if expression must return a boolean type",
                               "expected type", Types.BOOLEAN, "if expr type", testTy)
           else
-             if not (Types.tyEqual (thenTy, elseTy)) then
+             if not (Types.eq (thenTy, elseTy)) then
                 raise TypeError ("then and else expressions must have the same type",
                                  "then expression type", thenTy,
                                  "else expression type", elseTy)

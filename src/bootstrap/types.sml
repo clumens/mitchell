@@ -19,7 +19,8 @@
  * in the mitchell language.  This includes representation in symbol tables
  * and in AST nodes.
  *)
-structure Types = struct
+signature TYPES =
+sig
    (* Used for determining whether a type is part of an infinite loop. *)
    datatype Finite = NOT_FINITE | UNVISITED | VISITED | FINITE
 
@@ -40,7 +41,29 @@ structure Types = struct
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
 
-   fun tyEqual (tyA:Type, tyB:Type) = true
+   (* Compare two types for equality. *)
+   val eq: Type * Type -> bool
+
+   (* Convert a Type into a string suitable for printing. *)
+   val toString: Type -> string
+end
+
+structure Types :> TYPES =
+struct
+   datatype Finite = NOT_FINITE | UNVISITED | VISITED | FINITE
+
+   datatype Type = ALIAS of Symbol.symbol * Finite
+                 | ANY of Finite
+                 | BOOLEAN
+                 | BOTTOM
+                 | EXN of (Symbol.symbol * Type) list * Finite
+                 | INTEGER
+                 | LIST of Type * Finite
+                 | RECORD of (Symbol.symbol * Type) list * Finite
+                 | STRING
+                 | UNION of (Symbol.symbol * Type option) list * Finite
+
+   fun eq (tyA:Type, tyB:Type) = true
 
    fun toString (ALIAS (sym, _)) = Symbol.toString sym
      | toString (ANY _) = "any"
