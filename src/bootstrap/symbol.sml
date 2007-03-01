@@ -19,45 +19,76 @@
  * entered into the symbol tables.  Symbols are the keys for the symbol tables,
  * and the stored values are defined in symtab.sml.
  *)
-signature SYMBOL = sig
+signature SYMBOL =
+sig
+   (* The symbol table is divided up into several subtables, which allows
+    * different kinds of symbols to have the same name as long as we can figure
+    * out from context which kind of symbol we're dealing with.  These are the
+    * allowed subtables.  This probably belongs in symtab.sml instead.
+    *)
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    (* The key for symbol table operations. *)
-   type symbol = MString.mstring * Subtable
+   type symbol
 
-   (* Convert a string into a symbol that can be inserted into a symbol table.
-    * The subtable is used to discriminate between the various kinds of symbols
-    * that can all have the same name but live in the same table.
+   (* Are two symbols equal?  This must compare both the symbol names and the
+    * subtable types.  Two symbols with the same name in different subtables
+    * are not equal.
     *)
-   val toSymbol: MString.mstring * Subtable -> symbol
+   val eq: symbol * symbol -> bool
+
+   (* Return the name associated with a symbol. *)
+   val name: symbol -> MString.mstring
+
+   (* Function to compare just symbol names.  This acts as String.>, but for
+    * symbols.  This function basically exists just to use with
+    * ListMisc.findDup.
+    *)
+   val nameGt: symbol * symbol -> bool
+
+   (* Return the subtable a symbol exists in. *)
+   val subtable: symbol -> Subtable
 
    (* Perform the reverse operation - convert a symbol into a string that
     * is suitable for printing.
     *)
    val toString: symbol -> string
 
-   val symNameCmp: symbol * symbol -> bool
+   (* Convert a string into a symbol that can be inserted into a symbol table.
+    * The subtable is used to discriminate between the various kinds of symbols
+    * that can all have the same name but live in the same table.
+    *)
+   val toSymbol: MString.mstring * Subtable -> symbol
 end
 
-structure Symbol :> SYMBOL = struct
+structure Symbol :> SYMBOL =
+struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    type symbol = MString.mstring * Subtable
 
-   (* A wrapper around the symbol representation so callers don't have to know
-    * about the internals.  The internal format could change in the future.
+   fun eq (a: symbol, b: symbol) =
+      (#2 a = #2 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
+
+   (* These look stupid right now, but they won't if I decide to change
+    * the internal format of a symbol sometime in the future.
     *)
-   fun toSymbol (unicodeSym, subtable) =
-      (unicodeSym, subtable): symbol
+   fun name (sym: symbol) =
+      #1 sym
+
+   fun nameGt (a, b) =
+      MString.> (name a, name b)
+
+   fun subtable (sym: symbol) =
+      #2 sym
 
    fun toString (sym: symbol) =
-      (case #2 sym of EXN_TYPE => "EXN_TYPE: "
-                    | FUN_TYCON => "FUN_TYCON: "
-                    | MODULE => "MODULE: "
-                    | VALUE => "VALUE: ") ^ MString.toString (#1 sym)
+      (case subtable sym of EXN_TYPE => "EXN_TYPE: "
+                          | FUN_TYCON => "FUN_TYCON: "
+                          | MODULE => "MODULE: "
+                          | VALUE => "VALUE: ") ^ MString.toString (name sym)
 
-   (* A function to compare two symbols based only on their name.  This
-    * function is most useful when passed to ListMisc.findDup.
-    *)
-   val symNameCmp = fn (a: symbol, b: symbol) => MString.> (#1 a, #1 b)
+   (* This looks stupid, too. *)
+   fun toSymbol (unicodeSym, subtable) =
+      (unicodeSym, subtable): symbol
 end

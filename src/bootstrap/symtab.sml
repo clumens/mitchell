@@ -34,9 +34,6 @@ signature SYMTAB = sig
 
    (* Create a new empty symbol table. *)
    val mkTable: unit -> table
-
-   (* Compare two symbols for equality. *)
-   val symbolsEqual: Symbol.symbol * Symbol.symbol -> bool
 end
 
 structure Symtab :> SYMTAB = struct
@@ -52,24 +49,18 @@ structure Symtab :> SYMTAB = struct
 
    type table = (Symbol.symbol, Entry) HashTable.hash_table
 
-   fun hashSymbol (sym:Symbol.symbol) = let
+   fun hashSymbol sym = let
       (* Add a character to the front of the symbol to discriminate among
        * subtables.
        *)
-      val discrim = case #2 sym of Symbol.EXN_TYPE => chr 1
-                                 | Symbol.FUN_TYCON => chr 2
-                                 | Symbol.MODULE => chr 3
-                                 | Symbol.VALUE => chr 4
+      val discrim = case Symbol.subtable sym of Symbol.EXN_TYPE => chr 1
+                                              | Symbol.FUN_TYCON => chr 2
+                                              | Symbol.MODULE => chr 3
+                                              | Symbol.VALUE => chr 4
    in
-      HashString.hashString (str discrim ^ MString.toString (#1 sym))
+      HashString.hashString (str discrim ^ MString.toString (Symbol.name sym))
    end
 
-   (* Two symbols are equal only if they are in the same subtable and if their
-    * string representations are the same.
-    *)
-   fun symbolsEqual (a:Symbol.symbol, b:Symbol.symbol) =
-      (#2 a = #2 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
-
    fun mkTable () =
-      HashTable.mkTable (hashSymbol, symbolsEqual) (47, NotFound)
+      HashTable.mkTable (hashSymbol, Symbol.eq) (47, NotFound)
 end

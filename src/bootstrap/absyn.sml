@@ -92,7 +92,7 @@ structure Absyn = struct
     *)
    local
       fun checkForDupes lst msg =
-         case ListMisc.findDup Symbol.symNameCmp lst of
+         case ListMisc.findDup Symbol.nameGt lst of
             SOME dup => raise Error.SymbolError (msg, dup)
           | NONE => ()
    in

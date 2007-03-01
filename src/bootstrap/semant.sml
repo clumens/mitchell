@@ -82,7 +82,7 @@ struct
      | checkBaseExpr (RaiseExp expr) = ( checkExpr expr ; Types.ANY Types.UNVISITED )
      | checkBaseExpr (RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
-          val _ = case ListMisc.findDup Symbol.symNameCmp (map #1 lst) of
+          val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
                      SOME dup => raise SymbolError ("Record definition already includes a symbol with this name.", dup)
                    | NONE => ()
        in
