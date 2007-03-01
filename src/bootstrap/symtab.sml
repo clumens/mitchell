@@ -40,7 +40,6 @@ signature SYMTAB = sig
 end
 
 structure Symtab :> SYMTAB = struct
-   open BaseTy
    datatype Entry = SYM_EXN of {ty: Types.Type}
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
                                      formals: (Symbol.symbol * Types.Type) list}
@@ -62,14 +61,14 @@ structure Symtab :> SYMTAB = struct
                                  | Symbol.MODULE => chr 3
                                  | Symbol.VALUE => chr 4
    in
-      HashString.hashString (str discrim ^ mstringToString (#1 sym))
+      HashString.hashString (str discrim ^ MString.toString (#1 sym))
    end
 
    (* Two symbols are equal only if they are in the same subtable and if their
     * string representations are the same.
     *)
    fun symbolsEqual (a:Symbol.symbol, b:Symbol.symbol) =
-      (#2 a = #2 b) andalso (String.compare (mstringToString (#1 a), mstringToString (#1 b))) = EQUAL
+      (#2 a = #2 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
 
    fun mkTable () =
       HashTable.mkTable (hashSymbol, symbolsEqual) (47, NotFound)

@@ -30,11 +30,12 @@
    type lex_result = token
    fun eof() = EOF
 
-   val text: BaseTy.mstring ref = ref []
-   fun addText s = ( text := List.revAppend (s, !text))
-   fun addChar ch = ( text := ch::(!text))
-   fun clrText () = ( text := [] )
-   fun getText () = rev (!text)
+   val text: MString.mstring ref = ref (MString.fromString "")
+   fun addText s = ( text := MString.^ (!text, s) )
+   fun addChar ch = ( text := MString.^ (!text, MString.str ch) )
+   fun addWord w = ( text := MString.^ (!text, MString.fromWord w) )
+   fun clrText () = ( text := MString.fromString "" )
+   fun getText () = !text
 
    fun convertEscaped esc pos =
       case Word32.fromString (String.extract (esc, 2, NONE)) of
@@ -49,9 +50,9 @@
 <INITIAL> "\""          => ( clrText() ; YYBEGIN STRINGS ; continue() );
 <STRINGS> "\""          => ( YYBEGIN INITIAL ; STRING (getText()) );
 <STRINGS> "\\"\n        => ( YYBEGIN WSESCAPE ; continue() );
-<STRINGS> "\\n"         => ( addChar (UTF8.fromAscii #"\n") ; continue() );
-<STRINGS> "\\t"         => ( addChar (UTF8.fromAscii #"\t") ; continue() );
-<STRINGS> "\\u"{hex}{4} => ( addChar (convertEscaped yytext yypos); continue() );
+<STRINGS> "\\n"         => ( addChar #"\n" ; continue() );
+<STRINGS> "\\t"         => ( addChar #"\t" ; continue() );
+<STRINGS> "\\u"{hex}{4} => ( addWord (convertEscaped yytext yypos); continue() );
 <STRINGS> .             => ( addText yyunicode; continue() );
 
 <WSESCAPE> {ws}      => ( continue() );

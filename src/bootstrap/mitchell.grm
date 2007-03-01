@@ -20,10 +20,10 @@
    : ABSORB ("absorb") | ASSIGN ("←") | BOOLEAN of bool | BOTTOM ("⊥") | CASE ("case") |
      COLON (":") | COMMA (",") | DBLQUOTE ("\"") | DECL ("decl") | DOT (".") |
      ELSE ("else") | END ("end") | EXN ("ℰ") | FUNCTION ("ƒ") | HANDLE ("handle") |
-     IDENTIFIER of BaseTy.mstring | IF ("if") | IN ("in") | INTEGER of int |
+     IDENTIFIER of MString.mstring | IF ("if") | IN ("in") | INTEGER of int |
      LBRACE ("{") | LBRACK ("[") | LIST ("list") | LPAREN ("(") | MAPSTO ("→") |
      MODULE ("ℳ") | PIPE ("|") | RAISE ("raise") | RBRACE ("}") | RBRACK ("]") |
-     RPAREN (")") | SEMICOLON (";") | STRING of BaseTy.mstring | THEN ("then") |
+     RPAREN (")") | SEMICOLON (";") | STRING of MString.mstring | THEN ("then") |
      TYPE ("τ") | UNION ("∪") | VAL ("ʋ")
    ;
 

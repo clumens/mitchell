@@ -31,7 +31,7 @@ structure Absyn = struct
     * will look up in the symbol table later on, not something to be stored in
     * the symbol table.
     *)
-   and IdRef = Id of BaseTy.mstring list
+   and IdRef = Id of MString.mstring list
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
@@ -63,7 +63,7 @@ structure Absyn = struct
                 | RaiseExp of Expr
                 | RecordAssnExp of (Symbol.symbol * Expr) list
                 | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol list}
-                | StringExp of BaseTy.mstring
+                | StringExp of MString.mstring
 
    and Ty = BottomTy of pos
           | ExnTy of {exn': (Symbol.symbol * Ty * pos) list, pos: pos}
@@ -162,7 +162,7 @@ structure Absyn = struct
       and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
       and writeIdRef i (Id id) =
-         ( indent i ; sayln ("id = " ^ String.concatWith "." (map BaseTy.mstringToString id)) )
+         ( indent i ; sayln ("id = " ^ String.concatWith "." (map MString.toString id)) )
 
 
       (* AST PRINTING FUNCTIONS *)
@@ -243,7 +243,7 @@ structure Absyn = struct
               << i "element =" ; (printLst ele writeSymbol) ;
               indent i ; sayln "}")
         | writeBaseExpr i (StringExp v) =
-             (indent i ; sayln ("STRING(" ^ BaseTy.mstringToString v ^ ")"))
+             (indent i ; sayln ("STRING(" ^ MString.toString v ^ ")"))
 
       and writeTy i (BottomTy _) = (indent i ; sayln "ty = BOTTOM")
         | writeTy i (ExnTy{exn', ...}) = << i "ty = EXN" (printLst exn' writeTypedId)

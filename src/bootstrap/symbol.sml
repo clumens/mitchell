@@ -23,13 +23,13 @@ signature SYMBOL = sig
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    (* The key for symbol table operations. *)
-   type symbol = BaseTy.mstring * Subtable
+   type symbol = MString.mstring * Subtable
 
    (* Convert a string into a symbol that can be inserted into a symbol table.
     * The subtable is used to discriminate between the various kinds of symbols
     * that can all have the same name but live in the same table.
     *)
-   val toSymbol: BaseTy.mstring * Subtable -> symbol
+   val toSymbol: MString.mstring * Subtable -> symbol
 
    (* Perform the reverse operation - convert a symbol into a string that
     * is suitable for printing.
@@ -42,7 +42,7 @@ end
 structure Symbol :> SYMBOL = struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
-   type symbol = BaseTy.mstring * Subtable
+   type symbol = MString.mstring * Subtable
 
    (* A wrapper around the symbol representation so callers don't have to know
     * about the internals.  The internal format could change in the future.
@@ -54,11 +54,10 @@ structure Symbol :> SYMBOL = struct
       (case #2 sym of EXN_TYPE => "EXN_TYPE: "
                     | FUN_TYCON => "FUN_TYCON: "
                     | MODULE => "MODULE: "
-                    | VALUE => "VALUE: ") ^ BaseTy.mstringToString (#1 sym)
+                    | VALUE => "VALUE: ") ^ MString.toString (#1 sym)
 
    (* A function to compare two symbols based only on their name.  This
     * function is most useful when passed to ListMisc.findDup.
     *)
-   val symNameCmp = fn (a: symbol, b: symbol) =>
-                       BaseTy.mstringToString (#1 a) > BaseTy.mstringToString (#1 b)
+   val symNameCmp = fn (a: symbol, b: symbol) => MString.> (#1 a, #1 b)
 end
