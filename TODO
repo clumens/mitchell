@@ -5,15 +5,15 @@
    - type checking rules for polymorphism
    - audit all documentation for changes due to: union type, explicit
      polymorphism, absorb, and function call grammar changes
-- grammar:
-   - allow some sort of list pattern matching as a stop-gap for real
-     pattern matching throughout
+- language:
+   - pattern matching
+   - more featured module system w/ interface definitions, etc.
+   - eiffel-style assertions (?)
+   - documentation system, or possibly more generic attributes/decorators
 - misc:
    - need to think up a format for built modules that will allow us to
-     suck in a symbol table for them during semantic analysis (preview-5)
-   - proposal for C interface module
+     suck in a symbol table for them during semantic analysis
+   - internal interface to C libraries for implementing the runtime
    - outline contents for runtime library
 - symbol table / type checker:
    - add type information to standard library stubs
-- testing:
-   - automatic AST & simplification testing

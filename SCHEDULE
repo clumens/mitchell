@@ -3,86 +3,74 @@ completed/present at that release, or which actions will be taken at
 release time.
 
 
-preview-3 - type checking
-=========================
-- working strict non-polymorphic type system
-- grammar frozen (exceptions - record access, empty lists)
-- tagged as PREVIEW_3
+preview-6 - type checking rewrite
+=================================
+- rewritten in sml
+- working strict explicit polymorphic type system
+- grammar frozen
+- tagged as PREVIEW_6
 
-preview-4 - miscellaneous fixes
-===============================
-- fix miscellaneous grammar problems - decl, escapes in strings,
-  visibility declarations
-- add column numbers to error messages
-- detect infinite loops of recursive types
-- documentation and testing
-- tagged as PREVIEW_4
-- branch BRANCH_EXCEPTIONS for adding exception support
-- branch BRANCH_EXPLICIT_POLY for adding an explicit polymorphic type
-  checker
-
-preview-5 - simplified AST
-==========================
+preview-7 - simplified AST rewrite
+==================================
+- rewritten in sml
 - conversion of AST into simplified AST
-- merge in BRANCH_EXN
 - front-end frozen (exception - serious bugs)
-- tagged as PREVIEW_5
+- tagged as PREVIEW_7
 
-preview-6 - intermediate representation
+preview-8 - intermediate representation
 =======================================
 - conversion of simplified AST into IR
 - front-end frozen (exception - serious bugs)
-- tagged as PREVIEW_6
-? possible branch BRANCH_SSA for development of an SSA-based optimizer
+- tagged as PREVIEW_8
 
-preview-7 - runtime / interpreter
+preview-9 - runtime / interpreter
 =================================
 - on-disk module format
 - initial basic runtime library - magic C library module, other important bits
 - runtime documentation and testing
 - interpreter
 - front-end frozen (exception - serious bugs)
-- tagged as PREVIEW_7
+- tagged as PREVIEW_9
 
-preview-8 - miscellaneous fixes
-===============================
+preview-10 - miscellaneous fixes
+================================
 - builtin release for bug fixes and miscellaneous additions, may be
   removed if unneeded
 ? possible speed profiling and improvements, if needed
-- tagged as PREVIEW_8
+- tagged as PREVIEW_10
 
-preview-9 - compiler
-====================
-- instruction selection and register allocation targeting i386
+preview-11 - compiler
+=====================
+- instruction selection and register allocation targeting i386/ppc
 - compiler front-end
 - front-end and IR frozen (exception - serious bugs)
 - complete basic runtime library consisting of C and mitchell components
+- garbage collection in runtime
 - runtime documentation and testing
-- latest time to merge BRANCH_EXPLICIT_POLY since the polymorphic type
-  checker will be required for a complete runtime later on
-- tagged as PREVIEW_9
+- tagged as PREVIEW_11
 
-bootstrap-1
-===========
-- bug fixes from post-preview-8
-- complete C-based compiler
+
+test-1
+======
+- bug fixes from post-preview-11
+- complete sml-based compiler
 - complete base runtime
-? latest time to merge BRANCH_SSA, if created
-- full language specification and compiler & runtime documentation
+- initial language specification and compiler & runtime documentation
+  NOTE:  this is not the V.1 language specification
 - full test suite for compiler and runtime
-- tagged as BOOTSTRAP_1
+- tagged as TEST_1
 
 
 future
 ======
-- bootstrap releases follow roughly the same schedule as the preview
+- future test releases should include additions to the language
+  specification and runtime definition
+- bootstrap releases may follow the test releases, if that's still a goal
+  of the compiler
+- bootstrap releases would roughly follow the same schedule as the preview 
   releases, but consist of rewriting mitchell compiler chunks in mitchell
   itself
-- bootstrap releases may include additions to the runtime library as
-  needed for ease of rewriting the compiler
-- bootstrap releases may rarely include changes to the language
-  specification but only if needed
-- release-1 corresponds with a fully self-hosting mitchell compiler,
-  runtime environment, and stabilized specification
-- post-release-1 releases will focus on performance of the compiler and
-  building up a good optimizer
+- release-1 corresponds with a fully implemented compiler, runtime
+  environment, and stabilized specification, and possibly bootstrapping
+- post-release-1 releases will focus on performance and optimization, but
+  no major changes to the V.1 language and runtime specs

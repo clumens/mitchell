@@ -1,5 +1,7 @@
 Known problems
 ==============
+- grammar
+   - expressions with exception handlers must be surrounded by parens
 - type checker
    - mutually recursive modules don't work
    - calling functions in the standard library doesn't work (no type
