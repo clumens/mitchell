@@ -60,37 +60,36 @@ struct
    and checkBranch ts (Absyn.RegularBranch expr) = ()
      | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()
 
+   and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
+     | checkExnHandlerLst ts (handlers, NONE) = (
+          case findBadEle (checkExnHandler ts) handlers of
+             (firstTy, SOME (ty, Absyn.ExnHandler{pos, ...})) =>
+                raise TypeError (pos, "Inconsistent types in exception handler list.",
+                                 "previous exception handler type", firstTy,
+                                 "this exception handler type", ty)
+           | (firstTy, _) => firstTy
+          )
+     | checkExnHandlerLst ts (handlers, default as SOME (Absyn.ExnHandler{pos, ...})) = let
+          (* All exception handlers must have the same type, and the
+           * default handler must return this same type as well.  We can
+           * use previous definitions of checkExnHandlerLst to do this.
+           *)
+          val prevTy = checkExnHandlerLst ts (handlers, NONE)
+          val defaultTy = checkExnHandler ts (Option.valOf default)
+       in
+          if not (Types.eq (defaultTy, prevTy)) then
+             raise TypeError (pos, "Default exception handler type does not match type of previous handlers.",
+                              "previous exception handler type", prevTy,
+                              "default exception handler type", defaultTy)
+          else
+             defaultTy
+       end
+
    and checkExpr ts (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts expr
      | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
        let
-          fun checkHandlers ts ([], SOME default) = checkExnHandler ts default
-            | checkHandlers ts (handlers, NONE) = (
-                 case findBadEle (checkExnHandler ts) handlers of
-                    (firstTy, SOME (ty, Absyn.ExnHandler{pos, ...})) =>
-                       raise TypeError (pos, "Inconsistent types in exception handler list.",
-                                        "previous exception handler type", firstTy,
-                                        "this exception handler type", ty)
-                  | (firstTy, _) => firstTy
-                 )
-            | checkHandlers ts (handlers, default as SOME (Absyn.ExnHandler{pos, ...})) = let
-                 (* All exception handlers must have the same type, and the
-                  * default handler must return this same type as well.  We can
-                  * use previous definitions of checkHandlers to do this.
-                  *)
-                 val prevTy = checkHandlers ts (handlers, NONE)
-                 val defaultTy = checkExnHandler ts (Option.valOf default)
-              in
-                 if not (Types.eq (defaultTy, prevTy)) then
-                    raise TypeError (pos,
-                                     "Default exception handler type does not match type of previous handlers.",
-                                     "previous exception handler type", prevTy,
-                                     "default exception handler type", defaultTy)
-                 else
-                    defaultTy
-              end
-
           val exprTy = checkBaseExpr ts expr
-          val handlerTy = checkHandlers ts (handlers, default)
+          val handlerTy = checkExnHandlerLst ts (handlers, default)
        in
           if not (Types.eq (exprTy, handlerTy)) then
              raise TypeError (pos,
