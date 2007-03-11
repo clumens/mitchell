@@ -25,8 +25,8 @@ struct
    (* position * error message *)
    exception TokenizeError of StreamPos.pos * string
 
-   (* error message * expected message * expected ty * got message * got ty *)
-   exception TypeError of string * string * Types.Type * string * Types.Type
+   (* position * error message * expected message * expected ty * got message * got ty *)
+   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
    (* error message * problem symbol *)
    exception SymbolError of string * Symbol.symbol

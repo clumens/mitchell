@@ -30,6 +30,28 @@ structure Semant :> SEMANT =
 struct
    open Error
 
+
+   (* HELPER FUNCTIONS *)
+
+   (* All elements in the list must have the same type.  The easiest way to
+    * check this is to search for the first element that doesn't have the same
+    * type as the first element.  However in order to get position information
+    * for raising any exceptions, we need to pair the returned type up with its
+    * matching element.
+    *)
+   fun findBadEle f lst = let
+      val lst' = ListPair.zip (map f lst, lst)
+      val firstTy = #1 (hd lst')
+      val badEle = List.find (fn (ty, expr) => not (Types.eq (ty, firstTy))) lst'
+   in
+      case badEle of
+         SOME x => (firstTy, SOME x)
+       | NONE => (firstTy, NONE)
+   end
+
+
+   (* SEMANTIC ANALYSIS FUNCTIONS *)
+
    fun checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ty, ...}) =
       Types.BOTTOM
 
@@ -39,32 +61,30 @@ struct
      | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()
 
    and checkExpr ts (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts expr
-     | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, ...}), ...}) =
+     | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
        let
           fun checkHandlers ts ([], SOME default) = checkExnHandler ts default
-            | checkHandlers ts (handlers, NONE) = let
-                 (* All exception handlers must return the same type. *)
-                 val tyList = map (checkExnHandler ts) handlers
-                 val badEle = List.find (fn ty => not (Types.eq (ty, hd tyList))) tyList
-              in
-                 case badEle of
-                    SOME e => raise TypeError ("Inconsistent types in exception handler list.",
-                                               "previous exception handler type", hd tyList,
-                                               "this exception handler type", e)
-                  | NONE => hd tyList
-              end
-            | checkHandlers ts (handlers, SOME default) = let
+            | checkHandlers ts (handlers, NONE) = (
+                 case findBadEle (checkExnHandler ts) handlers of
+                    (firstTy, SOME (ty, Absyn.ExnHandler{pos, ...})) =>
+                       raise TypeError (pos, "Inconsistent types in exception handler list.",
+                                        "previous exception handler type", firstTy,
+                                        "this exception handler type", ty)
+                  | (firstTy, _) => firstTy
+                 )
+            | checkHandlers ts (handlers, default as SOME (Absyn.ExnHandler{pos, ...})) = let
                  (* All exception handlers must have the same type, and the
                   * default handler must return this same type as well.  We can
                   * use previous definitions of checkHandlers to do this.
                   *)
                  val prevTy = checkHandlers ts (handlers, NONE)
-                 val defaultTy = checkExnHandler ts default
+                 val defaultTy = checkExnHandler ts (Option.valOf default)
               in
                  if not (Types.eq (defaultTy, prevTy)) then
-                    raise  TypeError ("Default exception handler type does not match type of previous handlers.",
-                                      "previous exception handler type", prevTy,
-                                      "default exception handler type", defaultTy)
+                    raise TypeError (pos,
+                                     "Default exception handler type does not match type of previous handlers.",
+                                     "previous exception handler type", prevTy,
+                                     "default exception handler type", defaultTy)
                  else
                     defaultTy
               end
@@ -73,7 +93,8 @@ struct
           val handlerTy = checkHandlers ts (handlers, default)
        in
           if not (Types.eq (exprTy, handlerTy)) then
-             raise TypeError ("Type of exception handler does not match type of expression.",
+             raise TypeError (pos,
+                              "Type of exception handler does not match type of expression.",
                               "expression type", exprTy, "exception handler type", handlerTy)
           else
              exprTy
@@ -84,33 +105,28 @@ struct
      | checkBaseExpr ts (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.DeclExp{decls, expr, symtab}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.ExnExp{id, ty, values}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.ExprLstExp lst) = let
-          (* All expressions in the list must have the same type.  Easiest way
-           * to do that is to search for the first expr that doesn't have the
-           * same type as the first expr.
-           *)
-          val tyList = map (checkExpr ts) lst
-          val badEle = List.find (fn ty => not (Types.eq (ty, hd tyList))) tyList
-       in
-          case badEle of
-             SOME e => raise TypeError ("Inconsistent types in expression list.",
-                                        "previous expression type", hd tyList,
-                                        "this expression type", e)
-           | NONE   => hd tyList
-       end
+     | checkBaseExpr ts (Absyn.ExprLstExp exprs) = (
+          case findBadEle (checkExpr ts) exprs of
+             (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
+                raise TypeError (pos, "Inconsistent types in expression list.",
+                                 "previous expression type", firstTy,
+                                 "this expression type", ty)
+           | (firstTy, _) => firstTy
+          )
      | checkBaseExpr ts (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.IdExp id) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.IfExp{test, then', else'}) = let
+     | checkBaseExpr ts (Absyn.IfExp{test as Absyn.Expr{pos=testPos, ...}, then',
+                                     else' as Absyn.Expr{pos=elsePos, ...}}) = let
           val testTy = checkExpr ts test
           val thenTy = checkExpr ts then'
           val elseTy = checkExpr ts else'
        in
           if not (Types.eq (Types.BOOLEAN, testTy)) then
-             raise TypeError ("if expression must return a boolean type",
+             raise TypeError (testPos, "if expression must return a boolean type",
                               "expected type", Types.BOOLEAN, "if expr type", testTy)
           else
              if not (Types.eq (thenTy, elseTy)) then
-                raise TypeError ("then and else expressions must have the same type",
+                raise TypeError (elsePos, "then and else expressions must have the same type",
                                  "then expression type", thenTy,
                                  "else expression type", elseTy)
              else
