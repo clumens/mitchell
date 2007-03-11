@@ -55,11 +55,6 @@ struct
    fun checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ty, ...}) =
       Types.BOTTOM
 
-   and checkIdRef ts (Absyn.Id lst) = ()
-
-   and checkBranch ts (Absyn.RegularBranch expr) = ()
-     | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()
-
    and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
      | checkExnHandlerLst ts (handlers, NONE) = (
           case findBadEle (checkExnHandler ts) handlers of
@@ -84,6 +79,11 @@ struct
           else
              defaultTy
        end
+
+   and checkIdRef ts (Absyn.Id lst) = ()
+
+   and checkBranch ts (Absyn.RegularBranch expr) = ()
+     | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()
 
    and checkExpr ts (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts expr
      | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
