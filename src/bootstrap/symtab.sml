@@ -45,32 +45,6 @@ signature SYMTAB = sig
    val find: table -> Symbol.symbol -> Entry option
 end
 
-signature SYMTAB_STACK = sig
-   type stack
-
-   (* Given a symbol table stack and a new table, push the new table onto the
-    * top of the stack so all lookups and additions will be performed relative
-    * to the new table.
-    *)
-   val enter: stack * Symtab.table -> stack
-
-   (* Given a symbol table stack, pop the table off the top and return the new
-    * stack and the table.  Raises Empty if the stack is empty.
-    *)
-   val leave: stack -> stack * Symtab.table
-
-   (* Return the table at the top of the symbol table stack.  Raises Empty if
-    * the stack is empty.
-    *)
-   val top: stack -> Symtab.table
-
-   (* Two different ways to search a symbol table stack for an Entry.  The first
-    * raises NotFound on error, the second returns NONE.
-    *)
-   val lookup: stack -> Symbol.symbol -> Symtab.Entry
-   val find: stack -> Symbol.symbol -> Symtab.Entry option
-end
-
 structure Symtab :> SYMTAB = struct
    datatype Entry = SYM_EXN of {ty: Types.Type}
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
@@ -102,6 +76,32 @@ structure Symtab :> SYMTAB = struct
    val insert = HashTable.insert
    val lookup = HashTable.lookup
    val find = HashTable.find
+end
+
+signature SYMTAB_STACK = sig
+   type stack
+
+   (* Given a symbol table stack and a new table, push the new table onto the
+    * top of the stack so all lookups and additions will be performed relative
+    * to the new table.
+    *)
+   val enter: stack * Symtab.table -> stack
+
+   (* Given a symbol table stack, pop the table off the top and return the new
+    * stack and the table.  Raises Empty if the stack is empty.
+    *)
+   val leave: stack -> stack * Symtab.table
+
+   (* Return the table at the top of the symbol table stack.  Raises Empty if
+    * the stack is empty.
+    *)
+   val top: stack -> Symtab.table
+
+   (* Two different ways to search a symbol table stack for an Entry.  The first
+    * raises NotFound on error, the second returns NONE.
+    *)
+   val lookup: stack -> Symbol.symbol -> Symtab.Entry
+   val find: stack -> Symbol.symbol -> Symtab.Entry option
 end
 
 structure SymtabStack :> SYMTAB_STACK = struct
