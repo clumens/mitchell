@@ -28,8 +28,8 @@ struct
    (* position * error message * expected message * expected ty * got message * got ty *)
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
-   (* error message * problem symbol *)
-   exception SymbolError of string * Symbol.symbol
+   (* problem symbol * error message *)
+   exception SymbolError of Symbol.symbol * string
 
    (* A function to kill the compiler.  failure is a boolean for whether this
     * is an error case or not.  This function mainly exists to easily turn off
