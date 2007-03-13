@@ -50,6 +50,11 @@ signature SYMTAB = sig
     *)
    val lookup: table -> Symbol.symbol -> Entry
    val find: table -> Symbol.symbol -> Entry option
+
+   (* Given a header and a table, return a string representation of the table's
+    * contents.
+    *)
+   val toString: table -> string -> string
 end
 
 structure Symtab :> SYMTAB = struct
@@ -89,6 +94,24 @@ structure Symtab :> SYMTAB = struct
    fun insert table (sym, entry) =
       case find table sym of SOME e => raise Duplicate
                            | NONE => insert' table (sym, entry)
+
+   local
+      (* FIXME:  might be worth printing out tyFormals on SYM_FUNCTION and
+       * SYM_TYCON.
+       *)
+      fun entryToString (SYM_EXN ty) = Types.toString ty
+        | entryToString (SYM_FUNCTION{ty, ...}) = Types.toString ty
+        | entryToString (SYM_MODULE tbl) = ""
+        | entryToString (SYM_TYCON{ty, ...}) = Types.toString ty
+        | entryToString (SYM_TYPE ty) = Types.toString ty
+        | entryToString (SYM_VALUE ty) = Types.toString ty
+   in
+      fun toString table hdr =
+         "----------------------------------------\n" ^ hdr ^
+         HashTable.foldi (fn (key, entry, v) => v ^ (Symbol.toString key) ^ " => " ^
+                                                    (entryToString entry) ^ "\n")
+                         "" table
+   end
 end
 
 signature SYMTAB_STACK = sig
@@ -115,6 +138,11 @@ signature SYMTAB_STACK = sig
     *)
    val lookup: stack -> Symbol.symbol -> Symtab.Entry
    val find: stack -> Symbol.symbol -> Symtab.Entry option
+
+   (* Given a header and a symbol table stack, return a string representation of
+    * the complete current environment.
+    *)
+   val toString: stack -> string -> string
 end
 
 structure SymtabStack :> SYMTAB_STACK = struct
@@ -139,4 +167,8 @@ structure SymtabStack :> SYMTAB_STACK = struct
       fun lookup ts sym = doLookup ts sym
       fun find ts sym = SOME(lookup ts sym) handle NotFound => NONE
    end
+
+   fun toString ts hdr =
+      "========================================\n" ^ hdr ^
+      foldl (fn (table, v) => v ^ Symtab.toString table hdr) "" ts
 end
