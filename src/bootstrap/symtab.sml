@@ -16,27 +16,34 @@
  *)
 signature SYMTAB = sig
    (* The structure stored in the hash table, keyed on Symbol.symbol. *)
-   datatype Entry = SYM_EXN of {ty: Types.Type}
+   datatype Entry = SYM_EXN of Types.Type
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
                                      formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE
+                  | SYM_MODULE of table
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
-                  | SYM_TYPE of {ty: Types.Type}
-                  | SYM_VALUE of {ty: Types.Type}
-
-   (* Thrown by the hash table internals. *)
-   exception NotFound
+                  | SYM_TYPE of Types.Type
+                  | SYM_VALUE of Types.Type
 
    (* A symbol table is a polymorphic HashTable mapping Symbol.symbols to
     * entrys.
     *)
-   type table = (Symbol.symbol, Entry) HashTable.hash_table
+   withtype table = (Symbol.symbol, Entry) HashTable.hash_table
+
+   (* Raised by the hash table internals. *)
+   exception NotFound
+
+   (* Raised by insert if a symbol already exists. *)
+   exception Duplicate
 
    (* Create a new empty symbol table. *)
    val mkTable: unit -> table
 
-   (* Add a new entry to a table, overriding any entries that already exist. *)
+   (* Two different ways to add a new entry to the table.  The first raises
+    * Duplicate if a symbol by that name already exists in the table.  The
+    * second overrides any preexisting entry.
+    *)
    val insert: table -> Symbol.symbol * Entry -> unit
+   val insert': table -> Symbol.symbol * Entry -> unit
 
    (* Two different ways to search a symbol table for an Entry.  The first
     * raises NotFound on error, the second returns NONE.
@@ -46,17 +53,19 @@ signature SYMTAB = sig
 end
 
 structure Symtab :> SYMTAB = struct
-   datatype Entry = SYM_EXN of {ty: Types.Type}
+   datatype Entry = SYM_EXN of Types.Type
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
                                      formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE
+                  | SYM_MODULE of table
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
-                  | SYM_TYPE of {ty: Types.Type}
-                  | SYM_VALUE of {ty: Types.Type}
+                  | SYM_TYPE of Types.Type
+                  | SYM_VALUE of Types.Type
+
+   withtype table = (Symbol.symbol, Entry) HashTable.hash_table
 
    exception NotFound
 
-   type table = (Symbol.symbol, Entry) HashTable.hash_table
+   exception Duplicate
 
    fun hashSymbol sym = let
       (* Add a character to the front of the symbol to discriminate among
@@ -73,9 +82,13 @@ structure Symtab :> SYMTAB = struct
    fun mkTable () =
       HashTable.mkTable (hashSymbol, Symbol.eq) (47, NotFound)
 
-   val insert = HashTable.insert
+   val insert' = HashTable.insert
    val lookup = HashTable.lookup
    val find = HashTable.find
+
+   fun insert table (sym, entry) =
+      case find table sym of SOME e => raise Duplicate
+                           | NONE => insert' table (sym, entry)
 end
 
 signature SYMTAB_STACK = sig
