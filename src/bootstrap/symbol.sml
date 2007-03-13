@@ -66,10 +66,10 @@ structure Symbol :> SYMBOL =
 struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
-   type symbol = MString.mstring * Subtable
+   type symbol = MString.mstring * Label.label * Subtable
 
    fun eq (a: symbol, b: symbol) =
-      (#2 a = #2 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
+      (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
 
    (* These look stupid right now, but they won't if I decide to change
     * the internal format of a symbol sometime in the future.
@@ -81,7 +81,7 @@ struct
       MString.> (name a, name b)
 
    fun subtable (sym: symbol) =
-      #2 sym
+      #3 sym
 
    fun toString (sym: symbol) =
       (case subtable sym of EXN_TYPE => "EXN_TYPE: "
@@ -89,7 +89,6 @@ struct
                           | MODULE => "MODULE: "
                           | VALUE => "VALUE: ") ^ MString.toString (name sym)
 
-   (* This looks stupid, too. *)
    fun toSymbol (unicodeSym, subtable) =
-      (unicodeSym, subtable): symbol
+      (unicodeSym, Label.toLabel unicodeSym, subtable)
 end
