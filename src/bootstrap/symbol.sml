@@ -83,11 +83,14 @@ struct
    fun subtable (sym: symbol) =
       #3 sym
 
-   fun toString (sym: symbol) =
-      (case subtable sym of EXN_TYPE => "EXN_TYPE: "
-                          | FUN_TYCON => "FUN_TYCON: "
-                          | MODULE => "MODULE: "
-                          | VALUE => "VALUE: ") ^ MString.toString (name sym)
+   fun toString sym = let
+      val hdr = case subtable sym of EXN_TYPE => "EXN_TYPE{"
+                                   | FUN_TYCON => "FUN_TYCON{"
+                                   | MODULE => "MODULE{"
+                                   | VALUE => "VALUE{"
+   in
+      hdr ^ MString.toString (name sym) ^ "," ^ Label.toString (#2 sym) ^ "}"
+   end
 
    fun toSymbol (unicodeSym, subtable) =
       (unicodeSym, Label.toLabel unicodeSym, subtable)
