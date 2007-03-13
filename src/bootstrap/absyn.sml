@@ -24,8 +24,7 @@ structure Absyn = struct
     * an exception type.
     *)
    datatype ExnHandler = ExnHandler of {exnKind: IdRef option, sym: Symbol.symbol,
-                                        expr: Expr, symtab: Symtab.table,
-                                        ty: Types.Type option, pos: pos}
+                                        expr: Expr, symtab: Symtab.table, pos: pos}
 
    (* A reference to a (hopefully) existing identifier.  This is something we
     * will look up in the symbol table later on, not something to be stored in
@@ -42,18 +41,16 @@ structure Absyn = struct
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
     *)
-   and Expr = Expr of {expr: BaseExpr, pos: pos, ty: Types.Type option,
+   and Expr = Expr of {expr: BaseExpr, pos: pos,
                        exnHandler: {handlers: ExnHandler list,
-                                    default: ExnHandler option,
-                                    ty: Types.Type option, pos: pos} option}
+                                    default: ExnHandler option, pos: pos} option}
 
    and BaseExpr = BooleanExp of bool
                 | BottomExp
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
                 | DeclExp of {decls: Decl list, expr: Expr, symtab: Symtab.table}
-                | ExnExp of {id: IdRef, ty: Types.Type option,
-                             values: (Symbol.symbol * Expr) list}
+                | ExnExp of {id: IdRef, values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
                 | FunCallExp of {id: IdRef, args: Expr list, tyArgs: Ty list,
                                  frees: Symbol.symbol list}
@@ -80,11 +77,9 @@ structure Absyn = struct
                           calls: Expr list, body: Expr, symtab: Symtab.table}
             | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
                              symtab: Symtab.table}
-            | TyDecl of {sym: Symbol.symbol, ty: Types.Type option, absynTy: Ty,
-                         tyvars: Symbol.symbol list option, symtab: Symtab.table option,
-                         pos: pos}
-            | ValDecl of {sym: Symbol.symbol, ty: Types.Type option,
-                          absynTy: Ty option, init: Expr, pos: pos}
+            | TyDecl of {sym: Symbol.symbol, absynTy: Ty, tyvars: Symbol.symbol list option,
+                         symtab: Symtab.table option, pos: pos}
+            | ValDecl of {sym: Symbol.symbol, absynTy: Ty option, init: Expr, pos: pos}
 
    (* Convert an AST subtree into a Types.Type.  This may perhaps belong in
     * types.sml but that will create circular references between the two files.
@@ -182,7 +177,7 @@ structure Absyn = struct
               indent i ; sayln "}")
 
       and writeExpr i (Expr{expr, exnHandler, ...}) = let
-         fun writeExnHandlers i {handlers, default, ty, pos} = let
+         fun writeExnHandlers i {handlers, default, pos} = let
             fun optHandler i (SOME h) = << i "default" (fn i => writeExnHandler i h)
               | optHandler i _        = ()
          in

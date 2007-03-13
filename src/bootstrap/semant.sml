@@ -52,7 +52,7 @@ struct
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
-   fun checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ty, ...}) =
+   fun checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ...}) =
       Types.BOTTOM
 
    and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
@@ -103,7 +103,7 @@ struct
      | checkBaseExpr ts (Absyn.BottomExp) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.DeclExp{decls, expr, symtab}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.ExnExp{id, ty, values}) = Types.BOTTOM
+     | checkBaseExpr ts (Absyn.ExnExp{id, values}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.ExprLstExp exprs) = (
           case findBadEle (checkExpr ts) exprs of
              (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
@@ -152,6 +152,6 @@ struct
    and checkDecl ts (Absyn.Absorb{module, ...}) = ()
      | checkDecl ts (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, symtab, ...}) = ()
      | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = ()
-     | checkDecl ts (Absyn.TyDecl{sym, ty, absynTy, tyvars, symtab, ...}) = ()
-     | checkDecl ts (Absyn.ValDecl{sym, ty, absynTy, init, ...}) = ()
+     | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, symtab, ...}) = ()
+     | checkDecl ts (Absyn.ValDecl{sym, absynTy, init, ...}) = ()
 end
