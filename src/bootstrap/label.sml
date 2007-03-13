@@ -24,6 +24,9 @@ signature LABEL = sig
 
    (* Convert an identifier represented as a mitchell string into a label. *)
    val toLabel: MString.mstring -> label
+
+   (* Convert a label into a printable string. *)
+   val toString: label -> string
 end
 
 structure Label :> LABEL = struct
@@ -34,4 +37,7 @@ structure Label :> LABEL = struct
    fun toLabel mstring =
       ("_." ^ Int.toString (!uniqueId) ^ "_" ^ MString.toString mstring) before
       uniqueId := !uniqueId + 1
+
+   fun toString label =
+      label: string
 end
