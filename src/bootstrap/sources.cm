@@ -2,6 +2,7 @@ Group is
    absyn.sml
    basety.sml
    error.sml
+   label.sml
    main.sml
    misc.sml
    options.sml
