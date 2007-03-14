@@ -23,6 +23,11 @@ sig
     * act like the operator >.
     *)
    val findDup: ('a * 'a -> bool) -> 'a list -> 'a option
+
+   (* Split a list into the head of the list that satisfies the predicate
+    * function and all the elements from the first one that does not to the end.
+    *)
+   val split: ('a -> bool) -> 'a list -> 'a list * 'a list
 end
 
 structure ListMisc :> LISTMISC =
@@ -40,5 +45,13 @@ struct
                  else ListMergeSort.sort (op >) lst
    in
       loop lst'
+   end
+
+   local
+      fun doSplit f [] accum = (accum, [])
+        | doSplit f (lst as x::xs) accum = if f x then doSplit f xs (x::accum)
+                                           else (accum, lst)
+   in
+      fun split f lst = doSplit f lst []
    end
 end
