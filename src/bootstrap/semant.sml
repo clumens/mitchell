@@ -16,14 +16,8 @@
  *)
 signature SEMANT =
 sig
-   (* Type checking functions. *)
-   val checkExnHandler: SymtabStack.stack -> Absyn.ExnHandler -> Types.Type
-   val checkIdRef: SymtabStack.stack -> Absyn.IdRef -> unit
-   val checkBranch: SymtabStack.stack -> Absyn.Branch -> unit
-   val checkExpr: SymtabStack.stack -> Absyn.Expr -> Types.Type
-   val checkBaseExpr: SymtabStack.stack -> Absyn.BaseExpr -> Types.Type
-   val checkTy: SymtabStack.stack -> Absyn.Ty -> Types.Type
-   val checkDecl: SymtabStack.stack -> Absyn.Decl -> unit
+   (* We only need to expose a single function for checking the entire AST. *)
+   val checkProg: SymtabStack.stack -> Absyn.Decl list -> unit
 end
 
 structure Semant :> SEMANT =
@@ -49,10 +43,18 @@ struct
        | NONE => (firstTy, NONE)
    end
 
+   (* Wrap Symtab.insert, raising the appropriate exceptions. *)
+   fun insertSym ts (sym, entry) =
+      Symtab.insert (SymtabStack.top ts) (sym, entry)
+      handle Symtab.Duplicate => raise SymbolError (sym, "A symbol with this name already exists in this scope.")
+
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
-   fun checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ...}) =
+   fun checkProg ts lst =
+      app (checkDecl ts) lst
+
+   and checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ...}) =
       Types.BOTTOM
 
    and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
@@ -102,7 +104,15 @@ struct
    and checkBaseExpr ts (Absyn.BooleanExp b) = Types.BOOLEAN
      | checkBaseExpr ts (Absyn.BottomExp) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.DeclExp{decls, expr, symtab}) = Types.BOTTOM
+     | checkBaseExpr ts (Absyn.DeclExp{decls, expr, symtab}) = let
+          (* Create a new environment for the body of the decl-expr to execute
+           * in, then check it against that environment.
+           *)
+          val ts' = SymtabStack.enter (ts, symtab)
+          val _ = checkDeclLst ts' decls
+       in
+          checkExpr ts' expr
+       end
      | checkBaseExpr ts (Absyn.ExnExp{id, values}) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.ExprLstExp exprs) = (
           case findBadEle (checkExpr ts) exprs of
@@ -136,7 +146,7 @@ struct
      | checkBaseExpr ts (Absyn.RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
           val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
-                     SOME dup => raise SymbolError ("Record definition already includes a symbol with this name.", dup)
+                     SOME dup => raise SymbolError (dup, "Record definition already includes a symbol with this name.")
                    | NONE => ()
        in
           (* Construct a tuple for each element of the assignment expression and
@@ -150,8 +160,61 @@ struct
    and checkTy ts ast = Absyn.absynToTy ast
 
    and checkDecl ts (Absyn.Absorb{module, ...}) = ()
-     | checkDecl ts (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, symtab, ...}) = ()
-     | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = ()
+     | checkDecl ts (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body,
+                                   symtab, ...}) = ()
+     | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, symtab,
+                                   ...}) = ()
+     | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
+          (* Add the module to the lexical parent's table. *)
+          val _ = insertSym ts (sym, Symtab.SYM_MODULE symtab)
+       in
+          (* Check the guts of the module against the module's new environment. *)
+          checkDeclLst (SymtabStack.enter (ts, symtab)) decls
+       end
      | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, symtab, ...}) = ()
-     | checkDecl ts (Absyn.ValDecl{sym, absynTy, init, ...}) = ()
+     | checkDecl ts (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
+          val declaredTy = Absyn.absynToTy absynTy
+          val initTy = checkExpr ts init
+       in
+          (* Since there is a type specified, check that the return type of the
+           * initializing expression does match.
+           *)
+          if not (Types.eq (initTy, declaredTy)) then
+             raise TypeError (pos, "Type of value initializer does not match declared type.",
+                              "declared type", declaredTy, "initializer type", initTy)
+          else
+             insertSym ts (sym, Symtab.SYM_VALUE initTy)
+       end
+     | checkDecl ts (Absyn.ValDecl{sym, absynTy=NONE, init, pos}) =
+          insertSym ts (sym, Symtab.SYM_VALUE (checkExpr ts init))
+
+   and checkDeclLst ts decls = let
+      (* Process a block of possibly mutually recursive function declarations. *)
+      fun processFunDecls ts funcs = ()
+
+      (* Process a block of possibly mutually recursive type declarations. *)
+      fun processTyDecls ts tys = ()
+
+      (* For function and type declarations, we need to handle possibly
+       * recursive declarations.  Therefore, we have to build up blocks of
+       * functions and blocks of types , then process those as a unit, then go
+       * back for the rest.  All other declarations are straightforward.
+       *)
+      fun doCheck ts (lst as (Absyn.FunDecl _)::decls) = let
+             val (funcs, rest) = ListMisc.split (fn (Absyn.FunDecl _) => true | _ => false)
+                                                lst
+          in
+             (processFunDecls ts funcs) before (doCheck ts rest)
+          end
+        | doCheck ts (lst as (Absyn.TyDecl _)::decls) = let
+             val (tys, rest) = ListMisc.split (fn (Absyn.TyDecl _) => true | _ => false)
+                                              lst
+          in
+             (processTyDecls ts tys) before (doCheck ts rest)
+          end
+        | doCheck ts (decl::decls) = (checkDecl ts decl) before (doCheck ts decls)
+        | doCheck ts [] = ()
+   in
+      doCheck ts decls
+   end
 end
