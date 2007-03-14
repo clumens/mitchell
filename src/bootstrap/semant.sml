@@ -82,7 +82,7 @@ struct
              defaultTy
        end
 
-   and checkIdRef ts (Absyn.Id lst) = ()
+   and checkIdRef ts id = ()
 
    and checkBranch ts (Absyn.RegularBranch expr) = ()
      | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()

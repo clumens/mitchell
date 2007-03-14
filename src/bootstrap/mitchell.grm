@@ -154,7 +154,7 @@ single_exn:
 (* IDENTIFIERS *)
 
 id:
-   IDENTIFIER (DOT IDENTIFIER)* => ( Absyn.Id ([IDENTIFIER] @ SR) );
+   IDENTIFIER (DOT IDENTIFIER)* => ( [IDENTIFIER] @ SR );
 
 name_lst:
    IDENTIFIER (COMMA IDENTIFIER)* =>

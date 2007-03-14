@@ -19,24 +19,24 @@
 structure Absyn = struct
    type pos = StreamPos.pos
 
-   (* Exception handler expression.  exnKind is optional in the default case,
-    * where we handle all types of exceptions and therefore aren't given
-    * an exception type.
-    *)
-   datatype ExnHandler = ExnHandler of {exnKind: IdRef option, sym: Symbol.symbol,
-                                        expr: Expr, symtab: Symtab.table, pos: pos}
-
    (* A reference to a (hopefully) existing identifier.  This is something we
     * will look up in the symbol table later on, not something to be stored in
     * the symbol table.
     *)
-   and IdRef = Id of MString.mstring list
+   type id = MString.mstring list
+
+   (* Exception handler expression.  exnKind is optional in the default case,
+    * where we handle all types of exceptions and therefore aren't given
+    * an exception type.
+    *)
+   datatype ExnHandler = ExnHandler of {exnKind: id option, sym: Symbol.symbol,
+                                        expr: Expr, symtab: Symtab.table, pos: pos}
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
     *)
    and Branch = RegularBranch of BaseExpr
-              | UnionBranch of IdRef * Symbol.symbol list * Symtab.table
+              | UnionBranch of id * Symbol.symbol list * Symtab.table
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
@@ -50,11 +50,11 @@ structure Absyn = struct
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
                 | DeclExp of {decls: Decl list, expr: Expr, symtab: Symtab.table}
-                | ExnExp of {id: IdRef, values: (Symbol.symbol * Expr) list}
+                | ExnExp of {id: id, values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
-                | FunCallExp of {id: IdRef, args: Expr list, tyArgs: Ty list,
+                | FunCallExp of {id: id, args: Expr list, tyArgs: Ty list,
                                  frees: Symbol.symbol list}
-                | IdExp of IdRef
+                | IdExp of id
                 | IfExp of {test: Expr, then': Expr, else': Expr}
                 | IntegerExp of int
                 | RaiseExp of Expr
@@ -64,12 +64,12 @@ structure Absyn = struct
 
    and Ty = BottomTy of pos
           | ExnTy of {exn': (Symbol.symbol * Ty * pos) list, pos: pos}
-          | IdTy of {id: IdRef, pos: pos}
+          | IdTy of {id: id, pos: pos}
           | ListTy of {lst: Ty, pos: pos}
           | RecordTy of {record: (Symbol.symbol * Ty * pos) list, pos: pos}
           | UnionTy of {tycons: (Symbol.symbol * Ty option * pos) list, pos: pos}
 
-   and Decl = Absorb of {module: IdRef, pos: pos}
+   and Decl = Absorb of {module: id, pos: pos}
               (* Each element of calls must be a FunCallExp. *)
             | FunDecl of {sym: Symbol.symbol, absynTy: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
@@ -156,7 +156,7 @@ structure Absyn = struct
 
       and writeSymbol i sym = ( indent i ; sayln ("sym = " ^ Symbol.toString sym) )
 
-      and writeIdRef i (Id id) =
+      and writeIdRef i id =
          ( indent i ; sayln ("id = " ^ String.concatWith "." (map MString.toString id)) )
 
 
