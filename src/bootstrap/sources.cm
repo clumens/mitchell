@@ -9,6 +9,7 @@ Group is
    semant.sml
    symbol.sml
    symtab.sml
+   symtabstack.sml
    types.sml
 
    mitchell.lex: ml-ulex
