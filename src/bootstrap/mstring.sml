@@ -23,8 +23,8 @@
 
 (* How strings in the mitchell language are represented in the compiler. *)
 signature MSTRING = sig
-   (* I don't really like exposing the type in the signature, but it'll do
-    * for now.
+   (* FIXME: I don't really like exposing the type in the signature, but it'll
+    * do for now.
     *)
    type mstring = UTF8.wchar list
 
