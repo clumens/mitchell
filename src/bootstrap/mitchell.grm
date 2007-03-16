@@ -42,7 +42,7 @@ start:
 module_decl:
    MODULE IDENTIFIER ASSIGN DECL top_decl+ END =>
       ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE), decls=top_decl,
-                         pos=span2pos MODULE_SPAN, symtab=Symtab.mkTable()}
+                         pos=span2pos MODULE_SPAN}
       );
 
 
@@ -91,17 +91,13 @@ single_branch:
 
 branch_expr:
    id (LPAREN name_lst? RPAREN)? =>
-      ( let val syms = Option.getOpt (Option.getOpt (SR, NONE), [])
-        in Absyn.UnionBranch (id, syms, Symtab.mkTable())
-        end
-      )
+      ( Absyn.UnionBranch (id, Option.getOpt (Option.getOpt (SR, NONE), [])) )
  | INTEGER  => ( Absyn.RegularBranch (Absyn.IntegerExp INTEGER) )
  | STRING   => ( Absyn.RegularBranch (Absyn.StringExp STRING) )
  | BOOLEAN  => ( Absyn.RegularBranch (Absyn.BooleanExp BOOLEAN) );
 
 decl_expr:
-   DECL decl+ IN expr END => ( Absyn.DeclExp{decls=decl, expr=expr,
-                                             symtab=Symtab.mkTable()} );
+   DECL decl+ IN expr END => ( Absyn.DeclExp{decls=decl, expr=expr} );
 
 if_expr:
    IF expr THEN expr ELSE expr => ( Absyn.IfExp{test=expr1, then'=expr2, else'=expr3} );
@@ -130,13 +126,10 @@ handle_expr:
    HANDLE ELSE IDENTIFIER MAPSTO expr END =>
       ( {handlers=[], pos=span2pos HANDLE_SPAN,
          default=SOME (Absyn.ExnHandler{exnKind=NONE, expr=expr, pos=span2pos IDENTIFIER_SPAN,
-                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
-                                        symtab=Symtab.mkTable()})} )
+                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)})} )
  | HANDLE exn_lst (COMMA ELSE IDENTIFIER MAPSTO expr =>
                      ( Absyn.ExnHandler{exnKind=NONE, expr=expr, pos=span2pos ELSE_SPAN,
-                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
-                                        symtab=Symtab.mkTable()}
-                     )
+                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)} )
                   )? END =>
       ( {handlers=exn_lst, default=SR, pos=span2pos HANDLE_SPAN} );
 
@@ -146,8 +139,7 @@ exn_lst:
 single_exn:
    id IDENTIFIER MAPSTO expr =>
       ( Absyn.ExnHandler{exnKind=SOME id, expr=expr, pos=span2pos id_SPAN, 
-                         sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE),
-                         symtab=Symtab.mkTable()}
+                         sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)}
       );
 
 
@@ -180,9 +172,7 @@ fun_decl:
    FUNCTION IDENTIFIER LPAREN ty_formals_lst SEMICOLON formals_lst RPAREN (COLON ty)? ASSIGN expr =>
       ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON), absynTy=SR,
                       pos=span2pos FUNCTION_SPAN, formals=formals_lst,
-                      tyFormals=ty_formals_lst, calls=[], body=expr,
-                      symtab=Symtab.mkTable()}
-      );
+                      tyFormals=ty_formals_lst, calls=[], body=expr} );
 
 formals_lst:
    typed_name_lst? => ( Option.getOpt (typed_name_lst, []) );
@@ -194,7 +184,7 @@ top_decl:
 ty_decl:
    TYPE IDENTIFIER (LPAREN name_lst RPAREN)? ASSIGN ty =>
       ( Absyn.TyDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE), absynTy=ty,
-                     tyvars=SR, symtab=SOME (Symtab.mkTable()), pos=span2pos TYPE_SPAN}
+                     tyvars=SR, pos=span2pos TYPE_SPAN}
       );
 
 ty_formals_lst:

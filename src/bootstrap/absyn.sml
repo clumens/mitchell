@@ -29,27 +29,27 @@ structure Absyn = struct
     * where we handle all types of exceptions and therefore aren't given
     * an exception type.
     *)
-   datatype ExnHandler = ExnHandler of {exnKind: id option, sym: Symbol.symbol,
-                                        expr: Expr, symtab: Symtab.table, pos: pos}
+   datatype ExnHandler = ExnHandler of {exnKind: id option, sym: Symbol.symbol, expr: Expr,
+                                        pos: pos}
 
    (* Allow type constructors to appear as the branch of a case expression,
     * with value bindings for the elements in the constructor.
     *)
    and Branch = RegularBranch of BaseExpr
-              | UnionBranch of id * Symbol.symbol list * Symtab.table
+              | UnionBranch of id * Symbol.symbol list
 
    (* Wrap the basic expression type in things every expression has -
     * a position, a type, and a possible exception handler.
     *)
    and Expr = Expr of {expr: BaseExpr, pos: pos,
-                       exnHandler: {handlers: ExnHandler list,
-                                    default: ExnHandler option, pos: pos} option}
+                       exnHandler: {handlers: ExnHandler list, default: ExnHandler option,
+                                    pos: pos} option}
 
    and BaseExpr = BooleanExp of bool
                 | BottomExp
                 | CaseExp of {test: Expr, default: Expr option,
                               branches: (Branch * Expr) list}
-                | DeclExp of {decls: Decl list, expr: Expr, symtab: Symtab.table}
+                | DeclExp of {decls: Decl list, expr: Expr}
                 | ExnExp of {id: id, values: (Symbol.symbol * Expr) list}
                 | ExprLstExp of Expr list
                 | FunCallExp of {id: id, args: Expr list, tyArgs: Ty list,
@@ -73,12 +73,10 @@ structure Absyn = struct
               (* Each element of calls must be a FunCallExp. *)
             | FunDecl of {sym: Symbol.symbol, absynTy: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
-                          tyFormals: Symbol.symbol list,
-                          calls: Expr list, body: Expr, symtab: Symtab.table}
-            | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos,
-                             symtab: Symtab.table}
+                          tyFormals: Symbol.symbol list, calls: Expr list, body: Expr}
+            | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos}
             | TyDecl of {sym: Symbol.symbol, absynTy: Ty, tyvars: Symbol.symbol list option,
-                         symtab: Symtab.table option, pos: pos}
+                         pos: pos}
             | ValDecl of {sym: Symbol.symbol, absynTy: Ty option, init: Expr, pos: pos}
 
    (* Convert an AST subtree into a Types.Type.  This may perhaps belong in
@@ -170,7 +168,7 @@ structure Absyn = struct
           indent i ; sayln "}")
 
       and writeBranch i (RegularBranch expr) = writeBaseExpr i expr
-        | writeBranch i (UnionBranch (id, lst, _)) =
+        | writeBranch i (UnionBranch (id, lst)) =
              (indent i ; sayln "union_branch = {" ;
               writeIdRef (i+1) id ;
               << (i+1) "bindings" (printLst lst writeSymbol) ;

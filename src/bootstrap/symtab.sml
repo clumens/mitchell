@@ -19,7 +19,7 @@ signature SYMTAB = sig
    datatype Entry = SYM_EXN of Types.Type
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
                                      formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE of table
+                  | SYM_MODULE
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
                   | SYM_TYPE of Types.Type
                   | SYM_VALUE of Types.Type
@@ -61,7 +61,7 @@ structure Symtab :> SYMTAB = struct
    datatype Entry = SYM_EXN of Types.Type
                   | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
                                      formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE of table
+                  | SYM_MODULE
                   | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
                   | SYM_TYPE of Types.Type
                   | SYM_VALUE of Types.Type
@@ -101,7 +101,7 @@ structure Symtab :> SYMTAB = struct
        *)
       fun entryToString (SYM_EXN ty) = Types.toString ty
         | entryToString (SYM_FUNCTION{ty, ...}) = Types.toString ty
-        | entryToString (SYM_MODULE tbl) = ""
+        | entryToString SYM_MODULE = ""
         | entryToString (SYM_TYCON{ty, ...}) = Types.toString ty
         | entryToString (SYM_TYPE ty) = Types.toString ty
         | entryToString (SYM_VALUE ty) = Types.toString ty

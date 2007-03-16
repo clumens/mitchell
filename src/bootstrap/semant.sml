@@ -54,7 +54,7 @@ struct
    fun checkProg ts lst =
       app (checkDecl ts) lst
 
-   and checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, symtab, ...}) =
+   and checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, ...}) =
       Types.BOTTOM
 
    and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
@@ -85,7 +85,7 @@ struct
    and checkIdRef ts id = ()
 
    and checkBranch ts (Absyn.RegularBranch expr) = ()
-     | checkBranch ts (Absyn.UnionBranch (id, syms, symtab)) = ()
+     | checkBranch ts (Absyn.UnionBranch (id, syms)) = ()
 
    and checkExpr ts (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts expr
      | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
@@ -104,11 +104,11 @@ struct
    and checkBaseExpr ts (Absyn.BooleanExp b) = Types.BOOLEAN
      | checkBaseExpr ts (Absyn.BottomExp) = Types.BOTTOM
      | checkBaseExpr ts (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.DeclExp{decls, expr, symtab}) = let
+     | checkBaseExpr ts (Absyn.DeclExp{decls, expr}) = let
           (* Create a new environment for the body of the decl-expr to execute
            * in, then check it against that environment.
            *)
-          val ts' = SymtabStack.enter (ts, symtab)
+          val ts' = SymtabStack.enter (ts, Symtab.mkTable ())
           val _ = checkDeclLst ts' decls
        in
           checkExpr ts' expr
@@ -160,18 +160,16 @@ struct
    and checkTy ts ast = Absyn.absynToTy ast
 
    and checkDecl ts (Absyn.Absorb{module, ...}) = ()
-     | checkDecl ts (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body,
-                                   symtab, ...}) = ()
-     | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, symtab,
-                                   ...}) = ()
-     | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
+     | checkDecl ts (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
+     | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
+     | checkDecl ts (Absyn.ModuleDecl{sym, decls, ...}) = let
           (* Add the module to the lexical parent's table. *)
-          val _ = insertSym ts (sym, Symtab.SYM_MODULE symtab)
+          val _ = insertSym ts (sym, Symtab.SYM_MODULE)
        in
           (* Check the guts of the module against the module's new environment. *)
-          checkDeclLst (SymtabStack.enter (ts, symtab)) decls
+          checkDeclLst (SymtabStack.enter (ts, Symtab.mkTable ())) decls
        end
-     | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, symtab, ...}) = ()
+     | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
           val declaredTy = Absyn.absynToTy absynTy
           val initTy = checkExpr ts init
