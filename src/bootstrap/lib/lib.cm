@@ -1,0 +1,13 @@
+Group
+   signature LISTMISC
+   signature MSTRING
+   structure ListMisc
+   structure MString
+is
+   listmisc-sig.sml
+   listmisc.sml
+   mstring-sig.sml
+   mstring.sml
+
+   $/basis.cm
+   $/smlnj-lib.cm

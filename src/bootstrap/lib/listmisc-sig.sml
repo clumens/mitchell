@@ -29,29 +29,3 @@ sig
     *)
    val split: ('a -> bool) -> 'a list -> 'a list * 'a list
 end
-
-structure ListMisc :> LISTMISC =
-struct
-   fun findDup (op >) lst = let
-      fun areEq (ele::next::_) = ele > next
-        | areEq _ = false
-
-      fun loop (ele::lst) = if areEq (ele::lst) then SOME(ele)
-                            else loop lst
-        | loop _ = NONE
-
-      (* Sorting the list first makes everything else work. *)
-      val lst' = if ListMergeSort.sorted (op >) lst then lst
-                 else ListMergeSort.sort (op >) lst
-   in
-      loop lst'
-   end
-
-   local
-      fun doSplit f [] accum = (accum, [])
-        | doSplit f (lst as x::xs) accum = if f x then doSplit f xs (x::accum)
-                                           else (accum, lst)
-   in
-      fun split f lst = doSplit f lst []
-   end
-end

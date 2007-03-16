@@ -14,43 +14,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-
-(* This file defines structures that handle how certain types are
- * represented internal to the compiler.  However, it does not define
- * the types supported by the mitchell language itself.  For that
- * information, see types.sml.
- *)
-
-(* How strings in the mitchell language are represented in the compiler. *)
-signature MSTRING = sig
-   (* FIXME: I don't really like exposing the type in the signature, but it'll
-    * do for now.
-    *)
-   type mstring = UTF8.wchar list
-
-   (* Concatenate two mstrings. *)
-   val ^ : mstring * mstring -> mstring
-
-   (* These functions compare two mstrings, just like the ones in String. *)
-   val compare: mstring * mstring -> order
-   val < : mstring * mstring -> bool
-   val <= : mstring * mstring -> bool
-   val > : mstring * mstring -> bool
-   val >= : mstring * mstring -> bool
-
-   (* Convert a string into a mitchell string. *)
-   val fromString: string -> mstring
-
-   (* Convert a word into a string. *)
-   val fromWord: Word32.word -> mstring
-
-   (* Convert a character into a mitchell string. *)
-   val str: char -> mstring
-
-   (* Convert a mitchell string to a native format string. *)
-   val toString: mstring -> string
-end
-
 structure MString :> MSTRING = struct
    type mstring = UTF8.wchar list
 

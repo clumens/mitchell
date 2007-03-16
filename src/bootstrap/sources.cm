@@ -1,9 +1,7 @@
 Group is
    absyn.sml
-   mstring.sml
    error.sml
    label.sml
-   listmisc.sml
    main.sml
    options.sml
    semant.sml
@@ -11,6 +9,8 @@ Group is
    symtab.sml
    symtabstack.sml
    types.sml
+
+   lib/lib.cm
 
    mitchell.lex: ml-ulex
    mitchell.grm: ml-antlr
