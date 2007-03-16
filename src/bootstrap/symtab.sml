@@ -15,19 +15,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
 signature SYMTAB = sig
-   (* The structure stored in the hash table, keyed on Symbol.symbol. *)
-   datatype Entry = SYM_EXN of Types.Type
-                  | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
-                                     formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE
-                  | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
-                  | SYM_TYPE of Types.Type
-                  | SYM_VALUE of Types.Type
-
-   (* A symbol table is a polymorphic HashTable mapping Symbol.symbols to
-    * entrys.
-    *)
-   withtype table = (Symbol.symbol, Entry) HashTable.hash_table
+   (* A symbol table is a mapping from symbols to entries. *)
+   type table
 
    (* Raised by the hash table internals. *)
    exception NotFound
@@ -42,14 +31,14 @@ signature SYMTAB = sig
     * Duplicate if a symbol by that name already exists in the table.  The
     * second overrides any preexisting entry.
     *)
-   val insert: table -> Symbol.symbol * Entry -> unit
-   val insert': table -> Symbol.symbol * Entry -> unit
+   val insert: table -> Symbol.symbol * Entry.Entry -> unit
+   val insert': table -> Symbol.symbol * Entry.Entry -> unit
 
    (* Two different ways to search a symbol table for an Entry.  The first
     * raises NotFound on error, the second returns NONE.
     *)
-   val lookup: table -> Symbol.symbol -> Entry
-   val find: table -> Symbol.symbol -> Entry option
+   val lookup: table -> Symbol.symbol -> Entry.Entry
+   val find: table -> Symbol.symbol -> Entry.Entry option
 
    (* Given a header and a table, return a string representation of the table's
     * contents.
@@ -58,15 +47,7 @@ signature SYMTAB = sig
 end
 
 structure Symtab :> SYMTAB = struct
-   datatype Entry = SYM_EXN of Types.Type
-                  | SYM_FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
-                                     formals: (Symbol.symbol * Types.Type) list}
-                  | SYM_MODULE
-                  | SYM_TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
-                  | SYM_TYPE of Types.Type
-                  | SYM_VALUE of Types.Type
-
-   withtype table = (Symbol.symbol, Entry) HashTable.hash_table
+   type table = (Symbol.symbol, Entry.Entry) HashTable.hash_table
 
    exception NotFound
 
@@ -95,21 +76,9 @@ structure Symtab :> SYMTAB = struct
       case find table sym of SOME e => raise Duplicate
                            | NONE => insert' table (sym, entry)
 
-   local
-      (* FIXME:  might be worth printing out tyFormals on SYM_FUNCTION and
-       * SYM_TYCON.
-       *)
-      fun entryToString (SYM_EXN ty) = Types.toString ty
-        | entryToString (SYM_FUNCTION{ty, ...}) = Types.toString ty
-        | entryToString SYM_MODULE = ""
-        | entryToString (SYM_TYCON{ty, ...}) = Types.toString ty
-        | entryToString (SYM_TYPE ty) = Types.toString ty
-        | entryToString (SYM_VALUE ty) = Types.toString ty
-   in
-      fun toString table hdr =
-         "----------------------------------------\n" ^ hdr ^
-         HashTable.foldi (fn (key, entry, v) => v ^ (Symbol.toString key) ^ " => " ^
-                                                    (entryToString entry) ^ "\n")
-                         "" table
-   end
+   fun toString table hdr =
+      "----------------------------------------\n" ^ hdr ^
+      HashTable.foldi (fn (key, entry, v) => v ^ (Symbol.toString key) ^ " => " ^
+                                                 (Entry.toString entry) ^ "\n")
+                      "" table
 end

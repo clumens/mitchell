@@ -167,7 +167,7 @@ struct
      | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
      | checkDecl ts (Absyn.ModuleDecl{sym, decls, ...}) = let
           (* Add the module to the lexical parent's table. *)
-          val _ = insertSym ts (sym, Symtab.SYM_MODULE)
+          val _ = insertSym ts (sym, Entry.MODULE)
        in
           (* Check the guts of the module against the module's new environment. *)
           checkDeclLst (SymtabStack.enter (ts, Symtab.mkTable ())) decls
@@ -184,10 +184,10 @@ struct
              raise TypeError (pos, "Type of value initializer does not match declared type.",
                               "declared type", declaredTy, "initializer type", initTy)
           else
-             insertSym ts (sym, Symtab.SYM_VALUE initTy)
+             insertSym ts (sym, Entry.VALUE initTy)
        end
      | checkDecl ts (Absyn.ValDecl{sym, absynTy=NONE, init, pos}) =
-          insertSym ts (sym, Symtab.SYM_VALUE (checkExpr ts init))
+          insertSym ts (sym, Entry.VALUE (checkExpr ts init))
 
    and checkDeclLst ts decls = let
       (* Process a block of possibly mutually recursive function declarations. *)

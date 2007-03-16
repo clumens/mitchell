@@ -36,8 +36,8 @@ signature SYMTAB_STACK = sig
    (* Two different ways to search a symbol table stack for an Entry.  The first
     * raises NotFound on error, the second returns NONE.
     *)
-   val lookup: stack -> Symbol.symbol -> Symtab.Entry
-   val find: stack -> Symbol.symbol -> Symtab.Entry option
+   val lookup: stack -> Symbol.symbol -> Entry.Entry
+   val find: stack -> Symbol.symbol -> Entry.Entry option
 
    (* Given a header and a symbol table stack, return a string representation of
     * the complete current environment.
