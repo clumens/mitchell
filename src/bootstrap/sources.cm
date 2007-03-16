@@ -3,8 +3,8 @@ Group is
    mstring.sml
    error.sml
    label.sml
+   listmisc.sml
    main.sml
-   misc.sml
    options.sml
    semant.sml
    symbol.sml
