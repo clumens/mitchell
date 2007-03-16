@@ -16,13 +16,16 @@
  *)
 signature SEMANT =
 sig
+   (* position * error message * expected message * expected ty * got message * got ty *)
+   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
+
    (* We only need to expose a single function for checking the entire AST. *)
    val checkProg: SymtabStack.stack -> Absyn.Decl list -> unit
 end
 
 structure Semant :> SEMANT =
 struct
-   open Error
+   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
 
    (* HELPER FUNCTIONS *)
@@ -46,7 +49,7 @@ struct
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
       Symtab.insert (SymtabStack.top ts) (sym, entry)
-      handle Symtab.Duplicate => raise SymbolError (sym, "A symbol with this name already exists in this scope.")
+      handle Symtab.Duplicate => raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
 
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
@@ -146,7 +149,7 @@ struct
      | checkBaseExpr ts (Absyn.RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
           val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
-                     SOME dup => raise SymbolError (dup, "Record definition already includes a symbol with this name.")
+                     SOME dup => raise Symbol.SymbolError (dup, "Record definition already includes a symbol with this name.")
                    | NONE => ()
        in
           (* Construct a tuple for each element of the assignment expression and

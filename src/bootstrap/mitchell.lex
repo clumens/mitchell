@@ -30,6 +30,9 @@
    type lex_result = token
    fun eof() = EOF
 
+   (* position * error message *)
+   exception TokenizeError of StreamPos.pos * string
+
    val text: MString.mstring ref = ref (MString.fromString "")
    fun addText s = ( text := MString.^ (!text, s) )
    fun addChar ch = ( text := MString.^ (!text, MString.str ch) )
@@ -40,7 +43,7 @@
    fun convertEscaped esc pos =
       case Word32.fromString (String.extract (esc, 2, NONE)) of
          SOME i => i
-       | NONE   => raise Error.TokenizeError (pos, "Invalid escaped Unicode character sequence.")
+       | NONE   => raise TokenizeError (pos, "Invalid escaped Unicode character sequence.")
 );
 
 <INITIAL> "#"     => ( YYBEGIN COMMENTS ; continue() );
@@ -57,7 +60,7 @@
 
 <WSESCAPE> {ws}      => ( continue() );
 <WSESCAPE> "\\"      => ( YYBEGIN STRINGS ; continue() );
-<WSESCAPE> .         => ( raise Error.TokenizeError (yypos, "String whitespace escape sequences must end with '\\'.") );
+<WSESCAPE> .         => ( raise TokenizeError (yypos, "String whitespace escape sequences must end with '\\'.") );
 
 <INITIAL> absorb     => ( ABSORB );
 <INITIAL> f          => ( BOOLEAN false );
@@ -100,7 +103,7 @@
                           in
                              case i of
                                 SOME v => INTEGER v
-                              | NONE   => ( raise Error.TokenizeError (yypos, "Unable to perform numeric conversion") )
+                              | NONE   => ( raise TokenizeError (yypos, "Unable to perform numeric conversion") )
                           end );
 <INITIAL> {id}       => ( IDENTIFIER yyunicode );
-<INITIAL> .          => ( raise Error.TokenizeError (yypos, "Unknown character") );
+<INITIAL> .          => ( raise TokenizeError (yypos, "Unknown character") );

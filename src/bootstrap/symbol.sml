@@ -32,6 +32,9 @@ sig
    (* The key for symbol table operations. *)
    type symbol
 
+   (* problem symbol * error message *)
+   exception SymbolError of symbol * string
+
    (* Are two symbols equal?  This must compare both the symbol names and the
     * subtable types.  Two symbols with the same name in different subtables
     * are not equal.
@@ -67,6 +70,8 @@ struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
    type symbol = MString.mstring * Label.label * Subtable
+
+   exception SymbolError of symbol * string
 
    fun eq (a: symbol, b: symbol) =
       (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL

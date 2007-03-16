@@ -61,10 +61,10 @@ struct
       val lexer = MitchellLex.lex sm
 
       val ast = parse lexer (MitchellLex.streamifyInstream strm) sm
-                handle TokenizeError e => ( print (filename ^ " " ^
-                                                  (StreamPos.toString sm (#1 e)) ^ ": " ^
-                                                  #2 e ^ "\n") ;
-                                            quit true )
+                handle MitchellLex.UserDeclarations.TokenizeError e =>
+                   ( print (filename ^ " " ^ (StreamPos.toString sm (#1 e)) ^ ": " ^
+                                     #2 e ^ "\n") ;
+                           quit true )
    in
       (* What cases will cause parse to return NONE for the ast?  Perhaps we're
        * already handling those cases with TokenizeError and repairToString

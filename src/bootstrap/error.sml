@@ -14,22 +14,9 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-structure Error =
-struct
+structure Error = struct
    (* error message *)
    exception InternalError of string
-
-   (* source file * position * error message *)
-   exception ParseError of string * StreamPos.pos * string
-
-   (* position * error message *)
-   exception TokenizeError of StreamPos.pos * string
-
-   (* position * error message * expected message * expected ty * got message * got ty *)
-   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
-
-   (* problem symbol * error message *)
-   exception SymbolError of Symbol.symbol * string
 
    (* A function to kill the compiler.  failure is a boolean for whether this
     * is an error case or not.  This function mainly exists to easily turn off
