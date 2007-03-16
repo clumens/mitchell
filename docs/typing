@@ -8,7 +8,7 @@
  * $Id: typing,v 1.8 2005/08/19 01:13:42 chris Exp $
  */
 
-/* mitchell - the bootstrapping compiler
+/* mitchell - experimental compiler
  * Copyright (C) 2004 Chris Lumens
  *
  * This program is free software; you can redistribute it and/or modify
