@@ -1,16 +1,12 @@
 Group is
-   absyn.sml
    error.sml
    main.sml
    options.sml
-   semant.sml
-   types.sml
 
    env/env.cm
    lib/lib.cm
-
-   mitchell.lex: ml-ulex
-   mitchell.grm: ml-antlr
+   parse/parse.cm
+   semant/semant.cm
 
    getopt/betterinfo-sig.sml
    getopt/betterinfo.sml

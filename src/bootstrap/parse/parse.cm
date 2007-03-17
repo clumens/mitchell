@@ -1,0 +1,18 @@
+Group
+   structure Absyn
+   structure MitchellLex
+   structure MitchellTokens
+
+   functor MitchellParseFn
+is
+   absyn.sml
+
+   mitchell.lex: ml-ulex
+   mitchell.grm: ml-antlr
+
+   ../env/env.cm
+   ../lib/lib.cm
+
+   $/basis.cm
+   $/smlnj-lib.cm
+   $/ml-lpt-lib.cm

@@ -14,15 +14,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-signature SEMANT =
-sig
-   (* position * error message * expected message * expected ty * got message * got ty *)
-   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
-
-   (* We only need to expose a single function for checking the entire AST. *)
-   val checkProg: SymtabStack.stack -> Absyn.Decl list -> unit
-end
-
 structure Semant :> SEMANT =
 struct
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type

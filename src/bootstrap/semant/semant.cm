@@ -1,0 +1,14 @@
+Group
+   signature SEMANT
+   structure Semant
+is
+   semant-sig.sml
+   semant.sml
+
+   ../env/env.cm
+   ../lib/lib.cm
+   ../parse/parse.cm
+
+   $/basis.cm
+   $/smlnj-lib.cm
+   $/ml-lpt-lib.cm

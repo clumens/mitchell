@@ -1,3 +1,5 @@
+SUBDIRS = env getopt lib parse semant
+
 all:
 
 heap:
@@ -5,8 +7,12 @@ heap:
 	ml-build sources.cm Main.main obj/mitchell
 
 clean:
-	-rm dump.dot mitchell.grm.sml mitchell.grm.tex mitchell.lex.sml
+	-rm parse/dump.dot parse/mitchell.grm.sml parse/mitchell.grm.tex
+	-rm parse/mitchell.lex.sml
 	-rm -r obj
 
 realclean: clean
-	-rm -r .cm env/.cm getopt/.cm lib/.cm test/.cm
+	-rm -r .cm ; \
+	for dir in ${SUBDIRS}; do \
+		rm -r $$dir/.cm ; \
+	done
