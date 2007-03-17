@@ -14,30 +14,15 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
+signature ENTRY = sig
+   (* The structure stored in the hash table, keyed on Symbol.symbol. *)
+   datatype Entry = EXN of Types.Type
+                  | FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
+                                 formals: (Symbol.symbol * Types.Type) list}
+                  | MODULE
+                  | TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
+                  | TYPE of Types.Type
+                  | VALUE of Types.Type
 
-(* This file defines labels - the actual text that gets emitted for mitchell
- * symbols in the output code, stripped of its Unicode characters and turned
- * into unique identifiers.
- *)
-signature LABEL = sig
-   type label
-
-   (* Convert an identifier represented as a mitchell string into a label. *)
-   val toLabel: MString.mstring -> label
-
-   (* Convert a label into a printable string. *)
-   val toString: label -> string
-end
-
-structure Label :> LABEL = struct
-   type label = string
-
-   val uniqueId = ref 0
-
-   fun toLabel mstring =
-      ("_." ^ Int.toString (!uniqueId) ^ "_" ^ MString.toString mstring) before
-      uniqueId := !uniqueId + 1
-
-   fun toString label =
-      label: string
+   val toString: Entry -> string
 end

@@ -14,38 +14,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-signature SYMTAB = sig
-   (* A symbol table is a mapping from symbols to entries. *)
-   type table
-
-   (* Raised by the hash table internals. *)
-   exception NotFound
-
-   (* Raised by insert if a symbol already exists. *)
-   exception Duplicate
-
-   (* Create a new empty symbol table. *)
-   val mkTable: unit -> table
-
-   (* Two different ways to add a new entry to the table.  The first raises
-    * Duplicate if a symbol by that name already exists in the table.  The
-    * second overrides any preexisting entry.
-    *)
-   val insert: table -> Symbol.symbol * Entry.Entry -> unit
-   val insert': table -> Symbol.symbol * Entry.Entry -> unit
-
-   (* Two different ways to search a symbol table for an Entry.  The first
-    * raises NotFound on error, the second returns NONE.
-    *)
-   val lookup: table -> Symbol.symbol -> Entry.Entry
-   val find: table -> Symbol.symbol -> Entry.Entry option
-
-   (* Given a header and a table, return a string representation of the table's
-    * contents.
-    *)
-   val toString: table -> string -> string
-end
-
 structure Symtab :> SYMTAB = struct
    type table = (Symbol.symbol, Entry.Entry) HashTable.hash_table
 

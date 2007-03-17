@@ -9,4 +9,4 @@ clean:
 	-rm -r obj
 
 realclean: clean
-	-rm -r .cm getopt/.cm lib/.cm test/.cm
+	-rm -r .cm env/.cm getopt/.cm lib/.cm test/.cm

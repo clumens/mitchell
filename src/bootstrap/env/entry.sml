@@ -14,19 +14,6 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-signature ENTRY = sig
-   (* The structure stored in the hash table, keyed on Symbol.symbol. *)
-   datatype Entry = EXN of Types.Type
-                  | FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,
-                                 formals: (Symbol.symbol * Types.Type) list}
-                  | MODULE
-                  | TYCON of {ty: Types.Type, tyFormals: Symbol.symbol list}
-                  | TYPE of Types.Type
-                  | VALUE of Types.Type
-
-   val toString: Entry -> string
-end
-
 structure Entry :> ENTRY = struct
    datatype Entry = EXN of Types.Type
                   | FUNCTION of {ty: Types.Type, tyFormals: Symbol.symbol list,

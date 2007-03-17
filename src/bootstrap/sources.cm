@@ -1,16 +1,12 @@
 Group is
    absyn.sml
-   entry.sml
    error.sml
-   label.sml
    main.sml
    options.sml
    semant.sml
-   symbol.sml
-   symtab.sml
-   symtabstack.sml
    types.sml
 
+   env/env.cm
    lib/lib.cm
 
    mitchell.lex: ml-ulex
