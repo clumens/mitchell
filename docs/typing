@@ -248,20 +248,16 @@ complications.  The rules are as follows:
      to exist somewhere within the lexically innermost module.  This
      environment consists of all the identifiers defined at the module's top
      level, plus all the modifications made to the environment to take into
-     account any of the above syntax that the reference may occur in.  This
-     environment is searched from the innermost scope to the module's top level.
-     At this point if the symbol is not found, it is an unresolved reference.
-     Resolution of a naked identifier does not jump out of the current module.
-
-     As a special exception to this rule, the global namespace will be searched
-     next in order to handle the base types.  An identifier may not have the
-     same name as any of the types defined in the global namespace.
+     account any of the above syntax that the reference may occur in, plus the
+     global namespace.  This environment is searched from the innermost scope
+     outward to the global scope.  At this point if the symbol is not found, it
+     is an unresolved reference.
 
    * If an identifier is given that consists of period-delimited names, it must
-     be referring to a symbol defined in a module.  The entire path from the
-     lexically outermost module all the way to the one containing the symbol
-     must be referenced, or the symbol will be unresolved.  That is, the
-     identifier is resolved relative to the global symbol table going inwards.
+     be referring to a symbol defined in a module.  Since modules may nest and
+     could have the same name as a lexical parent module, and due to
+     complications from the absorb keyword, modules are searched in the same
+     method as regular identifiers.
 
    * Within a block of declarations, new type and function declarations may
      reference other types and functions that are not yet defined.  This is to
@@ -282,7 +278,7 @@ complications.  The rules are as follows:
      override one defined in a more outer level of scope, as long as it does
      not override one of the types defined in the global namespace.
 
-     A special note here is that for implementation reasons, if a function's
-     body is a decl expression, no names in that decl expression may override
-     any parameters passed to the function.  This is currently considered a
-     bug.
+   * Module references may not form cycles.  That is, module A may refer to
+     module B, but only if module B does not also refer to module A.  This
+     could be considered a bug, though this is standard in many languages and
+     may not have any good solution.
