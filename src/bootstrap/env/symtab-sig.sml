@@ -14,6 +14,12 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
+
+(* This structure defines a symbol table - a table mapping symbols found in
+ * the abstract syntax tree to its definition (this mainly includes type
+ * information).  Each new level of scope (modules, decl-exprs, functions,
+ * etc.) creates a new symbol table.
+ *)
 signature SYMTAB = sig
    (* A symbol table is a mapping from symbols to entries. *)
    type table

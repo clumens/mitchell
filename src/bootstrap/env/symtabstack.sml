@@ -17,6 +17,8 @@
 structure SymtabStack :> SYMTAB_STACK = struct
    type stack = Symtab.table list
 
+   fun mkStack () = []: stack
+
    fun enter (ts, table) = table :: ts
 
    fun leave ts = case List.getItem ts of

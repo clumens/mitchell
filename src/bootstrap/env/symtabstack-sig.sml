@@ -14,8 +14,21 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
+
+(* This structure defines a stack of symbol tables.  At any time, there is
+ * only one symbol table stack.  It contains the complete current environment
+ * from names defined in the most local scope (top of the stack) all the way
+ * down to those defined at the global level (bottom of the stack).  This is
+ * the easiest and most correct way to look up regular identifiers.
+ *
+ * Entering and leaving new levels of scope in the AST results in pushing and
+ * popping symbol tables from this structure.
+ *)
 signature SYMTAB_STACK = sig
    type stack
+
+   (* Create a new empty symbol table stack. *)
+   val mkStack: unit -> stack
 
    (* Given a symbol table stack and a new table, push the new table onto the
     * top of the stack so all lookups and additions will be performed relative
