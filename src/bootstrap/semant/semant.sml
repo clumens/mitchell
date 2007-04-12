@@ -43,10 +43,79 @@ struct
       handle Symtab.Duplicate => raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
 
 
+   (* TEMPORARY BASE ENVIRONMENT FUNCTIONS *)
+
+   (* This creates the base environment, containing all the predefined values,
+    * functions, modules, and types.  Keep this as small as possible.
+    *)
+   fun mkBaseEnv symtab = let
+      val syms = [ (Symbol.toSymbol (MString.fromString "f", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
+                   (Symbol.toSymbol (MString.fromString "t", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
+                   (Symbol.toSymbol (MString.fromString "⊥", Symbol.VALUE), Entry.VALUE Types.BOTTOM),
+                   (Symbol.toSymbol (MString.fromString "boolean", Symbol.EXN_TYPE), Entry.TYPE Types.BOOLEAN),
+                   (Symbol.toSymbol (MString.fromString "integer", Symbol.EXN_TYPE), Entry.TYPE Types.INTEGER),
+                   (Symbol.toSymbol (MString.fromString "string", Symbol.EXN_TYPE), Entry.TYPE Types.STRING)
+                 ]
+   in
+      app (Symtab.insert symtab) syms
+   end
+
+   (* XXX: temporary *)
+   fun mkIntegerEnv () = let
+      val integerSymtab = Symtab.mkTable ()
+
+      val syms = [ (Symbol.toSymbol (MString.fromString "+", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
+                   (Symbol.toSymbol (MString.fromString "-", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
+                   (Symbol.toSymbol (MString.fromString "*", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
+                   (Symbol.toSymbol (MString.fromString "mod", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
+                   (Symbol.toSymbol (MString.fromString "<", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
+                   (Symbol.toSymbol (MString.fromString "", Symbol.FUN_TYCON),
+                    Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]})
+                 ]
+   in
+      ( (app (Symtab.insert integerSymtab) syms) ; integerSymtab )
+   end
+
+   (* XXX: temporary *)
+   fun mkBooleanEnv () = let
+      val booleanSymtab = Symtab.mkTable ()
+
+      val syms = [ (Symbol.toSymbol (MString.fromString "or", Symbol.FUN_TYCON),
+                   Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.BOOLEAN), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.BOOLEAN)], tyFormals=[]}) ]
+   in
+      ( (app (Symtab.insert booleanSymtab) syms) ; booleanSymtab )
+   end
+
+
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
-   fun checkProg ts lst =
-      app (checkDecl ts) lst
+   fun checkProg lst = let
+      (* Create the global symbol table and module environment. *)
+      val global = Symtab.mkTable ()
+
+      (* Populate the global symbol table with some global stuff. *)
+      val _ = mkBaseEnv global
+
+      (* XXX: temporary.  Add entries for these two modules to the global
+       * symbol table.
+       *)
+      val integerSym = Symbol.toSymbol (MString.fromString "Integer", Symbol.MODULE)
+      val booleanSym = Symbol.toSymbol (MString.fromString "Boolean", Symbol.MODULE)
+      val _ = Symtab.insert global (integerSym, Entry.MODULE)
+      val _ = Symtab.insert global (booleanSym, Entry.MODULE)
+
+      (* Create the symtab stack we'll use for seeing what's in scope, and
+       * push the global environment onto it.
+       *)
+      val ts = SymtabStack.enter (SymtabStack.mkStack (), global)
+   in
+      checkDeclLst ts lst
+   end
 
    and checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, ...}) =
       Types.BOTTOM
