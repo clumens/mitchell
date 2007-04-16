@@ -41,6 +41,9 @@ sig
     *)
    val eq: symbol * symbol -> bool
 
+   (* Hash a symbol for entry/lookup into a symbol table. *)
+   val hash: symbol -> Word.word
+
    (* Return the name associated with a symbol. *)
    val name: symbol -> MString.mstring
 

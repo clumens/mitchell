@@ -48,4 +48,16 @@ struct
 
    fun toSymbol (unicodeSym, subtable) =
       (unicodeSym, Label.toLabel unicodeSym, subtable)
+
+   fun hash sym = let
+      (* Add a character to the front of the symbol to discriminate among
+       * subtables.
+       *)
+      val discrim = case subtable sym of EXN_TYPE => chr 1
+                                       | FUN_TYCON => chr 2
+                                       | MODULE => chr 3
+                                       | VALUE => chr 4
+   in
+      HashString.hashString (str discrim ^ MString.toString (name sym))
+   end
 end
