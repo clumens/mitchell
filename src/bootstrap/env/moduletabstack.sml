@@ -15,4 +15,4 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
 
-structure SymtabStack = TableStackFn(Symtab)
+structure ModuletabStack = TableStackFn(Moduletab)

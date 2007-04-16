@@ -15,4 +15,8 @@
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
 
-structure SymtabStack = TableStackFn(Symtab)
+(* Module tables map Symbols to Symtabs. *)
+structure Moduletab = HashTableFn (struct type hash_key = Symbol.symbol
+                                          val hashVal = Symbol.hash
+                                          val sameKey = Symbol.eq
+                                   end)
