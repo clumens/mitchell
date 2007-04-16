@@ -16,4 +16,3 @@
    - internal interface to C libraries for implementing the runtime
    - outline contents for runtime library
 - symbol table / type checker:
-   - add type information to standard library stubs
