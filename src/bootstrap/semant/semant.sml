@@ -125,28 +125,28 @@ struct
       val ts = SymtabStack.enter (SymtabStack.mkStack (), globalSymtab)
       val ms = ModuletabStack.enter (ModuletabStack.mkStack (), globalModuletab)
    in
-      checkDeclLst ts lst
+      checkDeclLst ts ms lst
    end
 
-   and checkExnHandler ts (Absyn.ExnHandler{exnKind, sym, expr, ...}) =
+   and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, ...}) =
       Types.BOTTOM
 
-   and checkExnHandlerLst ts ([], SOME default) = checkExnHandler ts default
-     | checkExnHandlerLst ts (handlers, NONE) = (
-          case findBadEle (checkExnHandler ts) handlers of
+   and checkExnHandlerLst ts ms ([], SOME default) = checkExnHandler ts ms default
+     | checkExnHandlerLst ts ms (handlers, NONE) = (
+          case findBadEle (checkExnHandler ts ms) handlers of
              (firstTy, SOME (ty, Absyn.ExnHandler{pos, ...})) =>
                 raise TypeError (pos, "Inconsistent types in exception handler list.",
                                  "previous exception handler type", firstTy,
                                  "this exception handler type", ty)
            | (firstTy, _) => firstTy
           )
-     | checkExnHandlerLst ts (handlers, default as SOME (Absyn.ExnHandler{pos, ...})) = let
+     | checkExnHandlerLst ts ms (handlers, default as SOME (Absyn.ExnHandler{pos, ...})) = let
           (* All exception handlers must have the same type, and the
            * default handler must return this same type as well.  We can
            * use previous definitions of checkExnHandlerLst to do this.
            *)
-          val prevTy = checkExnHandlerLst ts (handlers, NONE)
-          val defaultTy = checkExnHandler ts (Option.valOf default)
+          val prevTy = checkExnHandlerLst ts ms (handlers, NONE)
+          val defaultTy = checkExnHandler ts ms (Option.valOf default)
        in
           if not (Types.eq (defaultTy, prevTy)) then
              raise TypeError (pos, "Default exception handler type does not match type of previous handlers.",
@@ -156,16 +156,16 @@ struct
              defaultTy
        end
 
-   and checkIdRef ts id = ()
+   and checkIdRef ts ms id = ()
 
-   and checkBranch ts (Absyn.RegularBranch expr) = ()
-     | checkBranch ts (Absyn.UnionBranch (id, syms)) = ()
+   and checkBranch ts ms (Absyn.RegularBranch expr) = ()
+     | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = ()
 
-   and checkExpr ts (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts expr
-     | checkExpr ts (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
+   and checkExpr ts ms (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts ms expr
+     | checkExpr ts ms (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
        let
-          val exprTy = checkBaseExpr ts expr
-          val handlerTy = checkExnHandlerLst ts (handlers, default)
+          val exprTy = checkBaseExpr ts ms expr
+          val handlerTy = checkExnHandlerLst ts ms (handlers, default)
        in
           if not (Types.eq (exprTy, handlerTy)) then
              raise TypeError (pos,
@@ -175,34 +175,34 @@ struct
              exprTy
        end
 
-   and checkBaseExpr ts (Absyn.BooleanExp b) = Types.BOOLEAN
-     | checkBaseExpr ts (Absyn.BottomExp) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.DeclExp{decls, expr}) = let
+   and checkBaseExpr ts ms (Absyn.BooleanExp b) = Types.BOOLEAN
+     | checkBaseExpr ts ms (Absyn.BottomExp) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.DeclExp{decls, expr}) = let
           (* Create a new environment for the body of the decl-expr to execute
            * in, then check it against that environment.
            *)
           val ts' = SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))
-          val _ = checkDeclLst ts' decls
+          val _ = checkDeclLst ts' ms decls
        in
-          checkExpr ts' expr
+          checkExpr ts' ms expr
        end
-     | checkBaseExpr ts (Absyn.ExnExp{id, values}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.ExprLstExp exprs) = (
-          case findBadEle (checkExpr ts) exprs of
+     | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.ExprLstExp exprs) = (
+          case findBadEle (checkExpr ts ms) exprs of
              (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
                 raise TypeError (pos, "Inconsistent types in expression list.",
                                  "previous expression type", firstTy,
                                  "this expression type", ty)
            | (firstTy, _) => firstTy
           )
-     | checkBaseExpr ts (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.IdExp id) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.IfExp{test as Absyn.Expr{pos=testPos, ...}, then',
-                                     else' as Absyn.Expr{pos=elsePos, ...}}) = let
-          val testTy = checkExpr ts test
-          val thenTy = checkExpr ts then'
-          val elseTy = checkExpr ts else'
+     | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.IdExp id) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.IfExp{test as Absyn.Expr{pos=testPos, ...}, then',
+                                        else' as Absyn.Expr{pos=elsePos, ...}}) = let
+          val testTy = checkExpr ts ms test
+          val thenTy = checkExpr ts ms then'
+          val elseTy = checkExpr ts ms else'
        in
           if not (Types.eq (Types.BOOLEAN, testTy)) then
              raise TypeError (testPos, "if expression must return a boolean type",
@@ -215,9 +215,9 @@ struct
              else
                 thenTy
        end
-     | checkBaseExpr ts (Absyn.IntegerExp i) = Types.INTEGER
-     | checkBaseExpr ts (Absyn.RaiseExp expr) = ( checkExpr ts expr ; Types.ANY Types.UNVISITED )
-     | checkBaseExpr ts (Absyn.RecordAssnExp lst) = let
+     | checkBaseExpr ts ms (Absyn.IntegerExp i) = Types.INTEGER
+     | checkBaseExpr ts ms (Absyn.RaiseExp expr) = ( checkExpr ts ms expr ; Types.ANY Types.UNVISITED )
+     | checkBaseExpr ts ms (Absyn.RecordAssnExp lst) = let
           (* We're only interested in the symbols out of this AST node. *)
           val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
                      SOME dup => raise Symbol.SymbolError (dup, "Record definition already includes a symbol with this name.")
@@ -226,27 +226,27 @@ struct
           (* Construct a tuple for each element of the assignment expression and
            * use that to make the return type.  This isn't very hard.
            *)
-          Types.RECORD (map (fn (sym, expr) => (sym, checkExpr ts expr)) lst, Types.UNVISITED)
+          Types.RECORD (map (fn (sym, expr) => (sym, checkExpr ts ms expr)) lst, Types.UNVISITED)
        end
-     | checkBaseExpr ts (Absyn.RecordRefExp{record, ele}) = Types.BOTTOM
-     | checkBaseExpr ts (Absyn.StringExp s) = Types.STRING
+     | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.StringExp s) = Types.STRING
 
-   and checkTy ts ast = Absyn.absynToTy ast
+   and checkTy ts ms ast = Absyn.absynToTy ast
 
-   and checkDecl ts (Absyn.Absorb{module, ...}) = ()
-     | checkDecl ts (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
-     | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
-     | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
+   and checkDecl ts ms (Absyn.Absorb{module, ...}) = ()
+     | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
+     | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
+     | checkDecl ts ms (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
           (* Add the module to the lexical parent's table. *)
           val _ = insertSym ts (sym, Entry.MODULE)
        in
           (* Check the guts of the module against the module's environment. *)
-          checkDeclLst (SymtabStack.enter (ts, symtab)) decls
+          checkDeclLst (SymtabStack.enter (ts, symtab)) ms decls
        end
-     | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
-     | checkDecl ts (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
+     | checkDecl ts ms (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
+     | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
           val declaredTy = Absyn.absynToTy absynTy
-          val initTy = checkExpr ts init
+          val initTy = checkExpr ts ms init
        in
           (* Since there is a type specified, check that the return type of the
            * initializing expression does match.
@@ -257,36 +257,36 @@ struct
           else
              insertSym ts (sym, Entry.VALUE initTy)
        end
-     | checkDecl ts (Absyn.ValDecl{sym, absynTy=NONE, init, pos}) =
-          insertSym ts (sym, Entry.VALUE (checkExpr ts init))
+     | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=NONE, init, pos}) =
+          insertSym ts (sym, Entry.VALUE (checkExpr ts ms init))
 
-   and checkDeclLst ts decls = let
+   and checkDeclLst ts ms decls = let
       (* Process a block of possibly mutually recursive function declarations. *)
-      fun processFunDecls ts funcs = ()
+      fun processFunDecls ts ms funcs = ()
 
       (* Process a block of possibly mutually recursive type declarations. *)
-      fun processTyDecls ts tys = ()
+      fun processTyDecls ts ms tys = ()
 
       (* For function and type declarations, we need to handle possibly
        * recursive declarations.  Therefore, we have to build up blocks of
        * functions and blocks of types , then process those as a unit, then go
        * back for the rest.  All other declarations are straightforward.
        *)
-      fun doCheck ts (lst as (Absyn.FunDecl _)::decls) = let
+      fun doCheck ts ms (lst as (Absyn.FunDecl _)::decls) = let
              val (funcs, rest) = ListMisc.split (fn (Absyn.FunDecl _) => true | _ => false)
                                                 lst
           in
-             (processFunDecls ts funcs) before (doCheck ts rest)
+             (processFunDecls ts ms funcs) before (doCheck ts ms rest)
           end
-        | doCheck ts (lst as (Absyn.TyDecl _)::decls) = let
+        | doCheck ts ms (lst as (Absyn.TyDecl _)::decls) = let
              val (tys, rest) = ListMisc.split (fn (Absyn.TyDecl _) => true | _ => false)
                                               lst
           in
-             (processTyDecls ts tys) before (doCheck ts rest)
+             (processTyDecls ts ms tys) before (doCheck ts ms rest)
           end
-        | doCheck ts (decl::decls) = (checkDecl ts decl) before (doCheck ts decls)
-        | doCheck ts [] = ()
+        | doCheck ts ms (decl::decls) = (checkDecl ts ms decl) before (doCheck ts ms decls)
+        | doCheck ts ms [] = ()
    in
-      doCheck ts decls
+      doCheck ts ms decls
    end
 end
