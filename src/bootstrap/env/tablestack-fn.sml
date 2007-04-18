@@ -23,7 +23,7 @@
 functor TableStackFn (Table: sig
                          type 'a hash_table
                          val lookup: 'a hash_table -> Symbol.symbol -> 'a
-                      end) :> TABLESTACK = struct
+                      end) :> TABLESTACK where type 'a table = 'a Table.hash_table = struct
    exception NotFound
 
    type 'a table = 'a Table.hash_table
