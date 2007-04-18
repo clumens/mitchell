@@ -39,8 +39,10 @@ struct
 
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
-      Symtab.insert (SymtabStack.top ts) (sym, entry)
-      handle Symtab.Duplicate => raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
+      if Symtab.inDomain (SymtabStack.top ts) sym then
+         raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
+      else
+         Symtab.insert (SymtabStack.top ts) (sym, entry)
 
 
    (* TEMPORARY BASE ENVIRONMENT FUNCTIONS *)
@@ -62,7 +64,7 @@ struct
 
    (* XXX: temporary *)
    fun mkIntegerEnv () = let
-      val integerSymtab = Symtab.mkTable ()
+      val integerSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
 
       val syms = [ (Symbol.toSymbol (MString.fromString "+", Symbol.FUN_TYCON),
                     Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
@@ -83,7 +85,7 @@ struct
 
    (* XXX: temporary *)
    fun mkBooleanEnv () = let
-      val booleanSymtab = Symtab.mkTable ()
+      val booleanSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
 
       val syms = [ (Symbol.toSymbol (MString.fromString "or", Symbol.FUN_TYCON),
                    Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.BOOLEAN), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.BOOLEAN)], tyFormals=[]}) ]
@@ -96,7 +98,7 @@ struct
 
    fun checkProg lst = let
       (* Create the global symbol table and module environment. *)
-      val global = Symtab.mkTable ()
+      val global = Symtab.mkTable (47, SymtabStack.NotFound)
 
       (* Populate the global symbol table with some global stuff. *)
       val _ = mkBaseEnv global
@@ -171,7 +173,7 @@ struct
           (* Create a new environment for the body of the decl-expr to execute
            * in, then check it against that environment.
            *)
-          val ts' = SymtabStack.enter (ts, Symtab.mkTable ())
+          val ts' = SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))
           val _ = checkDeclLst ts' decls
        in
           checkExpr ts' expr
@@ -230,7 +232,7 @@ struct
           val _ = insertSym ts (sym, Entry.MODULE)
        in
           (* Check the guts of the module against the module's new environment. *)
-          checkDeclLst (SymtabStack.enter (ts, Symtab.mkTable ())) decls
+          checkDeclLst (SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))) decls
        end
      | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
