@@ -42,6 +42,8 @@ start:
 module_decl:
    MODULE IDENTIFIER ASSIGN DECL top_decl+ END =>
       ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE), decls=top_decl,
+                         moduletab=Moduletab.mkTable (47, ModuletabStack.NotFound),
+                         symtab=Symtab.mkTable (47, SymtabStack.NotFound),
                          pos=span2pos MODULE_SPAN}
       );
 

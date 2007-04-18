@@ -74,7 +74,9 @@ structure Absyn = struct
             | FunDecl of {sym: Symbol.symbol, absynTy: Ty option, pos: pos,
                           formals: (Symbol.symbol * Ty * pos) list,
                           tyFormals: Symbol.symbol list, calls: Expr list, body: Expr}
-            | ModuleDecl of {sym: Symbol.symbol, decls: Decl list, pos: pos}
+            | ModuleDecl of {sym: Symbol.symbol, decls: Decl list,
+                             moduletab: Entry.Entry Symtab.hash_table Moduletab.hash_table,
+                             symtab: Entry.Entry Symtab.hash_table, pos: pos}
             | TyDecl of {sym: Symbol.symbol, absynTy: Ty, tyvars: Symbol.symbol list option,
                          pos: pos}
             | ValDecl of {sym: Symbol.symbol, absynTy: Ty option, init: Expr, pos: pos}

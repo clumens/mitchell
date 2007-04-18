@@ -48,7 +48,9 @@ struct
    (* TEMPORARY BASE ENVIRONMENT FUNCTIONS *)
 
    (* This creates the base environment, containing all the predefined values,
-    * functions, modules, and types.  Keep this as small as possible.
+    * functions, modules, and types.  Keep this as small as possible.  It might
+    * be a better idea to have this automatically loaded from some other file,
+    * like standard library stuff would be.
     *)
    fun mkBaseEnv symtab = let
       val syms = [ (Symbol.toSymbol (MString.fromString "f", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
@@ -98,23 +100,30 @@ struct
 
    fun checkProg lst = let
       (* Create the global symbol table and module environment. *)
-      val global = Symtab.mkTable (47, SymtabStack.NotFound)
+      val globalSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
+      val globalModuletab = Moduletab.mkTable (47, ModuletabStack.NotFound)
 
       (* Populate the global symbol table with some global stuff. *)
-      val _ = mkBaseEnv global
+      val _ = mkBaseEnv globalSymtab
 
-      (* XXX: temporary.  Add entries for these two modules to the global
-       * symbol table.
+      (* XXX: temporary.  Create symbols and tables for the Integer and Boolean
+       * modules.  Later on, these will somehow be loaded automatically as we
+       * define a larger standard library.
        *)
+      val integerSymtab = mkIntegerEnv ()
+      val booleanSymtab = mkBooleanEnv ()
       val integerSym = Symbol.toSymbol (MString.fromString "Integer", Symbol.MODULE)
       val booleanSym = Symbol.toSymbol (MString.fromString "Boolean", Symbol.MODULE)
-      val _ = Symtab.insert global (integerSym, Entry.MODULE)
-      val _ = Symtab.insert global (booleanSym, Entry.MODULE)
 
-      (* Create the symtab stack we'll use for seeing what's in scope, and
-       * push the global environment onto it.
-       *)
-      val ts = SymtabStack.enter (SymtabStack.mkStack (), global)
+      (* XXX: temporary:  Add the symbols to the global environments. *)
+      val _ = Symtab.insert globalSymtab (integerSym, Entry.MODULE)
+      val _ = Symtab.insert globalSymtab (booleanSym, Entry.MODULE)
+      val _ = Moduletab.insert globalModuletab (integerSym, integerSymtab)
+      val _ = Moduletab.insert globalModuletab (booleanSym, booleanSymtab)
+
+      (* Create the environment stack we'll use for seeing what's in scope. *)
+      val ts = SymtabStack.enter (SymtabStack.mkStack (), globalSymtab)
+      val ms = ModuletabStack.enter (ModuletabStack.mkStack (), globalModuletab)
    in
       checkDeclLst ts lst
    end
@@ -227,12 +236,12 @@ struct
    and checkDecl ts (Absyn.Absorb{module, ...}) = ()
      | checkDecl ts (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
      | checkDecl ts (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
-     | checkDecl ts (Absyn.ModuleDecl{sym, decls, ...}) = let
+     | checkDecl ts (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
           (* Add the module to the lexical parent's table. *)
           val _ = insertSym ts (sym, Entry.MODULE)
        in
-          (* Check the guts of the module against the module's new environment. *)
-          checkDeclLst (SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))) decls
+          (* Check the guts of the module against the module's environment. *)
+          checkDeclLst (SymtabStack.enter (ts, symtab)) decls
        end
      | checkDecl ts (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
