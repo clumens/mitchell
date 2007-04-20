@@ -38,6 +38,10 @@ struct
        | NONE => (firstTy, NONE)
    end
 
+   (* Search a (symbol * expr) list and find the first duplicate symbol. *)
+   fun findDupEle (lst: (Symbol.symbol * Absyn.Expr) list) =
+      ListMisc.findDup Symbol.nameGt (map #1 lst)
+
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
       if Symtab.inDomain (SymtabStack.top ts) sym then
@@ -51,6 +55,22 @@ struct
          raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
       else
          Moduletab.insert (ModuletabStack.top ms) (sym, entry)
+
+   (* Given a (symbol * expr) list like what's found in record assignment
+    * expressions and exception expressions, convert the list into a
+    * (symbol * type) list that can be added into the appropriate Type value.
+    * We have to accept a type checking function argument here because they're
+    * all defined later on, even though it'll always be checkExpr.
+    *)
+   fun checkNamedExprLst f ts ms lst = let
+      (* First check for duplicate entries. *)
+      val _ = case findDupEle lst of
+                 SOME dup => raise Symbol.SymbolError (dup, "List already includes a symbol with this name.")
+               | _ => ()
+   in
+      (* Now convert the list. *)
+      map (fn (sym, expr) => (sym, f ts ms expr)) lst
+   end
 
    (* Wrap lookup functions so we only have to do error handling in one place. *)
    fun lookup (f, tbl, sym) =
@@ -204,7 +224,7 @@ struct
              defaultTy
        end
 
-   and checkIdRef ts ms id = ()
+   and checkIdRef ts ms id = Types.BOTTOM
 
    and checkBranch ts ms (Absyn.RegularBranch expr) = ()
      | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = ()
@@ -235,7 +255,23 @@ struct
        in
           checkExpr ts' ms expr
        end
-     | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = let
+          fun exprPos (Absyn.Expr{pos, ...}) = pos
+
+          val entry = lookupId ts ms id Symbol.EXN_TYPE
+          val valuesTy = Types.EXN (checkNamedExprLst checkExpr ts ms values, Types.UNVISITED)
+       in
+          (* Exceptions and types are in the same namespace. *)
+          case entry of
+             Entry.EXN ty => if not (Types.eq (ty, valuesTy)) then
+                                raise TypeError (exprPos (#2 (hd values)),
+                                                 "Type of stated expression does not match list of assignments.",
+                                                 "exception type", ty,
+                                                 "assignment list type", valuesTy)
+                             else
+                                ty
+           | _ => raise Symbol.IdError (id, "Symbol is not an exception type.")
+       end
      | checkBaseExpr ts ms (Absyn.ExprLstExp exprs) = (
           case findBadEle (checkExpr ts ms) exprs of
              (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
@@ -272,17 +308,8 @@ struct
        end
      | checkBaseExpr ts ms (Absyn.IntegerExp i) = Types.INTEGER
      | checkBaseExpr ts ms (Absyn.RaiseExp expr) = ( checkExpr ts ms expr ; Types.ANY Types.UNVISITED )
-     | checkBaseExpr ts ms (Absyn.RecordAssnExp lst) = let
-          (* We're only interested in the symbols out of this AST node. *)
-          val _ = case ListMisc.findDup Symbol.nameGt (map #1 lst) of
-                     SOME dup => raise Symbol.SymbolError (dup, "Record definition already includes a symbol with this name.")
-                   | NONE => ()
-       in
-          (* Construct a tuple for each element of the assignment expression and
-           * use that to make the return type.  This isn't very hard.
-           *)
-          Types.RECORD (map (fn (sym, expr) => (sym, checkExpr ts ms expr)) lst, Types.UNVISITED)
-       end
+     | checkBaseExpr ts ms (Absyn.RecordAssnExp lst) =
+          Types.RECORD (checkNamedExprLst checkExpr ts ms lst, Types.UNVISITED)
      | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele}) = Types.BOTTOM
      | checkBaseExpr ts ms (Absyn.StringExp s) = Types.STRING
 
