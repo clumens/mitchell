@@ -16,6 +16,7 @@
  *)
 structure Semant :> SEMANT =
 struct
+   exception InternalError of string
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
 
@@ -44,6 +45,52 @@ struct
       else
          Symtab.insert (SymtabStack.top ts) (sym, entry)
 
+   (* Likewise for Moduletab.insert. *)
+   fun insertModuleSym ms (sym, entry) =
+      if Moduletab.inDomain (ModuletabStack.top ms) sym then
+         raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
+      else
+         Moduletab.insert (ModuletabStack.top ms) (sym, entry)
+
+   (* Wrap lookup functions so we only have to do error handling in one place. *)
+   fun lookup (f, tbl, sym) =
+      f tbl sym handle _ => raise Symbol.SymbolError (sym, "Referenced symbol is unknown.")
+
+   (* Look up an identifier in the environment.  The basic algorithm is:
+    *   - For naked identifiers (ones that are not part of any module), simply
+    *     look them up in the symbol table stack from most local towards the
+    *     global table.
+    *   - For module references, first look up the initial module reference in
+    *     the module table stack from most local towards the global table.  Once
+    *     that has been resolved to a module, then search back down through the
+    *     AST at each module table until we get to the last part of the
+    *     reference.  This is an identifier, which should be looked up in the
+    *     final module's symbol table.
+    * This algorithm is described more in docs/typing.
+    *)
+   fun lookupId ts ms [] kind =
+          raise InternalError "Empty identifier list passed to lookupId"
+     | lookupId ts ms (id::[]) kind = SymtabStack.lookup ts (Symbol.toSymbol (id, kind))
+     | lookupId ts ms (topModule::rest) kind = let
+          fun doLookup (tbl as Absyn.ModuleDecl _) [] kind =
+                 raise InternalError "Identifier only consists of module references."
+            | doLookup (tbl as Absyn.ModuleDecl{symtab, ...}) (id::[]) kind =
+                 lookup (Symtab.lookup, symtab, Symbol.toSymbol (id, kind))
+            | doLookup (tbl as Absyn.ModuleDecl{moduletab, ...}) (module::rest) kind = let
+                 val nextTbl = lookup (Moduletab.lookup, moduletab,
+                                       Symbol.toSymbol (module, Symbol.MODULE))
+              in
+                 doLookup nextTbl rest kind
+              end
+            | doLookup _ _ _ =
+                 raise InternalError "AST node besides ModuleDecl stored in moduletab."
+
+          val moduleTbl = lookup (ModuletabStack.lookup, ms,
+                                  Symbol.toSymbol (topModule, Symbol.MODULE))
+       in
+          doLookup moduleTbl rest kind
+       end
+
 
    (* TEMPORARY BASE ENVIRONMENT FUNCTIONS *)
 
@@ -52,7 +99,9 @@ struct
     * be a better idea to have this automatically loaded from some other file,
     * like standard library stuff would be.
     *)
-   fun mkBaseEnv symtab = let
+   fun mkBaseEnv () = let
+      val globalSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
+
       val syms = [ (Symbol.toSymbol (MString.fromString "f", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
                    (Symbol.toSymbol (MString.fromString "t", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
                    (Symbol.toSymbol (MString.fromString "⊥", Symbol.VALUE), Entry.VALUE Types.BOTTOM),
@@ -61,7 +110,7 @@ struct
                    (Symbol.toSymbol (MString.fromString "string", Symbol.EXN_TYPE), Entry.TYPE Types.STRING)
                  ]
    in
-      app (Symtab.insert symtab) syms
+      ( app (Symtab.insert globalSymtab) syms ; globalSymtab )
    end
 
    (* XXX: temporary *)
@@ -100,11 +149,8 @@ struct
 
    fun checkProg lst = let
       (* Create the global symbol table and module environment. *)
-      val globalSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
+      val globalSymtab = mkBaseEnv ()
       val globalModuletab = Moduletab.mkTable (47, ModuletabStack.NotFound)
-
-      (* Populate the global symbol table with some global stuff. *)
-      val _ = mkBaseEnv globalSymtab
 
       (* XXX: temporary.  Create symbols and tables for the Integer and Boolean
        * modules.  Later on, these will somehow be loaded automatically as we
@@ -118,8 +164,10 @@ struct
       (* XXX: temporary:  Add the symbols to the global environments. *)
       val _ = Symtab.insert globalSymtab (integerSym, Entry.MODULE)
       val _ = Symtab.insert globalSymtab (booleanSym, Entry.MODULE)
+(*
       val _ = Moduletab.insert globalModuletab (integerSym, integerSymtab)
       val _ = Moduletab.insert globalModuletab (booleanSym, booleanSymtab)
+*)
 
       (* Create the environment stack we'll use for seeing what's in scope. *)
       val ts = SymtabStack.enter (SymtabStack.mkStack (), globalSymtab)
@@ -197,7 +245,14 @@ struct
            | (firstTy, _) => firstTy
           )
      | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.IdExp id) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.IdExp id) = let
+          val sym = Symbol.toSymbol ((hd id), Symbol.VALUE)
+       in
+          case SymtabStack.find ts sym of
+             SOME (Entry.VALUE ty) => ty
+           | SOME _ => raise Symbol.SymbolError (sym, "Referenced symbol is not a value.")
+           | NONE => raise Symbol.SymbolError (sym, "Referenced symbol is unknown.")
+       end
      | checkBaseExpr ts ms (Absyn.IfExp{test as Absyn.Expr{pos=testPos, ...}, then',
                                         else' as Absyn.Expr{pos=elsePos, ...}}) = let
           val testTy = checkExpr ts ms test
@@ -236,12 +291,19 @@ struct
    and checkDecl ts ms (Absyn.Absorb{module, ...}) = ()
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
-     | checkDecl ts ms (Absyn.ModuleDecl{sym, decls, symtab, ...}) = let
-          (* Add the module to the lexical parent's table. *)
+     | checkDecl ts ms (decl as Absyn.ModuleDecl{sym, decls, symtab, moduletab, ...}) = let
+          (* Add the module to the lexical parent's environment. *)
           val _ = insertSym ts (sym, Entry.MODULE)
+          val _ = insertModuleSym ms (sym, decl)
+
+          (* Push the module's environment tables onto the stacks, so now
+           * everything is done relative to this module.
+           *)
+          val ts' = SymtabStack.enter (ts, symtab)
+          val ms' = ModuletabStack.enter (ms, moduletab)
        in
           (* Check the guts of the module against the module's environment. *)
-          checkDeclLst (SymtabStack.enter (ts, symtab)) ms decls
+          checkDeclLst ts' ms' decls
        end
      | checkDecl ts ms (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
@@ -269,7 +331,7 @@ struct
 
       (* For function and type declarations, we need to handle possibly
        * recursive declarations.  Therefore, we have to build up blocks of
-       * functions and blocks of types , then process those as a unit, then go
+       * functions and blocks of types, then process those as a unit, then go
        * back for the rest.  All other declarations are straightforward.
        *)
       fun doCheck ts ms (lst as (Absyn.FunDecl _)::decls) = let
