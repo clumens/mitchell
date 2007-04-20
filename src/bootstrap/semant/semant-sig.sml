@@ -16,6 +16,9 @@
  *)
 signature SEMANT =
 sig
+   (* error message *)
+   exception InternalError of string
+
    (* position * error message * expected message * expected ty * got message * got ty *)
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
