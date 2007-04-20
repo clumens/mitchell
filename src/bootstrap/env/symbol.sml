@@ -22,6 +22,8 @@ struct
 
    exception SymbolError of symbol * string
 
+   exception IdError of MString.mstring list * string
+
    fun eq (a: symbol, b: symbol) =
       (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
 

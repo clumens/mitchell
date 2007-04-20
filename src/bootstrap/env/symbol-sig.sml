@@ -35,6 +35,9 @@ sig
    (* problem symbol * error message *)
    exception SymbolError of symbol * string
 
+   (* problem identifier * error message *)
+   exception IdError of MString.mstring list * string
+
    (* Are two symbols equal?  This must compare both the symbol names and the
     * subtable types.  Two symbols with the same name in different subtables
     * are not equal.
