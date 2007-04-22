@@ -38,7 +38,7 @@ signature MSTRING = sig
    val fromString: string -> mstring
 
    (* Convert a word into a string. *)
-   val fromWord: Word32.word -> mstring
+   val fromWord: Word.word -> mstring
 
    (* Convert a character into a mitchell string. *)
    val str: char -> mstring

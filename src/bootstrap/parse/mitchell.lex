@@ -41,7 +41,7 @@
    fun getText () = !text
 
    fun convertEscaped esc pos =
-      case Word32.fromString (String.extract (esc, 2, NONE)) of
+      case Word.fromString (String.extract (esc, 2, NONE)) of
          SOME i => i
        | NONE   => raise TokenizeError (pos, "Invalid escaped Unicode character sequence.")
 );

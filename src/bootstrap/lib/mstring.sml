@@ -23,7 +23,7 @@ structure MString :> MSTRING = struct
    fun fromString s =
       map UTF8.fromAscii (String.explode s)
 
-   fun fromWord (w: Word32.word) =
+   fun fromWord (w: Word.word) =
       [w]
 
    fun str ch =
@@ -43,10 +43,10 @@ structure MString :> MSTRING = struct
           else result
        end
 
-   fun compare (strA, strB) = cmp Word32.compare (strA, strB)
+   fun compare (strA, strB) = cmp Word.compare (strA, strB)
 
-   fun op < (strA, strB) = cmp Word32.compare (strA, strB) = LESS
-   fun op <= (strA, strB) = not (cmp Word32.compare (strA, strB) = GREATER)
-   fun op > (strA, strB) = cmp Word32.compare (strA, strB) = GREATER
-   fun op >= (strA, strB) = not (cmp Word32.compare (strA, strB) = LESS)
+   fun op < (strA, strB) = cmp Word.compare (strA, strB) = LESS
+   fun op <= (strA, strB) = not (cmp Word.compare (strA, strB) = GREATER)
+   fun op > (strA, strB) = cmp Word.compare (strA, strB) = GREATER
+   fun op >= (strA, strB) = not (cmp Word.compare (strA, strB) = LESS)
 end
