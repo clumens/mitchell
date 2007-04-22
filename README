@@ -77,6 +77,7 @@ The following are features of the Mitchell language and compiler:
 The following components are required to build the mitchell compiler:
 
    * SML/NJ - Compiler for the SML language used to bootstrap mitchell.
+              This version of mitchell requires at least smlnj-110.63.
               http://www.smlnj.org
 
    * ml-ulex and ml-antlr - Optional components from SML/NJ.
