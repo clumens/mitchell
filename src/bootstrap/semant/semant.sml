@@ -196,8 +196,35 @@ struct
       checkDeclLst ts ms lst
    end
 
-   and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, ...}) =
-      Types.BOTTOM
+   and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, ...}) = let
+      fun isExn (Entry.EXN _) = true | isExn _ = false
+
+      (* Since exception handlers can create new bindings (for the exception
+       * value itself), we first need to create a new symbol table.
+       *)
+      val ts' = SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))
+   in
+      case exnKind of
+         (* This is not a default handler, so lookup the exception type in the
+          * environment.  If it's found (which it had better be), enter the
+          * exception value into the new symbol table and check the handler
+          * against that environment.
+          *)
+         SOME id => let val entry = lookupId ts ms id Symbol.EXN_TYPE
+                    in
+                        (* Exceptions and types are in the same namespace. *)
+                        if isExn entry then
+                           ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
+                        else
+                           raise Symbol.SymbolError (sym, "Symbol is not an exception type.")
+                    end
+         (* The default handler only gets a skeleton entry added for the
+          * exception type.
+          *)
+       | NONE => let val _ = insertSym ts' (sym, Entry.TYPE (Types.EXN ([], Types.FINITE)))
+                 in checkExpr ts' ms expr
+                 end
+   end
 
    and checkExnHandlerLst ts ms ([], SOME default) = checkExnHandler ts ms default
      | checkExnHandlerLst ts ms (handlers, NONE) = (
@@ -226,8 +253,8 @@ struct
 
    and checkIdRef ts ms id = Types.BOTTOM
 
-   and checkBranch ts ms (Absyn.RegularBranch expr) = ()
-     | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = ()
+   and checkBranch ts ms (Absyn.RegularBranch expr) = Types.BOTTOM
+     | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = Types.BOTTOM
 
    and checkExpr ts ms (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts ms expr
      | checkExpr ts ms (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
@@ -258,19 +285,22 @@ struct
      | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = let
           fun exprPos (Absyn.Expr{pos, ...}) = pos
 
+          (* Exceptions and types are in the same namespace, so make sure we
+           * have an exception.
+           *)
+          fun getExnTy (Entry.EXN ty) = ty
+            | getExnTy _ = raise Symbol.IdError (id, "Symbol is not an exception type.")
+
           val entry = lookupId ts ms id Symbol.EXN_TYPE
+          val exnTy = getExnTy entry
           val valuesTy = Types.EXN (checkNamedExprLst checkExpr ts ms values, Types.UNVISITED)
        in
-          (* Exceptions and types are in the same namespace. *)
-          case entry of
-             Entry.EXN ty => if not (Types.eq (ty, valuesTy)) then
-                                raise TypeError (exprPos (#2 (hd values)),
-                                                 "Type of stated expression does not match list of assignments.",
-                                                 "exception type", ty,
-                                                 "assignment list type", valuesTy)
-                             else
-                                ty
-           | _ => raise Symbol.IdError (id, "Symbol is not an exception type.")
+          if not (Types.eq (exnTy, valuesTy)) then
+             raise TypeError (exprPos (#2 (hd values)),
+                              "Type of stated expression does not match list of assignments.",
+                              "exception type", exnTy, "assignment list type", valuesTy)
+          else
+             exnTy
        end
      | checkBaseExpr ts ms (Absyn.ExprLstExp exprs) = (
           case findBadEle (checkExpr ts ms) exprs of
