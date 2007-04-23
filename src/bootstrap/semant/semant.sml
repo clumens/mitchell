@@ -112,86 +112,17 @@ struct
        end
 
 
-   (* TEMPORARY BASE ENVIRONMENT FUNCTIONS *)
-
-   (* This creates the base environment, containing all the predefined values,
-    * functions, modules, and types.  Keep this as small as possible.  It might
-    * be a better idea to have this automatically loaded from some other file,
-    * like standard library stuff would be.
-    *)
-   fun mkBaseEnv () = let
-      val globalSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
-
-      val syms = [ (Symbol.toSymbol (MString.fromString "f", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
-                   (Symbol.toSymbol (MString.fromString "t", Symbol.VALUE), Entry.VALUE Types.BOOLEAN),
-                   (Symbol.toSymbol (MString.fromString "⊥", Symbol.VALUE), Entry.VALUE Types.BOTTOM),
-                   (Symbol.toSymbol (MString.fromString "boolean", Symbol.EXN_TYPE), Entry.TYPE Types.BOOLEAN),
-                   (Symbol.toSymbol (MString.fromString "integer", Symbol.EXN_TYPE), Entry.TYPE Types.INTEGER),
-                   (Symbol.toSymbol (MString.fromString "string", Symbol.EXN_TYPE), Entry.TYPE Types.STRING)
-                 ]
-   in
-      ( app (Symtab.insert globalSymtab) syms ; globalSymtab )
-   end
-
-   (* XXX: temporary *)
-   fun mkIntegerEnv () = let
-      val integerSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
-
-      val syms = [ (Symbol.toSymbol (MString.fromString "+", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
-                   (Symbol.toSymbol (MString.fromString "-", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
-                   (Symbol.toSymbol (MString.fromString "*", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
-                   (Symbol.toSymbol (MString.fromString "mod", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.INTEGER, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
-                   (Symbol.toSymbol (MString.fromString "<", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]}),
-                   (Symbol.toSymbol (MString.fromString "", Symbol.FUN_TYCON),
-                    Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.INTEGER), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.INTEGER)], tyFormals=[]})
-                 ]
-   in
-      ( (app (Symtab.insert integerSymtab) syms) ; integerSymtab )
-   end
-
-   (* XXX: temporary *)
-   fun mkBooleanEnv () = let
-      val booleanSymtab = Symtab.mkTable (47, SymtabStack.NotFound)
-
-      val syms = [ (Symbol.toSymbol (MString.fromString "or", Symbol.FUN_TYCON),
-                   Entry.FUNCTION {ty=Types.BOOLEAN, formals=[(Symbol.toSymbol (MString.fromString "x", Symbol.VALUE), Types.BOOLEAN), (Symbol.toSymbol (MString.fromString "y", Symbol.VALUE), Types.BOOLEAN)], tyFormals=[]}) ]
-   in
-      ( (app (Symtab.insert booleanSymtab) syms) ; booleanSymtab )
-   end
-
-
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
    fun checkProg lst = let
-      (* Create the global symbol table and module environment. *)
-      val globalSymtab = mkBaseEnv ()
-      val globalModuletab = Moduletab.mkTable (47, ModuletabStack.NotFound)
+      (* Create the environment stacks. *)
+      val ts = SymtabStack.mkStack ()
+      val ms = ModuletabStack.mkStack ()
 
-      (* XXX: temporary.  Create symbols and tables for the Integer and Boolean
-       * modules.  Later on, these will somehow be loaded automatically as we
-       * define a larger standard library.
+      (* Now populate the base environment with our temporary "module loading"
+       * code.
        *)
-      val integerSymtab = mkIntegerEnv ()
-      val booleanSymtab = mkBooleanEnv ()
-      val integerSym = Symbol.toSymbol (MString.fromString "Integer", Symbol.MODULE)
-      val booleanSym = Symbol.toSymbol (MString.fromString "Boolean", Symbol.MODULE)
-
-      (* XXX: temporary:  Add the symbols to the global environments. *)
-      val _ = Symtab.insert globalSymtab (integerSym, Entry.MODULE)
-      val _ = Symtab.insert globalSymtab (booleanSym, Entry.MODULE)
-(*
-      val _ = Moduletab.insert globalModuletab (integerSym, integerSymtab)
-      val _ = Moduletab.insert globalModuletab (booleanSym, booleanSymtab)
-*)
-
-      (* Create the environment stack we'll use for seeing what's in scope. *)
-      val ts = SymtabStack.enter (SymtabStack.mkStack (), globalSymtab)
-      val ms = ModuletabStack.enter (ModuletabStack.mkStack (), globalModuletab)
+      val _ = TempEnv.createEnv ts ms
    in
       checkDeclLst ts ms lst
    end
