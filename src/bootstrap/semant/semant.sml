@@ -38,9 +38,11 @@ struct
        | NONE => (firstTy, NONE)
    end
 
-   (* Search a (symbol * expr) list and find the first duplicate symbol. *)
-   fun findDupEle (lst: (Symbol.symbol * Absyn.Expr) list) =
-      ListMisc.findDup Symbol.nameGt (map #1 lst)
+   (* Search a symbol list and error if a duplicate name is found. *)
+   fun findDupEle lst =
+      case ListMisc.findDup Symbol.nameGt lst of
+         SOME dup => raise Symbol.SymbolError (dup, "List already includes a symbol with this name.")
+       | _ => ()
 
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
@@ -64,9 +66,7 @@ struct
     *)
    fun checkNamedExprLst f ts ms lst = let
       (* First check for duplicate entries. *)
-      val _ = case findDupEle lst of
-                 SOME dup => raise Symbol.SymbolError (dup, "List already includes a symbol with this name.")
-               | _ => ()
+      val _ = findDupEle (map #1 lst)
    in
       (* Now convert the list. *)
       map (fn (sym, expr) => (sym, f ts ms expr)) lst
@@ -312,7 +312,47 @@ struct
 
    and checkDeclLst ts ms decls = let
       (* Process a block of possibly mutually recursive function declarations. *)
-      fun processFunDecls ts ms funcs = ()
+      fun processFunDecls ts ms funcs = let
+         (* Create skeleton entries for every function in the block so they can
+          * recursively call each other.  A skeleton entry consists of the LHS
+          * of the declaration.  These will be added to the scope of what the
+          * functions are defined in so functions may call themselves.
+          *)
+         fun round1 ts ms [] = ()
+           | round1 ts ms (funDecl as (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, ...})::rest) = let
+                (* Create a list of formal parameters and their Types as tuples. *)
+                fun buildFormalsLst [] = []
+                  | buildFormalsLst (lst: (Symbol.symbol * Absyn.Ty * Absyn.pos) list) = let
+                   val symLst = map #1 lst
+
+                   (* Check for duplicate named parameters. *)
+                   val _ = findDupEle symLst
+
+                   val tyLst = map Absyn.absynToTy (map #2 lst)
+                in
+                   ListPair.zip (symLst, tyLst)
+                end
+
+                (* This fun decl may not have an explicit type, so just make
+                 * something up for now.  This will get resolved in round2.
+                 *)
+                val retTy = if Option.isSome absynTy then Absyn.absynToTy (valOf absynTy)
+                            else Types.BOTTOM
+                val formals = buildFormalsLst formals
+             in
+                (* Check that a function by this name is not already defined in
+                 * this scope, though it's okay to shadow the name of a function
+                 * in a higher level scope.  By checking here, we don't have to
+                 * check in round2.
+                 *
+                 * Then check the rest of the list.
+                 *)
+                ( insertSym ts (sym, Entry.FUNCTION{ty=retTy, tyFormals=tyFormals, formals=formals}) ; round1 ts ms rest )
+             end
+           | round1 ts ms _ = raise InternalError "FunDecl list contains something other than functions."
+      in
+         round1 ts ms funcs
+      end
 
       (* Process a block of possibly mutually recursive type declarations. *)
       fun processTyDecls ts ms tys = ()
