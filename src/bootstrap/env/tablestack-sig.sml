@@ -43,6 +43,11 @@ signature TABLESTACK = sig
     *)
    val top: 'a stack -> 'a table
 
+   (* Return the table at the bottom of the table stack.  This should correspond
+    * to the global environment.  Raises Empty if the stack is empty.
+    *)
+   val bottom: 'a stack -> 'a table
+
    (* Two different ways to search a table stack for a Symbol.  The first raises
     * NotFound on error, the second returns NONE.
     *)

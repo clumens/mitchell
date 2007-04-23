@@ -39,6 +39,8 @@ functor TableStackFn (Table: sig
 
    fun top ts = hd ts
 
+   fun bottom ts = List.last ts
+
    local
       fun doLookup [] sym = raise NotFound
         | doLookup (tbl::ts) sym = Table.lookup tbl sym
