@@ -319,7 +319,7 @@ struct
           * functions are defined in so functions may call themselves.
           *)
          fun round1 ts ms [] = ()
-           | round1 ts ms (funDecl as (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, ...})::rest) = let
+           | round1 ts ms (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, ...}::rest) = let
                 (* Create a list of formal parameters and their Types as tuples. *)
                 fun buildFormalsLst [] = []
                   | buildFormalsLst (lst: (Symbol.symbol * Absyn.Ty * Absyn.pos) list) = let
@@ -355,7 +355,36 @@ struct
       end
 
       (* Process a block of possibly mutually recursive type declarations. *)
-      fun processTyDecls ts ms tys = ()
+      fun processTyDecls ts ms tys = let
+         (* Create skeleton entries for every type in the block so they can
+          * mutually refer to each other.  Skeleton entries really just contain
+          * the type's name and a dummy type since we can't look at the RHS for
+          * real type information.
+          *)
+         fun round1 ts ms [] = ()
+           | round1 ts ms (Absyn.TyDecl{sym, ...}::rest) = let
+                (* User-defined types are not allowed to override the types in
+                 * the global environment, since that contains the base types of
+                 * the language.
+                 *)
+                val globalTs = SymtabStack.bottom ts
+             in
+                if Symtab.inDomain globalTs sym then
+                   raise Symbol.SymbolError (sym, "Type identifiers may not override symbols in the global scope.")
+                else
+                   (* Check that a type by this name is not already defined in
+                    * this scope, though it's okay to shadow the name of a type
+                    * in a higher level scope.  By checking here, we don't have
+                    * to check in round2.
+                    *
+                    * Then check the rest of the list.
+                    *)
+                   ( insertSym ts (sym, Entry.TYPE Types.BOTTOM) ; round1 ts ms rest )
+             end
+           | round1 ts ms _ = raise InternalError "TyDecl list contains something other than types."
+      in
+         round1 ts ms tys
+      end
 
       (* For function and type declarations, we need to handle possibly
        * recursive declarations.  Therefore, we have to build up blocks of
