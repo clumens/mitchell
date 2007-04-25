@@ -15,6 +15,9 @@
      suck in a symbol table for them during semantic analysis
    - internal interface to C libraries for implementing the runtime
    - outline contents for runtime library
+   - some sort of plugin/registration system for compilation phases (?)
+   - exnToString functions in structures where exceptions are defined
 - symbol table / type checker:
    - does it make sense to keep the symtab and moduletab in a tree
      structure that parallels the AST instead of in the AST itself?
+   - symbols need position information
