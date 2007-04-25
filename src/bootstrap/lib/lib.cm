@@ -1,9 +1,13 @@
 Group
+   signature HASHTABLEMISC
    signature LISTMISC
    signature MSTRING
+   structure HashTableMisc
    structure ListMisc
    structure MString
 is
+   hashtablemisc-sig.sml
+   hashtablemisc.sml
    listmisc-sig.sml
    listmisc.sml
    mstring-sig.sml
