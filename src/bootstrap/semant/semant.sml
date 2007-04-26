@@ -111,6 +111,14 @@ struct
           doLookup moduleTbl rest kind
        end
 
+   (* Print out a single hash table.  This can't easily go into its own module
+    * because our hash tables are made from a functor which really complicates
+    * the types.  foldi is the obvious function, since this needs to work on all
+    * kinds of tables.
+    *)
+   fun tblToString foldi tbl valFn =
+      foldi (fn (k, v, str) => str ^ "\t" ^ (Symbol.toString k) ^ " => " ^ (valFn v) ^ "\n") "" tbl
+
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
