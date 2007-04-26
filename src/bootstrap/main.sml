@@ -19,8 +19,7 @@
  * compilation process is controlled, and also where ml-build will know to
  * look to build a standalone executable.
  *)
-structure Main =
-struct
+structure Main = struct
    open Error
    structure Parser = MitchellParseFn (MitchellLex)
 
@@ -29,6 +28,11 @@ struct
    (* Format error messages to all look the same. *)
    fun fmtError (filename, pos, msg) =
       filename ^ " " ^ (StreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
+
+   (* Create the output stream we're writing internal debugging output to. *)
+   fun mkStream inFile Options.Stdout = TextIO.stdOut
+     | mkStream inFile (Options.Default suffix) = TextIO.openOut (inFile ^ suffix)
+     | mkStream inFile (Options.File f) = TextIO.openOut f
 
    (* Given a filename as a string, return the abstract syntax tree.  This is
     * largely the same as test/parser.sml.
@@ -77,9 +81,9 @@ struct
    end
 
    fun doSemanticAnalysis filename ast = let
-      fun fmtTypeError (e: (StreamPos.pos * string * string * Types.Type * string * Types.Type)) =
-         (#2 e) ^ ":\n\t" ^ (#3 e) ^ ":\t" ^ (Types.toString (#4 e)) ^
-                  "\n\t" ^ (#5 e) ^ ":\t" ^ (Types.toString (#6 e))
+      fun fmtTypeError (_, errMsg, expectedMsg, expectedTy, gotMsg, gotTy) =
+         errMsg ^ ":\n\t" ^ expectedMsg ^ ":\t" ^ (Types.toString expectedTy) ^
+                  "\n\t" ^ gotMsg ^ ":\t" ^ (Types.toString gotTy)
    in
       Semant.checkProg ast
       handle Semant.TypeError e => ( print (fmtError (filename, #1 e, fmtTypeError e)) ; quit true )
@@ -88,12 +92,8 @@ struct
    (* This is where the magic happens. *)
    fun main (name, argv) = let
       (* Wrapper around Absyn.write to handle specifying a destination. *)
-      fun printAST ast inFile hdr (SOME (Options.AbsynFile (Options.Stdout))) =
-             Absyn.write TextIO.stdOut hdr ast
-        | printAST ast inFile hdr (SOME (Options.AbsynFile (Options.Default))) =
-             Absyn.write (TextIO.openOut (inFile ^ ".ast")) hdr ast
-        | printAST ast inFile hdr (SOME (Options.AbsynFile (Options.File f))) =
-             Absyn.write (TextIO.openOut f) hdr ast
+      fun printAST ast inFile hdr (SOME (Options.AbsynFile dest)) =
+             Absyn.write (mkStream inFile dest) hdr ast
         | printAST ast inFile hdr _ = ()
 
       val (optsMap, extra) = Options.parse argv handle e => Options.badOpts e
