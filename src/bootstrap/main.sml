@@ -24,9 +24,11 @@ struct
    open Error
    structure Parser = MitchellParseFn (MitchellLex)
 
+   val sm = StreamPos.mkSourcemap ()
+
    (* Format error messages to all look the same. *)
    fun fmtError (filename, pos, msg) =
-      filename ^ " " ^ pos ^ ": " ^ msg ^ "\n"
+      filename ^ " " ^ (StreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
 
    (* Given a filename as a string, return the abstract syntax tree.  This is
     * largely the same as test/parser.sml.
@@ -45,8 +47,7 @@ struct
        * formatted output.
        *)
       fun repairToString tokToString sm (pos, repair) =
-         fmtError (filename, StreamPos.toString sm pos, "Parse error: " ^
-                             Repair.actionToString tokToString repair)
+         fmtError (filename, pos, "Parse error: " ^ Repair.actionToString tokToString repair)
 
       (* Perform the actual parse.  If there are any repair error messages,
        * print them out and then quit.  Otherwise return the AST.
@@ -60,13 +61,11 @@ struct
       end
 
       val strm = openFile filename
-      val sm = StreamPos.mkSourcemap ()
       val lexer = MitchellLex.lex sm
 
       val ast = parse lexer (MitchellLex.streamifyInstream strm) sm
                 handle MitchellLex.UserDeclarations.TokenizeError e =>
-                   ( print (fmtError (filename, StreamPos.toString sm (#1 e), #2 e)) ;
-                     quit true )
+                   ( print (fmtError (filename, #1 e, #2 e)) ; quit true )
    in
       (* What cases will cause parse to return NONE for the ast?  Perhaps we're
        * already handling those cases with TokenizeError and repairToString
@@ -77,8 +76,14 @@ struct
        | NONE     => raise InternalError "Parser returned NONE for abstract syntax tree"
    end
 
-   fun doSemanticAnalysis ast =
+   fun doSemanticAnalysis filename ast = let
+      fun fmtTypeError (e: (StreamPos.pos * string * string * Types.Type * string * Types.Type)) =
+         (#2 e) ^ ":\n\t" ^ (#3 e) ^ ":\t" ^ (Types.toString (#4 e)) ^
+                  "\n\t" ^ (#5 e) ^ ":\t" ^ (Types.toString (#6 e))
+   in
       Semant.checkProg ast
+      handle Semant.TypeError e => ( print (fmtError (filename, #1 e, fmtTypeError e)) ; quit true )
+   end
 
    (* This is where the magic happens. *)
    fun main (name, argv) = let
@@ -97,7 +102,7 @@ struct
       val ast = parseFile inFile
       val _   = printAST ast inFile "Initial abstract syntax tree"
                          (StringMap.find (optsMap, "Idump-absyn"))
-      val _ = doSemanticAnalysis ast
+      val _ = doSemanticAnalysis inFile ast
    in
       OS.Process.exit OS.Process.success
    end
