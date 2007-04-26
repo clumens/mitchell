@@ -19,9 +19,8 @@
  * options that may be supplied to the compiler.  It makes use of David
  * Shea's improved getopt library, found in getopt/.
  *)
-structure Options = 
-struct
-   val version = "mitchell version 20070224"
+structure Options = struct
+   val version = "mitchell version 20070426"
    val copyright = "© 2004-2007 Chris Lumens"
 
    (* Raised if invalid arguments provided *)
@@ -36,7 +35,7 @@ struct
     * inputfile.ext.
     *)
    datatype output_file = Stdout
-                        | Default
+                        | Default of string
                         | File of string
 
    (* Specify which compilation phase should be the last one. *)
@@ -95,7 +94,7 @@ struct
                     help="Dump the abstract syntax tree to FILE, or infile.ast by default",
                     desc=GetOpt.OptArg ((fn SOME "-" => AbsynFile Stdout
                                           | SOME f   => AbsynFile (File f)
-                                          | NONE     => AbsynFile Default
+                                          | NONE     => AbsynFile (Default ".ast")
                                         ), "FILE")
                    },
                    {short="",
@@ -103,7 +102,7 @@ struct
                     help="Dump the symbol tables to FILE, or infile.symtab by default",
                     desc=GetOpt.OptArg ((fn SOME "-" => SymtabFile Stdout
                                           | SOME f   => SymtabFile (File f)
-                                          | NONE     => SymtabFile Default
+                                          | NONE     => SymtabFile (Default ".symtab")
                                         ), "FILE")
                    },
                    {short="",
@@ -111,7 +110,7 @@ struct
                     help="Dump the free values to FILE, or infile.free by default",
                     desc=GetOpt.OptArg ((fn SOME "-" => FreeValsFile Stdout
                                           | SOME f   => FreeValsFile (File f)
-                                          | NONE     => FreeValsFile Default
+                                          | NONE     => FreeValsFile (Default ".free")
                                         ), "FILE")
                    }
                  ]
