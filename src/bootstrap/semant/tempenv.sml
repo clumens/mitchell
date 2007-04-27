@@ -20,7 +20,7 @@
  * be replaced by a proper module loader.  However that is a very long way off.
  *)
 structure TempEnv :> sig
-                        val createEnv: Entry.Entry SymtabStack.stack -> 'a ModuletabStack.stack -> unit
+                        val createEnv: unit -> Entry.Entry SymtabStack.stack * 'a ModuletabStack.stack
                      end = struct
    (* Wrappers to create symbols. *)
    local
@@ -72,7 +72,7 @@ structure TempEnv :> sig
       ( (app (Symtab.insert booleanSymtab) syms) ; booleanSymtab )
    end
 
-   fun createEnv ts ms = let
+   fun createEnv () = let
       (* Create the global symbol table and module environment. *)
       val globalSymtab = mkBaseEnv ()
       val globalModuletab = Moduletab.mkTable (47, ModuletabStack.NotFound)
@@ -94,9 +94,9 @@ structure TempEnv :> sig
 *)
 
       (* Put the new tables onto the environment stacks. *)
-      val _ = SymtabStack.enter (ts, globalSymtab)
-      val _ = ModuletabStack.enter (ms, globalModuletab)
+      val ts = SymtabStack.enter (SymtabStack.mkStack (), globalSymtab)
+      val ms = ModuletabStack.enter (ModuletabStack.mkStack (), globalModuletab)
    in
-      ()
+      (ts, ms)
    end
 end

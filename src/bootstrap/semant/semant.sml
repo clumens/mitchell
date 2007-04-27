@@ -14,8 +14,7 @@
  * along with this program; if not, write to the Free Software
  * Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  *)
-structure Semant :> SEMANT =
-struct
+structure Semant :> SEMANT = struct
    exception InternalError of string
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
@@ -123,14 +122,8 @@ struct
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
    fun checkProg lst = let
-      (* Create the environment stacks. *)
-      val ts = SymtabStack.mkStack ()
-      val ms = ModuletabStack.mkStack ()
-
-      (* Now populate the base environment with our temporary "module loading"
-       * code.
-       *)
-      val _ = TempEnv.createEnv ts ms
+      (* Create the base environment. *)
+      val (ts, ms) = TempEnv.createEnv ()
    in
       checkDeclLst ts ms lst
    end
