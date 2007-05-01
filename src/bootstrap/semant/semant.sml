@@ -18,6 +18,13 @@ structure Semant :> SEMANT = struct
    exception InternalError of string
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
+   (* Lame, but it saves having to pass around another parameter to every
+    * function or making Semant into a functor for no good reason.  The correct
+    * printing function will be set up when checkProg is called.  This function
+    * is called every time we leave a scope.
+    *)
+   val writeFn = ref (fn s: string => ())
+
 
    (* HELPER FUNCTIONS *)
 
@@ -110,20 +117,26 @@ structure Semant :> SEMANT = struct
           doLookup moduleTbl rest kind
        end
 
-   (* Print out a single hash table.  This can't easily go into its own module
-    * because our hash tables are made from a functor which really complicates
-    * the types.  foldi is the obvious function, since this needs to work on all
-    * kinds of tables.
+   (* tblToString converts a single table to a string with the provided foldi
+    * function (we can't use a generic foldi function here due to the different
+    * hash table types).  I don't know if there's a point to a
+    * moduletabTopToString function, so that's not implemented yet.
     *)
-   fun tblToString foldi tbl valFn =
-      foldi (fn (k, v, str) => str ^ "\t" ^ (Symbol.toString k) ^ " => " ^ (valFn v) ^ "\n") "" tbl
+   local
+      fun tblToString foldi tbl valFn =
+         foldi (fn (k, v, str) => str ^ (Symbol.toString k) ^ " => " ^ (valFn v) ^ "\n") "" tbl
+   in
+      fun symtabTopToString hdr ts =
+         hdr ^ "\n----------------------------------------\n" ^
+         tblToString Symtab.foldi (SymtabStack.top ts) Entry.toString
+   end
 
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
 
-   fun checkProg lst = let
-      (* Create the base environment. *)
-      val (ts, ms) = TempEnv.createEnv ()
+   fun checkProg f lst = let
+      (* Set up the printing function, and create the base environment. *)
+      val (ts, ms) = ( writeFn := f ; TempEnv.createEnv () )
    in
       checkDeclLst ts ms lst
    end

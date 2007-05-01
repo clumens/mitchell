@@ -19,7 +19,7 @@
  * compilation process is controlled, and also where ml-build will know to
  * look to build a standalone executable.
  *)
-structure Main = struct
+structure Main :> sig val main: 'a * string list -> 'b end = struct
    open Error
    structure Parser = MitchellParseFn (MitchellLex)
 
@@ -80,12 +80,30 @@ structure Main = struct
        | NONE     => raise InternalError "Parser returned NONE for abstract syntax tree"
    end
 
-   fun doSemanticAnalysis filename ast = let
+   (* Perform semantic analysis (type checking, symbol lookup, etc.) on the
+    * provided abstract syntax tree.  Doesn't return anything on success, raises
+    * various exceptions on various errors.
+    *)
+   fun doSemanticAnalysis opt filename ast = let
+      (* If we're supposed to dump the symbol tables somewhere for debugging,
+       * open that stream now.  Otherwise leave it as NONE which essentially
+       * makes the printing function a no-op.
+       *)
+      val strm = case opt of
+                    SOME (Options.SymtabFile dest) => SOME (mkStream filename dest)
+                  | _ => NONE
+
       fun fmtTypeError (_, errMsg, expectedMsg, expectedTy, gotMsg, gotTy) =
          errMsg ^ ":\n\t" ^ expectedMsg ^ ":\t" ^ (Types.toString expectedTy) ^
                   "\n\t" ^ gotMsg ^ ":\t" ^ (Types.toString gotTy)
    in
-      Semant.checkProg ast
+      (* The function we're passing here is for dumping out the symbol tables.
+       * It takes a string and writes it to a previously opened stream, which
+       * was opened above.  checkProg will actually need to do some more work to
+       * get the symbol tables into string form.
+       *)
+      Semant.checkProg (fn str => case strm of SOME strm => TextIO.output (strm, str)
+                                             | NONE => ()) ast
       handle Semant.TypeError e => ( print (fmtError (filename, #1 e, fmtTypeError e)) ; quit true )
    end
 
@@ -94,7 +112,7 @@ structure Main = struct
       (* Wrapper around Absyn.write to handle specifying a destination. *)
       fun printAST ast inFile hdr (SOME (Options.AbsynFile dest)) =
              Absyn.write (mkStream inFile dest) hdr ast
-        | printAST ast inFile hdr _ = ()
+        | printAST _ _ _ _ = ()
 
       val (optsMap, extra) = Options.parse argv handle e => Options.badOpts e
       val inFile = hd extra handle Empty => Options.badOpts Options.NullArgExn
@@ -102,7 +120,7 @@ structure Main = struct
       val ast = parseFile inFile
       val _   = printAST ast inFile "Initial abstract syntax tree"
                          (StringMap.find (optsMap, "Idump-absyn"))
-      val _ = doSemanticAnalysis inFile ast
+      val _ = doSemanticAnalysis (StringMap.find (optsMap, "Idump-symtab")) inFile ast
    in
       OS.Process.exit OS.Process.success
    end

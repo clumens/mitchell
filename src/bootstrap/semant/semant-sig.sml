@@ -23,5 +23,5 @@ sig
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
    (* We only need to expose a single function for checking the entire AST. *)
-   val checkProg: Absyn.Decl list -> unit
+   val checkProg: (string -> unit) -> Absyn.Decl list -> unit
 end
