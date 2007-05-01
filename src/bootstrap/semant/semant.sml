@@ -128,7 +128,7 @@ structure Semant :> SEMANT = struct
    in
       fun symtabTopToString hdr ts =
          hdr ^ "\n----------------------------------------\n" ^
-         tblToString Symtab.foldi (SymtabStack.top ts) Entry.toString
+         tblToString Symtab.foldi (SymtabStack.top ts) Entry.toString ^ "\n"
    end
 
 
@@ -138,7 +138,7 @@ structure Semant :> SEMANT = struct
       (* Set up the printing function, and create the base environment. *)
       val (ts, ms) = ( writeFn := f ; TempEnv.createEnv () )
    in
-      checkDeclLst ts ms lst
+      (checkDeclLst ts ms lst) before (!writeFn (symtabTopToString "Global" ts))
    end
 
    and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, ...}) = let
@@ -160,6 +160,7 @@ structure Semant :> SEMANT = struct
                         (* Exceptions and types are in the same namespace. *)
                         if isExn entry then
                            ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
+                           before (!writeFn (symtabTopToString "exn-handler" ts'))
                         else
                            raise Symbol.SymbolError (sym, "Symbol is not an exception type.")
                     end
@@ -167,7 +168,7 @@ structure Semant :> SEMANT = struct
           * exception type.
           *)
        | NONE => let val _ = insertSym ts' (sym, Entry.TYPE (Types.EXN ([], Types.FINITE)))
-                 in checkExpr ts' ms expr
+                 in (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "exn-handler" ts'))
                  end
    end
 
@@ -225,7 +226,7 @@ structure Semant :> SEMANT = struct
           val ts' = SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))
           val _ = checkDeclLst ts' ms decls
        in
-          checkExpr ts' ms expr
+          (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "decl-expr" ts'))
        end
      | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = let
           fun exprPos (Absyn.Expr{pos, ...}) = pos
@@ -305,7 +306,7 @@ structure Semant :> SEMANT = struct
           val ms' = ModuletabStack.enter (ms, moduletab)
        in
           (* Check the guts of the module against the module's environment. *)
-          checkDeclLst ts' ms' decls
+          (checkDeclLst ts' ms' decls) before (!writeFn (symtabTopToString (Symbol.toString sym) ts'))
        end
      | checkDecl ts ms (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
