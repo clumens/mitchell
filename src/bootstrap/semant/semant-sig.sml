@@ -24,4 +24,6 @@ sig
 
    (* We only need to expose a single function for checking the entire AST. *)
    val checkProg: (string -> unit) -> Absyn.Decl list -> unit
+
+   val typeErrorToString: (StreamPos.pos * string * string * Types.Type * string * Types.Type) -> string
 end

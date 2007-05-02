@@ -88,7 +88,7 @@ structure Absyn = struct
    local
       fun checkForDupes symLst pos msg =
          case ListMisc.findDup Symbol.nameGt symLst of
-            SOME dup => raise Symbol.SymbolError (pos, dup, msg)
+            SOME dup => raise Symbol.SymbolError (pos, msg, dup)
           | NONE => ()
    in
       fun absynToTy (BottomTy _) = Types.BOTTOM

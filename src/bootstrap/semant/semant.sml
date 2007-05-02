@@ -18,6 +18,10 @@ structure Semant :> SEMANT = struct
    exception InternalError of string
    exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
 
+   fun typeErrorToString (_, errorMsg, expectedMsg, expectedTy, gotMsg, gotTy) =
+      errorMsg ^ ":\n\t" ^ expectedMsg ^ ":\t" ^ (Types.toString expectedTy) ^
+                 "\n\t" ^ gotMsg ^ ":\t" ^ (Types.toString gotTy)
+
    (* Lame, but it saves having to pass around another parameter to every
     * function or making Semant into a functor for no good reason.  The correct
     * printing function will be set up when checkProg is called.  This function
@@ -53,22 +57,20 @@ structure Semant :> SEMANT = struct
    (* Search a symbol list and error if a duplicate name is found. *)
    fun findDupEle lst =
       case ListMisc.findDup Symbol.nameGt lst of
-         SOME dup => raise Symbol.SymbolError (Symbol.pos dup, dup, "List already includes a symbol with this name.")
+         SOME dup => raise Symbol.SymbolError (Symbol.pos dup, "List already includes a symbol with this name.", dup)
        | _ => ()
 
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
       if Symtab.inDomain (SymtabStack.top ts) sym then
-         raise Symbol.SymbolError (Symbol.pos sym, sym,
-                                   "A symbol with this name already exists in this scope.")
+         raise Symbol.SymbolError (Symbol.pos sym, "A symbol with this name already exists in this scope.", sym)
       else
          Symtab.insert (SymtabStack.top ts) (sym, entry)
 
    (* Likewise for Moduletab.insert. *)
    fun insertModuleSym ms (sym, entry) =
       if Moduletab.inDomain (ModuletabStack.top ms) sym then
-         raise Symbol.SymbolError (Symbol.pos sym, sym,
-                                   "A symbol with this name already exists in this scope.")
+         raise Symbol.SymbolError (Symbol.pos sym, "A symbol with this name already exists in this scope.", sym)
       else
          Moduletab.insert (ModuletabStack.top ms) (sym, entry)
 
@@ -88,8 +90,7 @@ structure Semant :> SEMANT = struct
 
    (* Wrap lookup functions so we only have to do error handling in one place. *)
    fun lookup (f, tbl, sym) =
-      f tbl sym handle _ => raise Symbol.SymbolError (Symbol.pos sym, sym,
-                                                      "Referenced symbol is unknown.")
+      f tbl sym handle _ => raise Symbol.SymbolError (Symbol.pos sym, "Referenced symbol is unknown.", sym)
 
    (* Look up an identifier in the environment.  The basic algorithm is:
     *   - For naked identifiers (ones that are not part of any module), simply
@@ -172,7 +173,7 @@ structure Semant :> SEMANT = struct
                            ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
                            before (!writeFn (symtabTopToString "exn-handler" ts'))
                         else
-                           raise Symbol.SymbolError (pos, sym, "Symbol is not an exception type.")
+                           raise Symbol.SymbolError (pos, "Symbol is not an exception type.", sym)
                     end
          (* The default handler only gets a skeleton entry added for the
           * exception type.
@@ -301,7 +302,7 @@ structure Semant :> SEMANT = struct
            * have an exception.
            *)
           fun getExnTy (Entry.EXN ty) = ty
-            | getExnTy _ = raise Symbol.IdError (id, "Symbol is not an exception type.")
+            | getExnTy _ = raise Symbol.IdError ("Symbol is not an exception type.", id)
 
           val entry = lookupId ts ms id Symbol.EXN_TYPE pos
           val exnTy = getExnTy entry
@@ -328,8 +329,8 @@ structure Semant :> SEMANT = struct
        in
           case SymtabStack.find ts sym of
              SOME (Entry.VALUE ty) => ty
-           | SOME _ => raise Symbol.SymbolError (pos, sym, "Referenced symbol is not a value.")
-           | NONE => raise Symbol.SymbolError (pos, sym, "Referenced symbol is unknown.")
+           | SOME _ => raise Symbol.SymbolError (pos, "Referenced symbol is not a value.", sym)
+           | NONE => raise Symbol.SymbolError (pos, "Referenced symbol is unknown.", sym)
        end
      | checkBaseExpr ts ms (Absyn.IfExp{test, then', else', ...}) = let
           val testTy = checkExpr ts ms test
@@ -451,7 +452,7 @@ structure Semant :> SEMANT = struct
                 val globalTs = SymtabStack.bottom ts
              in
                 if Symtab.inDomain globalTs sym then
-                   raise Symbol.SymbolError (pos, sym, "Type identifiers may not override symbols in the global scope.")
+                   raise Symbol.SymbolError (pos, "Type identifiers may not override symbols in the global scope.", sym)
                 else
                    (* Check that a type by this name is not already defined in
                     * this scope, though it's okay to shadow the name of a type

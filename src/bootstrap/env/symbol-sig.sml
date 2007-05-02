@@ -32,17 +32,20 @@ sig
    (* The key for symbol table operations. *)
    type symbol
 
-   (* problem symbol * error message *)
-   exception SymbolError of StreamPos.pos * symbol * string
+   (* position * error message * problem symbol *)
+   exception SymbolError of StreamPos.pos * string * symbol
 
-   (* problem identifier * error message *)
-   exception IdError of MString.mstring list * string
+   (* error message * problem identifier *)
+   exception IdError of string * MString.mstring list
 
    (* Are two symbols equal?  This must compare both the symbol names and the
     * subtable types.  Two symbols with the same name in different subtables
     * are not equal.
     *)
    val eq: symbol * symbol -> bool
+
+   (* Format an IdError exception for printing. *)
+   val idErrorToString: (string * MString.mstring list) -> string
 
    (* Hash a symbol for entry/lookup into a symbol table. *)
    val hash: symbol -> Word.word
@@ -61,6 +64,9 @@ sig
 
    (* Return the subtable a symbol exists in. *)
    val subtable: symbol -> Subtable
+
+   (* Format a SymbolError exception for printing. *)
+   val symbolErrorToString: (StreamPos.pos * string * symbol) -> string
 
    (* Perform the reverse operation - convert a symbol into a string that
     * is suitable for printing.

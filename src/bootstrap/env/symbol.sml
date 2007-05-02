@@ -20,9 +20,9 @@ struct
 
    type symbol = MString.mstring * Label.label * Subtable * StreamPos.pos
 
-   exception SymbolError of StreamPos.pos * symbol * string
+   exception SymbolError of StreamPos.pos * string * symbol
 
-   exception IdError of MString.mstring list * string
+   exception IdError of string * MString.mstring list
 
    fun eq (a: symbol, b: symbol) =
       (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
@@ -53,6 +53,12 @@ struct
 
    fun toSymbol (unicodeSym, subtable, pos) =
       (unicodeSym, Label.toLabel unicodeSym, subtable, pos)
+
+   fun symbolErrorToString (_, errorMsg, sym) =
+      (toString sym) ^ " : " ^ errorMsg
+
+   fun idErrorToString (errorMsg, id) =
+      (String.concatWith "." (map MString.toString id)) ^ " : " ^ errorMsg
 
    fun hash sym = let
       (* Add a character to the front of the symbol to discriminate among
