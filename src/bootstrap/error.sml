@@ -18,6 +18,10 @@ structure Error = struct
    (* error message *)
    exception InternalError of string
 
+   (* Format error messages to all look the same. *)
+   fun fmtError (filename, sm, pos, msg) =
+      filename ^ " " ^ (StreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
+
    (* A function to kill the compiler.  failure is a boolean for whether this
     * is an error case or not.  This function mainly exists to easily turn off
     * during development when we don't want to kill sml.

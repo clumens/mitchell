@@ -25,10 +25,6 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
 
    val sm = StreamPos.mkSourcemap ()
 
-   (* Format error messages to all look the same. *)
-   fun fmtError (filename, pos, msg) =
-      filename ^ " " ^ (StreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
-
    (* Create the output stream we're writing internal debugging output to. *)
    fun mkStream inFile Options.Stdout = TextIO.stdOut
      | mkStream inFile (Options.Default suffix) = TextIO.openOut (inFile ^ suffix)
@@ -51,7 +47,8 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
        * formatted output.
        *)
       fun repairToString tokToString sm (pos, repair) =
-         fmtError (filename, pos, "Parse error: " ^ Repair.actionToString tokToString repair)
+         Error.fmtError (filename, sm, pos,
+                         "Parse error: " ^ Repair.actionToString tokToString repair)
 
       (* Perform the actual parse.  If there are any repair error messages,
        * print them out and then quit.  Otherwise return the AST.
@@ -69,7 +66,7 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
 
       val ast = parse lexer (MitchellLex.streamifyInstream strm) sm
                 handle MitchellLex.UserDeclarations.TokenizeError e =>
-                   ( print (fmtError (filename, #1 e, #2 e)) ; quit true )
+                   ( print (Error.fmtError (filename, sm, #1 e, #2 e)) ; quit true )
    in
       (* What cases will cause parse to return NONE for the ast?  Perhaps we're
        * already handling those cases with TokenizeError and repairToString
@@ -100,8 +97,8 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
        *)
       Semant.checkProg (fn str => case strm of SOME strm => TextIO.output (strm, str)
                                              | NONE => ()) ast
-      handle Semant.TypeError e => ( print (fmtError (filename, #1 e, Semant.typeErrorToString e)) ; quit true )
-           | Symbol.SymbolError e => ( print (fmtError (filename, #1 e, Symbol.symbolErrorToString e)) ; quit true )
+      handle Semant.TypeError e => ( print (Error.fmtError (filename, sm, #1 e, Semant.typeErrorToString e)) ; quit true )
+           | Symbol.SymbolError e => ( print (Error.fmtError (filename, sm, #1 e, Symbol.symbolErrorToString e)) ; quit true )
    end
 
    (* This is where the magic happens. *)
