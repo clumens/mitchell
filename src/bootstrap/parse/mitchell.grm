@@ -52,25 +52,26 @@ module_decl:
 
 expr:
    LPAREN base_expr RPAREN handle_expr? =>
-      ( Absyn.Expr{expr=base_expr, pos=span2pos LPAREN_SPAN, exnHandler=handle_expr} )
- | base_expr => ( Absyn.Expr{expr=base_expr, pos=span2pos base_expr_SPAN,
-                             exnHandler=NONE} );
+      ( Absyn.Expr{expr=base_expr, exnHandler=handle_expr, pos=span2pos LPAREN_SPAN} )
+ | base_expr => ( Absyn.Expr{expr=base_expr, exnHandler=NONE, pos=span2pos base_expr_SPAN} );
 
 base_expr:
    record_literal          => ( record_literal )
- | LBRACK expr_lst? RBRACK => ( Absyn.ExprLstExp (Option.getOpt (expr_lst, [])))
+ | LBRACK expr_lst? RBRACK => ( Absyn.ExprLstExp (Option.getOpt (expr_lst, []),
+                                                  span2pos LBRACK_SPAN) )
  | case_expr               => ( case_expr )
  | decl_expr               => ( decl_expr )
  | if_expr                 => ( if_expr )
  | sym_ref                 => ( sym_ref )
- | RAISE expr              => ( Absyn.RaiseExp expr )
- | INTEGER                 => ( Absyn.IntegerExp INTEGER )
- | STRING                  => ( Absyn.StringExp STRING )
- | BOOLEAN                 => ( Absyn.BooleanExp BOOLEAN )
- | BOTTOM                  => ( Absyn.BottomExp );
+ | RAISE expr              => ( Absyn.RaiseExp (expr, span2pos RAISE_SPAN) )
+ | INTEGER                 => ( Absyn.IntegerExp (INTEGER, span2pos INTEGER_SPAN) )
+ | STRING                  => ( Absyn.StringExp (STRING, span2pos STRING_SPAN) )
+ | BOOLEAN                 => ( Absyn.BooleanExp (BOOLEAN, span2pos BOOLEAN_SPAN) )
+ | BOTTOM                  => ( Absyn.BottomExp (span2pos BOTTOM_SPAN) );
 
 record_literal:
-   LBRACE record_assn_lst RBRACE => ( Absyn.RecordAssnExp record_assn_lst );
+   LBRACE record_assn_lst RBRACE => ( Absyn.RecordAssnExp (record_assn_lst,
+                                                           span2pos LBRACE_SPAN) );
 
 record_assn_lst:
    single_record_assn (COMMA single_record_assn)* => ( [single_record_assn] @ SR );
@@ -83,7 +84,8 @@ expr_lst:
 
 case_expr:
    CASE expr IN branch_lst (COMMA ELSE MAPSTO expr)? END =>
-      ( Absyn.CaseExp{test=expr, branches=branch_lst, default=SR} );
+      ( Absyn.CaseExp{test=expr, branches=branch_lst, default=SR,
+                      pos=span2pos CASE_SPAN} );
 
 branch_lst:
    single_branch (COMMA single_branch)* => ( [single_branch] @ SR );
@@ -94,29 +96,30 @@ single_branch:
 branch_expr:
    id (LPAREN name_lst? RPAREN)? =>
       ( Absyn.UnionBranch (id, Option.getOpt (Option.getOpt (SR, NONE), [])) )
- | INTEGER  => ( Absyn.RegularBranch (Absyn.IntegerExp INTEGER) )
- | STRING   => ( Absyn.RegularBranch (Absyn.StringExp STRING) )
- | BOOLEAN  => ( Absyn.RegularBranch (Absyn.BooleanExp BOOLEAN) );
+ | INTEGER  => ( Absyn.RegularBranch (Absyn.IntegerExp (INTEGER, span2pos INTEGER_SPAN)) )
+ | STRING   => ( Absyn.RegularBranch (Absyn.StringExp (STRING, span2pos STRING_SPAN)) )
+ | BOOLEAN  => ( Absyn.RegularBranch (Absyn.BooleanExp (BOOLEAN, span2pos BOOLEAN_SPAN)) );
 
 decl_expr:
-   DECL decl+ IN expr END => ( Absyn.DeclExp{decls=decl, expr=expr} );
+   DECL decl+ IN expr END => ( Absyn.DeclExp{decls=decl, expr=expr, pos=span2pos DECL_SPAN} );
 
 if_expr:
-   IF expr THEN expr ELSE expr => ( Absyn.IfExp{test=expr1, then'=expr2, else'=expr3} );
+   IF expr THEN expr ELSE expr => ( Absyn.IfExp{test=expr1, then'=expr2, else'=expr3,
+                                                pos=span2pos IF_SPAN} );
 
 sym_ref:
    id complex_sym_ref@(id)? (PIPE IDENTIFIER)* =>
-      ( let val expr = Option.getOpt(complex_sym_ref, Absyn.IdExp id)
+      ( let val expr = Option.getOpt(complex_sym_ref, Absyn.IdExp (id, span2pos id_SPAN))
         in
            if List.null SR then expr
-           else Absyn.RecordRefExp{record=expr,
+           else Absyn.RecordRefExp{record=expr, pos=span2pos id_SPAN,
                                    ele=map (fn s => Symbol.toSymbol (s, Symbol.VALUE)) SR}
         end
       );
 
 complex_sym_ref(id):
    LPAREN (ty (COMMA ty)* => ([ty] @ SR))? SEMICOLON expr_lst? RPAREN =>
-      ( Absyn.FunCallExp{id=id, tyArgs=Option.getOpt(SR, []),
+      ( Absyn.FunCallExp{id=id, tyArgs=Option.getOpt(SR, []), pos=span2pos LPAREN_SPAN,
                          args=Option.getOpt(expr_lst, []), frees=[]}
       )
  | record_literal => ( record_literal );

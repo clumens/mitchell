@@ -45,22 +45,22 @@ structure Absyn = struct
                        exnHandler: {handlers: ExnHandler list, default: ExnHandler option,
                                     pos: pos} option}
 
-   and BaseExpr = BooleanExp of bool
-                | BottomExp
+   and BaseExpr = BooleanExp of (bool * pos)
+                | BottomExp of pos
                 | CaseExp of {test: Expr, default: Expr option,
-                              branches: (Branch * Expr) list}
-                | DeclExp of {decls: Decl list, expr: Expr}
-                | ExnExp of {id: id, values: (Symbol.symbol * Expr) list}
-                | ExprLstExp of Expr list
+                              branches: (Branch * Expr) list, pos: pos}
+                | DeclExp of {decls: Decl list, expr: Expr, pos: pos}
+                | ExnExp of {id: id, values: (Symbol.symbol * Expr) list, pos: pos}
+                | ExprLstExp of (Expr list * pos)
                 | FunCallExp of {id: id, args: Expr list, tyArgs: Ty list,
-                                 frees: Symbol.symbol list}
-                | IdExp of id
-                | IfExp of {test: Expr, then': Expr, else': Expr}
-                | IntegerExp of int
-                | RaiseExp of Expr
-                | RecordAssnExp of (Symbol.symbol * Expr) list
-                | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol list}
-                | StringExp of MString.mstring
+                                 frees: Symbol.symbol list, pos: pos}
+                | IdExp of (id * pos)
+                | IfExp of {test: Expr, then': Expr, else': Expr, pos: pos}
+                | IntegerExp of (int * pos)
+                | RaiseExp of (Expr * pos)
+                | RecordAssnExp of ((Symbol.symbol * Expr) list * pos)
+                | RecordRefExp of {record: BaseExpr, ele: Symbol.symbol list, pos: pos}
+                | StringExp of (MString.mstring * pos)
 
    and Ty = BottomTy of pos
           | ExnTy of {exn': (Symbol.symbol * Ty * pos) list, pos: pos}
@@ -190,11 +190,11 @@ structure Absyn = struct
          Option.app (fn v => writeExnHandlers (i+1) v) exnHandler
       end
 
-      and writeBaseExpr i (BooleanExp v) =
+      and writeBaseExpr i (BooleanExp (v, _)) =
              (indent i ; sayln ("BOOLEAN(" ^ Bool.toString v ^ ")"))
-        | writeBaseExpr i BottomExp =
+        | writeBaseExpr i (BottomExp _) =
              (indent i ; sayln "BOTTOM")
-        | writeBaseExpr i (CaseExp{test, default, branches}) =
+        | writeBaseExpr i (CaseExp{test, default, branches, ...}) =
              (indent i ; sayln "case = {" ;
               indent (i+1) ; sayln "test =" ; writeExpr (i+2) test ;
               << (i+1) "branches" (printLst branches writeOneBranch) ;
@@ -210,7 +210,7 @@ structure Absyn = struct
               writeIdRef (i+1) id ;
               << (i+1) "values" (printLst values writeAssnExpr) ;
               indent i ; sayln "}")
-        | writeBaseExpr i (ExprLstExp lst) =
+        | writeBaseExpr i (ExprLstExp (lst, _)) =
              << i "expr_lst" (printLst lst writeExpr)
         | writeBaseExpr i (FunCallExp{id, args, tyArgs, ...}) =
              (indent i ; sayln "function = {" ;
@@ -218,26 +218,26 @@ structure Absyn = struct
               if length tyArgs > 0 then << (i+1) "tyArgs" (printLst tyArgs writeTy) else () ;
               if length args > 0 then << (i+1) "args" (printLst args writeExpr) else () ;
               indent i ; sayln "}")
-        | writeBaseExpr i (IdExp v) =
+        | writeBaseExpr i (IdExp (v, _)) =
              writeIdRef i v
-        | writeBaseExpr i (IfExp{test, then', else'}) =
+        | writeBaseExpr i (IfExp{test, then', else', ...}) =
              (indent i ; sayln "if = {" ;
               indent (i+1) ; sayln "test = " ; writeExpr (i+2) test ;
               indent (i+1) ; sayln "then = " ; writeExpr (i+2) then' ;
               indent (i+1) ; sayln "else = " ; writeExpr (i+2) else' ;
               indent i ; sayln "}")
-        | writeBaseExpr i (IntegerExp v) =
+        | writeBaseExpr i (IntegerExp (v, _)) =
              (indent i ; sayln ("INTEGER(" ^ Int.toString v ^ ")"))
-        | writeBaseExpr i (RaiseExp expr) =
+        | writeBaseExpr i (RaiseExp (expr, _)) =
              (indent i ; sayln "raise_expr = "; writeExpr (i+1) expr)
-        | writeBaseExpr i (RecordAssnExp lst) =
+        | writeBaseExpr i (RecordAssnExp (lst, _)) =
              << i "record_assn_expr" (printLst lst writeAssnExpr)
-        | writeBaseExpr i (RecordRefExp{record, ele}) =
+        | writeBaseExpr i (RecordRefExp{record, ele, ...}) =
              (indent i ; sayln "record_expr = {" ;
               indent (i+1) ; sayln "record =" ; writeBaseExpr (i+2) record ;
               << i "element =" ; (printLst ele writeSymbol) ;
               indent i ; sayln "}")
-        | writeBaseExpr i (StringExp v) =
+        | writeBaseExpr i (StringExp (v, _)) =
              (indent i ; sayln ("STRING(" ^ MString.toString v ^ ")"))
 
       and writeTy i (BottomTy _) = (indent i ; sayln "ty = BOTTOM")

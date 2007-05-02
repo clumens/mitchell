@@ -219,9 +219,9 @@ structure Semant :> SEMANT = struct
              exprTy
        end
 
-   and checkBaseExpr ts ms (Absyn.BooleanExp b) = Types.BOOLEAN
-     | checkBaseExpr ts ms (Absyn.BottomExp) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches}) = let
+   and checkBaseExpr ts ms (Absyn.BooleanExp _) = Types.BOOLEAN
+     | checkBaseExpr ts ms (Absyn.BottomExp _) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches, ...}) = let
           fun checkBranch ts ms (Absyn.RegularBranch expr) =
                  (ts, ms, checkBaseExpr ts ms expr)
             | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = (ts, ms, Types.BOTTOM)
@@ -283,7 +283,7 @@ structure Semant :> SEMANT = struct
              (* Just return the type of the first branch expression. *)
              hd exprTyLst
        end
-     | checkBaseExpr ts ms (Absyn.DeclExp{decls, expr}) = let
+     | checkBaseExpr ts ms (Absyn.DeclExp{decls, expr, ...}) = let
           (* Create a new environment for the body of the decl-expr to execute
            * in, then check it against that environment.
            *)
@@ -292,7 +292,7 @@ structure Semant :> SEMANT = struct
        in
           (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "decl-expr" ts'))
        end
-     | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = let
+     | checkBaseExpr ts ms (Absyn.ExnExp{id, values, ...}) = let
           (* Exceptions and types are in the same namespace, so make sure we
            * have an exception.
            *)
@@ -310,7 +310,7 @@ structure Semant :> SEMANT = struct
           else
              exnTy
        end
-     | checkBaseExpr ts ms (Absyn.ExprLstExp exprs) = (
+     | checkBaseExpr ts ms (Absyn.ExprLstExp (exprs, _)) = (
           case checkBadEle (checkExpr ts ms) exprs of
              (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
                 raise TypeError (pos, "Inconsistent types in expression list.",
@@ -319,7 +319,7 @@ structure Semant :> SEMANT = struct
            | (firstTy, _) => firstTy
           )
      | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.IdExp id) = let
+     | checkBaseExpr ts ms (Absyn.IdExp (id, _)) = let
           val sym = Symbol.toSymbol ((hd id), Symbol.VALUE)
        in
           case SymtabStack.find ts sym of
@@ -327,29 +327,29 @@ structure Semant :> SEMANT = struct
            | SOME _ => raise Symbol.SymbolError (sym, "Referenced symbol is not a value.")
            | NONE => raise Symbol.SymbolError (sym, "Referenced symbol is unknown.")
        end
-     | checkBaseExpr ts ms (Absyn.IfExp{test as Absyn.Expr{pos=testPos, ...}, then',
-                                        else' as Absyn.Expr{pos=elsePos, ...}}) = let
+     | checkBaseExpr ts ms (Absyn.IfExp{test, then', else', ...}) = let
           val testTy = checkExpr ts ms test
           val thenTy = checkExpr ts ms then'
           val elseTy = checkExpr ts ms else'
        in
           if not (Types.eq (Types.BOOLEAN, testTy)) then
-             raise TypeError (testPos, "if expression must return a boolean type",
+             raise TypeError (exprPos test, "if expression must return a boolean type",
                               "expected type", Types.BOOLEAN, "if expr type", testTy)
           else
              if not (Types.eq (thenTy, elseTy)) then
-                raise TypeError (elsePos, "then and else expressions must have the same type",
+                raise TypeError (exprPos else',
+                                 "then and else expressions must have the same type",
                                  "then expression type", thenTy,
                                  "else expression type", elseTy)
              else
                 thenTy
        end
-     | checkBaseExpr ts ms (Absyn.IntegerExp i) = Types.INTEGER
-     | checkBaseExpr ts ms (Absyn.RaiseExp expr) = ( checkExpr ts ms expr ; Types.ANY Types.UNVISITED )
-     | checkBaseExpr ts ms (Absyn.RecordAssnExp lst) =
+     | checkBaseExpr ts ms (Absyn.IntegerExp _) = Types.INTEGER
+     | checkBaseExpr ts ms (Absyn.RaiseExp (expr, _)) = ( checkExpr ts ms expr ; Types.ANY Types.UNVISITED )
+     | checkBaseExpr ts ms (Absyn.RecordAssnExp (lst, _)) =
           Types.RECORD (checkNamedExprLst checkExpr ts ms lst, Types.UNVISITED)
-     | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele}) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.StringExp s) = Types.STRING
+     | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele, pos}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.StringExp _) = Types.STRING
 
    and checkTy ts ms ast = Absyn.absynToTy ast
 
