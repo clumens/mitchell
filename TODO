@@ -20,4 +20,3 @@
 - symbol table / type checker:
    - does it make sense to keep the symtab and moduletab in a tree
      structure that parallels the AST instead of in the AST itself?
-   - symbols need position information
