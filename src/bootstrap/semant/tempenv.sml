@@ -24,7 +24,7 @@ structure TempEnv :> sig
                      end = struct
    (* Wrappers to create symbols. *)
    local
-      fun mkSym str ty = Symbol.toSymbol (MString.fromString str, ty)
+      fun mkSym str ty = Symbol.toSymbol (MString.fromString str, ty, 0)
    in
       fun funSym str = mkSym str Symbol.FUN_TYCON
       fun typeSym str = mkSym str Symbol.EXN_TYPE
@@ -82,8 +82,8 @@ structure TempEnv :> sig
        *)
       val integerSymtab = mkIntegerEnv ()
       val booleanSymtab = mkBooleanEnv ()
-      val integerSym = Symbol.toSymbol (MString.fromString "Integer", Symbol.MODULE)
-      val booleanSym = Symbol.toSymbol (MString.fromString "Boolean", Symbol.MODULE)
+      val integerSym = Symbol.toSymbol (MString.fromString "Integer", Symbol.MODULE, 0)
+      val booleanSym = Symbol.toSymbol (MString.fromString "Boolean", Symbol.MODULE, 0)
 
       (* Add the symbols to the global environments. *)
       val _ = Symtab.insert globalSymtab (integerSym, Entry.MODULE)

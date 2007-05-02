@@ -41,7 +41,9 @@ start:
 
 module_decl:
    MODULE IDENTIFIER ASSIGN DECL top_decl+ END =>
-      ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE), decls=top_decl,
+      ( Absyn.ModuleDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.MODULE,
+                                              span2pos IDENTIFIER_SPAN),
+                         decls=top_decl,
                          moduletab=Moduletab.mkTable (47, ModuletabStack.NotFound),
                          symtab=Symtab.mkTable (47, SymtabStack.NotFound),
                          pos=span2pos MODULE_SPAN}
@@ -77,7 +79,8 @@ record_assn_lst:
    single_record_assn (COMMA single_record_assn)* => ( [single_record_assn] @ SR );
 
 single_record_assn:
-   IDENTIFIER ASSIGN expr => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), expr) );
+   IDENTIFIER ASSIGN expr => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE,
+                                                 span2pos IDENTIFIER_SPAN), expr) );
 
 expr_lst:
    expr (COMMA expr)* => ( [expr] @ SR );
@@ -113,7 +116,7 @@ sym_ref:
         in
            if List.null SR then expr
            else Absyn.RecordRefExp{record=expr, pos=span2pos id_SPAN,
-                                   ele=map (fn s => Symbol.toSymbol (s, Symbol.VALUE)) SR}
+                                   ele=map (fn s => Symbol.toSymbol (s, Symbol.VALUE, span2pos id_SPAN)) SR}
         end
       );
 
@@ -131,10 +134,12 @@ handle_expr:
    HANDLE ELSE IDENTIFIER MAPSTO expr END =>
       ( {handlers=[], pos=span2pos HANDLE_SPAN,
          default=SOME (Absyn.ExnHandler{exnKind=NONE, expr=expr, pos=span2pos IDENTIFIER_SPAN,
-                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)})} )
+                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE,
+                                                             span2pos IDENTIFIER_SPAN)})} )
  | HANDLE exn_lst (COMMA ELSE IDENTIFIER MAPSTO expr =>
                      ( Absyn.ExnHandler{exnKind=NONE, expr=expr, pos=span2pos ELSE_SPAN,
-                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)} )
+                                        sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE,
+                                                             span2pos IDENTIFIER_SPAN)} )
                   )? END =>
       ( {handlers=exn_lst, default=SR, pos=span2pos HANDLE_SPAN} );
 
@@ -143,8 +148,9 @@ exn_lst:
 
 single_exn:
    id IDENTIFIER MAPSTO expr =>
-      ( Absyn.ExnHandler{exnKind=SOME id, expr=expr, pos=span2pos id_SPAN, 
-                         sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE)}
+      ( Absyn.ExnHandler{exnKind=SOME id, expr=expr, pos=span2pos id_SPAN,
+                         sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE,
+                                              span2pos IDENTIFIER_SPAN)}
       );
 
 
@@ -155,13 +161,14 @@ id:
 
 name_lst:
    IDENTIFIER (COMMA IDENTIFIER)* =>
-      ( map (fn s => Symbol.toSymbol (s, Symbol.VALUE)) ([IDENTIFIER] @ SR) );
+      ( map (fn s => Symbol.toSymbol (s, Symbol.VALUE, span2pos IDENTIFIER_SPAN)) ([IDENTIFIER] @ SR) );
 
 typed_name_lst:
    typed_name (COMMA typed_name)* => ( [typed_name] @ SR );
 
 typed_name:
-   IDENTIFIER COLON ty => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), ty,
+   IDENTIFIER COLON ty => ( (Symbol.toSymbol (IDENTIFIER, Symbol.VALUE,
+                                              span2pos IDENTIFIER_SPAN), ty,
                              span2pos IDENTIFIER_SPAN) );
 
 
@@ -175,8 +182,9 @@ decl:
 
 fun_decl:
    FUNCTION IDENTIFIER LPAREN ty_formals_lst SEMICOLON formals_lst RPAREN (COLON ty)? ASSIGN expr =>
-      ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON), absynTy=SR,
-                      pos=span2pos FUNCTION_SPAN, formals=formals_lst,
+      ( Absyn.FunDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON,
+                                           span2pos IDENTIFIER_SPAN),
+                      absynTy=SR, pos=span2pos FUNCTION_SPAN, formals=formals_lst,
                       tyFormals=ty_formals_lst, calls=[], body=expr} );
 
 formals_lst:
@@ -188,8 +196,9 @@ top_decl:
 
 ty_decl:
    TYPE IDENTIFIER (LPAREN name_lst RPAREN)? ASSIGN ty =>
-      ( Absyn.TyDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE), absynTy=ty,
-                     tyvars=SR, pos=span2pos TYPE_SPAN}
+      ( Absyn.TyDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.EXN_TYPE,
+                                          span2pos IDENTIFIER_SPAN),
+                     absynTy=ty, tyvars=SR, pos=span2pos TYPE_SPAN}
       );
 
 ty_formals_lst:
@@ -197,8 +206,9 @@ ty_formals_lst:
 
 val_decl:
    VAL IDENTIFIER (COLON ty)? ASSIGN expr =>
-      ( Absyn.ValDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.VALUE), absynTy=SR,
-                      init=expr, pos=span2pos VAL_SPAN} );
+      ( Absyn.ValDecl{sym=Symbol.toSymbol (IDENTIFIER, Symbol.VALUE,
+                                           span2pos IDENTIFIER_SPAN),
+                      absynTy=SR, init=expr, pos=span2pos VAL_SPAN} );
 
 
 (* TYPES *)
@@ -218,7 +228,8 @@ tycon_lst:
    tycon (COMMA tycon)* => ( [tycon] @ SR );
 
 tycon:
-   IDENTIFIER (COLON ty)? => ( let val sym = Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON)
+   IDENTIFIER (COLON ty)? => ( let val sym = Symbol.toSymbol (IDENTIFIER, Symbol.FUN_TYCON,
+                                                              span2pos IDENTIFIER_SPAN)
                                in (sym, SR, span2pos IDENTIFIER_SPAN)
                                end
                              );

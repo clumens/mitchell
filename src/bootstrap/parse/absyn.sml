@@ -86,14 +86,14 @@ structure Absyn = struct
     * This is just as good a place.
     *)
    local
-      fun checkForDupes lst msg =
-         case ListMisc.findDup Symbol.nameGt lst of
-            SOME dup => raise Symbol.SymbolError (dup, msg)
+      fun checkForDupes symLst pos msg =
+         case ListMisc.findDup Symbol.nameGt symLst of
+            SOME dup => raise Symbol.SymbolError (pos, dup, msg)
           | NONE => ()
    in
       fun absynToTy (BottomTy _) = Types.BOTTOM
-        | absynToTy (ExnTy{exn', ...}) = let
-             val _ = checkForDupes (map #1 exn')"Exception definition already includes a symbol with this name."
+        | absynToTy (ExnTy{exn', pos}) = let
+             val _ = checkForDupes (map #1 exn') pos "Exception definition already includes a symbol with this name."
           in
              Types.EXN (map (fn ele => (#1 ele, absynToTy (#2 ele))) exn', Types.UNVISITED)
           end
@@ -101,13 +101,13 @@ structure Absyn = struct
              (* FIXME - write this one *)
              Types.BOTTOM
         | absynToTy (ListTy{lst, ...}) = Types.LIST (absynToTy lst, Types.UNVISITED)
-        | absynToTy (RecordTy{record, ...}) = let
-             val _ = checkForDupes (map #1 record) "Record definition already includes a symbol with this name."
+        | absynToTy (RecordTy{record, pos}) = let
+             val _ = checkForDupes (map #1 record) pos "Record definition already includes a symbol with this name."
           in
              Types.RECORD (map (fn ele => (#1 ele, absynToTy (#2 ele))) record, Types.UNVISITED)
           end
-        | absynToTy (UnionTy{tycons, ...}) = let
-             val _ = checkForDupes (map #1 tycons) "Union type definition already includdes a symbol with this name."
+        | absynToTy (UnionTy{tycons, pos}) = let
+             val _ = checkForDupes (map #1 tycons) pos "Union type definition already includdes a symbol with this name."
           in
              Types.UNION (map (fn ele => (#1 ele, Option.map absynToTy (#2 ele))) tycons,
                           Types.UNVISITED)

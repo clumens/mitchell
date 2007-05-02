@@ -53,20 +53,22 @@ structure Semant :> SEMANT = struct
    (* Search a symbol list and error if a duplicate name is found. *)
    fun findDupEle lst =
       case ListMisc.findDup Symbol.nameGt lst of
-         SOME dup => raise Symbol.SymbolError (dup, "List already includes a symbol with this name.")
+         SOME dup => raise Symbol.SymbolError (Symbol.pos dup, dup, "List already includes a symbol with this name.")
        | _ => ()
 
    (* Wrap Symtab.insert, raising the appropriate exceptions. *)
    fun insertSym ts (sym, entry) =
       if Symtab.inDomain (SymtabStack.top ts) sym then
-         raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
+         raise Symbol.SymbolError (Symbol.pos sym, sym,
+                                   "A symbol with this name already exists in this scope.")
       else
          Symtab.insert (SymtabStack.top ts) (sym, entry)
 
    (* Likewise for Moduletab.insert. *)
    fun insertModuleSym ms (sym, entry) =
       if Moduletab.inDomain (ModuletabStack.top ms) sym then
-         raise Symbol.SymbolError (sym, "A symbol with this name already exists in this scope.")
+         raise Symbol.SymbolError (Symbol.pos sym, sym,
+                                   "A symbol with this name already exists in this scope.")
       else
          Moduletab.insert (ModuletabStack.top ms) (sym, entry)
 
@@ -86,7 +88,8 @@ structure Semant :> SEMANT = struct
 
    (* Wrap lookup functions so we only have to do error handling in one place. *)
    fun lookup (f, tbl, sym) =
-      f tbl sym handle _ => raise Symbol.SymbolError (sym, "Referenced symbol is unknown.")
+      f tbl sym handle _ => raise Symbol.SymbolError (Symbol.pos sym, sym,
+                                                      "Referenced symbol is unknown.")
 
    (* Look up an identifier in the environment.  The basic algorithm is:
     *   - For naked identifiers (ones that are not part of any module), simply
@@ -100,17 +103,18 @@ structure Semant :> SEMANT = struct
     *     final module's symbol table.
     * This algorithm is described more in docs/typing.
     *)
-   fun lookupId ts ms [] kind =
+   fun lookupId ts ms [] kind pos =
           raise InternalError "Empty identifier list passed to lookupId"
-     | lookupId ts ms (id::[]) kind = SymtabStack.lookup ts (Symbol.toSymbol (id, kind))
-     | lookupId ts ms (topModule::rest) kind = let
+     | lookupId ts ms (id::[]) kind pos =
+          SymtabStack.lookup ts (Symbol.toSymbol (id, kind, pos))
+     | lookupId ts ms (topModule::rest) kind pos = let
           fun doLookup (tbl as Absyn.ModuleDecl _) [] kind =
                  raise InternalError "Identifier only consists of module references."
             | doLookup (tbl as Absyn.ModuleDecl{symtab, ...}) (id::[]) kind =
-                 lookup (Symtab.lookup, symtab, Symbol.toSymbol (id, kind))
+                 lookup (Symtab.lookup, symtab, Symbol.toSymbol (id, kind, pos))
             | doLookup (tbl as Absyn.ModuleDecl{moduletab, ...}) (module::rest) kind = let
                  val nextTbl = lookup (Moduletab.lookup, moduletab,
-                                       Symbol.toSymbol (module, Symbol.MODULE))
+                                       Symbol.toSymbol (module, Symbol.MODULE, pos))
               in
                  doLookup nextTbl rest kind
               end
@@ -118,7 +122,7 @@ structure Semant :> SEMANT = struct
                  raise InternalError "AST node besides ModuleDecl stored in moduletab."
 
           val moduleTbl = lookup (ModuletabStack.lookup, ms,
-                                  Symbol.toSymbol (topModule, Symbol.MODULE))
+                                  Symbol.toSymbol (topModule, Symbol.MODULE, pos))
        in
           doLookup moduleTbl rest kind
        end
@@ -147,7 +151,7 @@ structure Semant :> SEMANT = struct
       (checkDeclLst ts ms lst) before (!writeFn (symtabTopToString "Global" ts))
    end
 
-   and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, ...}) = let
+   and checkExnHandler ts ms (Absyn.ExnHandler{exnKind, sym, expr, pos}) = let
       fun isExn (Entry.EXN _) = true | isExn _ = false
 
       (* Since exception handlers can create new bindings (for the exception
@@ -161,14 +165,14 @@ structure Semant :> SEMANT = struct
           * exception value into the new symbol table and check the handler
           * against that environment.
           *)
-         SOME id => let val entry = lookupId ts ms id Symbol.EXN_TYPE
+         SOME id => let val entry = lookupId ts ms id Symbol.EXN_TYPE pos
                     in
                         (* Exceptions and types are in the same namespace. *)
                         if isExn entry then
                            ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
                            before (!writeFn (symtabTopToString "exn-handler" ts'))
                         else
-                           raise Symbol.SymbolError (sym, "Symbol is not an exception type.")
+                           raise Symbol.SymbolError (pos, sym, "Symbol is not an exception type.")
                     end
          (* The default handler only gets a skeleton entry added for the
           * exception type.
@@ -292,14 +296,14 @@ structure Semant :> SEMANT = struct
        in
           (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "decl-expr" ts'))
        end
-     | checkBaseExpr ts ms (Absyn.ExnExp{id, values, ...}) = let
+     | checkBaseExpr ts ms (Absyn.ExnExp{id, values, pos}) = let
           (* Exceptions and types are in the same namespace, so make sure we
            * have an exception.
            *)
           fun getExnTy (Entry.EXN ty) = ty
             | getExnTy _ = raise Symbol.IdError (id, "Symbol is not an exception type.")
 
-          val entry = lookupId ts ms id Symbol.EXN_TYPE
+          val entry = lookupId ts ms id Symbol.EXN_TYPE pos
           val exnTy = getExnTy entry
           val valuesTy = Types.EXN (checkNamedExprLst checkExpr ts ms values, Types.UNVISITED)
        in
@@ -319,13 +323,13 @@ structure Semant :> SEMANT = struct
            | (firstTy, _) => firstTy
           )
      | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.IdExp (id, _)) = let
-          val sym = Symbol.toSymbol ((hd id), Symbol.VALUE)
+     | checkBaseExpr ts ms (Absyn.IdExp (id, pos)) = let
+          val sym = Symbol.toSymbol ((hd id), Symbol.VALUE, pos)
        in
           case SymtabStack.find ts sym of
              SOME (Entry.VALUE ty) => ty
-           | SOME _ => raise Symbol.SymbolError (sym, "Referenced symbol is not a value.")
-           | NONE => raise Symbol.SymbolError (sym, "Referenced symbol is unknown.")
+           | SOME _ => raise Symbol.SymbolError (pos, sym, "Referenced symbol is not a value.")
+           | NONE => raise Symbol.SymbolError (pos, sym, "Referenced symbol is unknown.")
        end
      | checkBaseExpr ts ms (Absyn.IfExp{test, then', else', ...}) = let
           val testTy = checkExpr ts ms test
@@ -439,7 +443,7 @@ structure Semant :> SEMANT = struct
           * real type information.
           *)
          fun round1 ts ms [] = ()
-           | round1 ts ms (Absyn.TyDecl{sym, ...}::rest) = let
+           | round1 ts ms (Absyn.TyDecl{sym, pos, ...}::rest) = let
                 (* User-defined types are not allowed to override the types in
                  * the global environment, since that contains the base types of
                  * the language.
@@ -447,7 +451,7 @@ structure Semant :> SEMANT = struct
                 val globalTs = SymtabStack.bottom ts
              in
                 if Symtab.inDomain globalTs sym then
-                   raise Symbol.SymbolError (sym, "Type identifiers may not override symbols in the global scope.")
+                   raise Symbol.SymbolError (pos, sym, "Type identifiers may not override symbols in the global scope.")
                 else
                    (* Check that a type by this name is not already defined in
                     * this scope, though it's okay to shadow the name of a type
