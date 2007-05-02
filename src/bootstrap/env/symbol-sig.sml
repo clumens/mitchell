@@ -33,7 +33,7 @@ sig
    type symbol
 
    (* problem symbol * error message *)
-   exception SymbolError of symbol * string
+   exception SymbolError of StreamPos.pos * symbol * string
 
    (* problem identifier * error message *)
    exception IdError of MString.mstring list * string
@@ -56,6 +56,9 @@ sig
     *)
    val nameGt: symbol * symbol -> bool
 
+   (* Return the position of a symbol in the input stream. *)
+   val pos: symbol -> StreamPos.pos
+
    (* Return the subtable a symbol exists in. *)
    val subtable: symbol -> Subtable
 
@@ -68,5 +71,5 @@ sig
     * The subtable is used to discriminate between the various kinds of symbols
     * that can all have the same name but live in the same table.
     *)
-   val toSymbol: MString.mstring * Subtable -> symbol
+   val toSymbol: MString.mstring * Subtable * StreamPos.pos -> symbol
 end

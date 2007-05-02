@@ -18,9 +18,9 @@ structure Symbol :> SYMBOL =
 struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
-   type symbol = MString.mstring * Label.label * Subtable
+   type symbol = MString.mstring * Label.label * Subtable * StreamPos.pos
 
-   exception SymbolError of symbol * string
+   exception SymbolError of StreamPos.pos * symbol * string
 
    exception IdError of MString.mstring list * string
 
@@ -36,6 +36,9 @@ struct
    fun nameGt (a, b) =
       MString.> (name a, name b)
 
+   fun pos (sym: symbol) =
+      #4 sym
+
    fun subtable (sym: symbol) =
       #3 sym
 
@@ -48,8 +51,8 @@ struct
       hdr ^ MString.toString (name sym) ^ "," ^ Label.toString (#2 sym) ^ "}"
    end
 
-   fun toSymbol (unicodeSym, subtable) =
-      (unicodeSym, Label.toLabel unicodeSym, subtable)
+   fun toSymbol (unicodeSym, subtable, pos) =
+      (unicodeSym, Label.toLabel unicodeSym, subtable, pos)
 
    fun hash sym = let
       (* Add a character to the front of the symbol to discriminate among
