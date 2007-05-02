@@ -96,6 +96,9 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
       fun fmtTypeError (_, errMsg, expectedMsg, expectedTy, gotMsg, gotTy) =
          errMsg ^ ":\n\t" ^ expectedMsg ^ ":\t" ^ (Types.toString expectedTy) ^
                   "\n\t" ^ gotMsg ^ ":\t" ^ (Types.toString gotTy)
+
+      fun fmtSymError (_, sym, errMsg) =
+         (Symbol.toString sym) ^ ": " ^ errMsg
    in
       (* The function we're passing here is for dumping out the symbol tables.
        * It takes a string and writes it to a previously opened stream, which
@@ -105,6 +108,7 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
       Semant.checkProg (fn str => case strm of SOME strm => TextIO.output (strm, str)
                                              | NONE => ()) ast
       handle Semant.TypeError e => ( print (fmtError (filename, #1 e, fmtTypeError e)) ; quit true )
+           | Symbol.SymbolError e => ( print (fmtError (filename, #1 e, fmtSymError e)) ; quit true )
    end
 
    (* This is where the magic happens. *)
