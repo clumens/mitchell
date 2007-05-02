@@ -34,15 +34,21 @@ structure Semant :> SEMANT = struct
     * for raising any exceptions, we need to pair the returned type up with its
     * matching element.
     *)
-   fun findBadEle f lst = let
-      val lst' = ListPair.zip (map f lst, lst)
-      val firstTy = #1 (hd lst')
-      val badEle = List.find (fn (ty, expr) => not (Types.eq (ty, firstTy))) lst'
+   fun findBadEle lst = let
+      val firstTy = #1 (hd lst)
+      val badEle = List.find (fn (ty, expr) => not (Types.eq (ty, firstTy))) lst
    in
       case badEle of
          SOME x => (firstTy, SOME x)
        | NONE => (firstTy, NONE)
    end
+
+   (* Same as above, but do the type checking at the same time. *)
+   fun checkBadEle f lst =
+      findBadEle (ListPair.zip (map f lst, lst))
+
+   (* Return the position from an expression, of course. *)
+   fun exprPos (Absyn.Expr{pos, ...}) = pos
 
    (* Search a symbol list and error if a duplicate name is found. *)
    fun findDupEle lst =
@@ -174,7 +180,7 @@ structure Semant :> SEMANT = struct
 
    and checkExnHandlerLst ts ms ([], SOME default) = checkExnHandler ts ms default
      | checkExnHandlerLst ts ms (handlers, NONE) = (
-          case findBadEle (checkExnHandler ts ms) handlers of
+          case checkBadEle (checkExnHandler ts ms) handlers of
              (firstTy, SOME (ty, Absyn.ExnHandler{pos, ...})) =>
                 raise TypeError (pos, "Inconsistent types in exception handler list.",
                                  "previous exception handler type", firstTy,
@@ -199,9 +205,6 @@ structure Semant :> SEMANT = struct
 
    and checkIdRef ts ms id = Types.BOTTOM
 
-   and checkBranch ts ms (Absyn.RegularBranch expr) = Types.BOTTOM
-     | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = Types.BOTTOM
-
    and checkExpr ts ms (Absyn.Expr{expr, exnHandler as NONE, ...}) = checkBaseExpr ts ms expr
      | checkExpr ts ms (Absyn.Expr{expr, exnHandler as SOME ({handlers, default, pos, ...}), ...}) =
        let
@@ -218,7 +221,68 @@ structure Semant :> SEMANT = struct
 
    and checkBaseExpr ts ms (Absyn.BooleanExp b) = Types.BOOLEAN
      | checkBaseExpr ts ms (Absyn.BottomExp) = Types.BOTTOM
-     | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches}) = let
+          fun checkBranch ts ms (Absyn.RegularBranch expr) =
+                 (ts, ms, checkBaseExpr ts ms expr)
+            | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = (ts, ms, Types.BOTTOM)
+
+          (* UnionBranches can introduce new bindings, so we have to check the
+           * branch to build a new environment and then the expression against
+           * the augmented environment.
+           *)
+          fun checkPair ts ms (branch, expr) = let
+             val (ts', ms', branchTy) = checkBranch ts ms branch
+          in
+             (branchTy, checkExpr ts' ms' expr)
+          end
+
+          fun verifyTyLst tyLst exprLst errMsg =
+             case findBadEle (ListPair.zip (tyLst, exprLst)) of
+                (firstTy, SOME (ty, expr)) =>
+                   raise TypeError (exprPos expr, errMsg, "previous type", firstTy,
+                                    "this type", ty)
+              | _ => ()
+
+          (* FIXME: testTy must be a boolean, integer, string, or union type *)
+          val testTy = checkExpr ts ms test
+
+          (* Build up a list of types for the branches of the case, and a
+           * list of the types for the matching expressions.  Then we have to
+           * make sure that all the branch types are the same (and the same as
+           * testTy) and that all the expression types are the same.
+           *)
+          val (branchTyLst, exprTyLst) = ListPair.unzip (map (checkPair ts ms) branches)
+          val _ = verifyTyLst branchTyLst (map #2 branches) "Inconsistent types in branch list."
+          val _ = if not (Types.eq (hd branchTyLst, testTy)) then
+                     raise TypeError (exprPos test, "Branch test must have the same type as the test expression.",
+                                      "test expression type", testTy,
+                                      "branch test type", hd branchTyLst)
+                  else
+                     ()
+          val _ = verifyTyLst exprTyLst (map #2 branches) "Inconsistent types in case branch expressions."
+       in
+          if Option.isSome default then let
+                val default' = Option.valOf default
+                val defaultTy = checkExpr ts ms default'
+             in
+                (* Make sure the default expression has the same type as all the
+                 * other expressions in the case.
+                 *)
+                 if not (Types.eq (hd exprTyLst, defaultTy)) then
+                    raise TypeError (exprPos default', "Default expression type does not match type of branch expressions.",
+                                     "branch expression type", hd exprTyLst,
+                                     "default expression type", defaultTy)
+                 else
+                    defaultTy
+             end
+          else
+             (* FIXME:  need to check that all possibilities are covered if
+              * there's no default branch.
+              *)
+
+             (* Just return the type of the first branch expression. *)
+             hd exprTyLst
+       end
      | checkBaseExpr ts ms (Absyn.DeclExp{decls, expr}) = let
           (* Create a new environment for the body of the decl-expr to execute
            * in, then check it against that environment.
@@ -229,8 +293,6 @@ structure Semant :> SEMANT = struct
           (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "decl-expr" ts'))
        end
      | checkBaseExpr ts ms (Absyn.ExnExp{id, values}) = let
-          fun exprPos (Absyn.Expr{pos, ...}) = pos
-
           (* Exceptions and types are in the same namespace, so make sure we
            * have an exception.
            *)
@@ -249,7 +311,7 @@ structure Semant :> SEMANT = struct
              exnTy
        end
      | checkBaseExpr ts ms (Absyn.ExprLstExp exprs) = (
-          case findBadEle (checkExpr ts ms) exprs of
+          case checkBadEle (checkExpr ts ms) exprs of
              (firstTy, SOME (ty, Absyn.Expr{pos, ...})) =>
                 raise TypeError (pos, "Inconsistent types in expression list.",
                                  "previous expression type", firstTy,
