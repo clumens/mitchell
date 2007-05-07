@@ -88,10 +88,6 @@ structure Semant :> SEMANT = struct
       map (fn (sym, expr) => (sym, f ts ms expr)) lst
    end
 
-   (* Wrap lookup functions so we only have to do error handling in one place. *)
-   fun lookup (f, tbl, sym) =
-      f tbl sym handle _ => raise Symbol.SymbolError (Symbol.pos sym, "Referenced symbol is unknown.", sym)
-
    (* Look up an identifier in the environment.  The basic algorithm is:
     *   - For naked identifiers (ones that are not part of any module), simply
     *     look them up in the symbol table stack from most local towards the
@@ -104,29 +100,34 @@ structure Semant :> SEMANT = struct
     *     final module's symbol table.
     * This algorithm is described more in docs/typing.
     *)
-   fun lookupId ts ms [] kind pos =
-          raise InternalError "Empty identifier list passed to lookupId"
-     | lookupId ts ms (id::[]) kind pos =
-          SymtabStack.lookup ts (Symbol.toSymbol (id, kind, pos))
-     | lookupId ts ms (topModule::rest) kind pos = let
-          fun doLookup (tbl as Absyn.ModuleDecl _) [] kind =
-                 raise InternalError "Identifier only consists of module references."
-            | doLookup (tbl as Absyn.ModuleDecl{symtab, ...}) (id::[]) kind =
-                 lookup (Symtab.lookup, symtab, Symbol.toSymbol (id, kind, pos))
-            | doLookup (tbl as Absyn.ModuleDecl{moduletab, ...}) (module::rest) kind = let
-                 val nextTbl = lookup (Moduletab.lookup, moduletab,
-                                       Symbol.toSymbol (module, Symbol.MODULE, pos))
-              in
-                 doLookup nextTbl rest kind
-              end
-            | doLookup _ _ _ =
-                 raise InternalError "AST node besides ModuleDecl stored in moduletab."
+   local
+      fun lookup (f, tbl, sym) =
+         f tbl sym
+         handle _ => raise Symbol.SymbolError (Symbol.pos sym, "Referenced symbol is unknown.", sym)
+   in
+      fun lookupId (ts, ms) pos ([], kind) = raise InternalError "Empty identifier list passed to lookupId"
+        | lookupId (ts, ms) pos ((id::[]), kind) =
+             SymtabStack.lookup ts (Symbol.toSymbol (id, kind, pos))
+        | lookupId (ts, ms) pos ((topModule::rest), kind) = let
+             fun doLookup (tbl as Absyn.ModuleDecl _) [] kind =
+                    raise InternalError "Identifier only consists of module references."
+               | doLookup (tbl as Absyn.ModuleDecl{symtab, ...}) (id::[]) kind =
+                    lookup (Symtab.lookup, symtab, Symbol.toSymbol (id, kind, pos))
+               | doLookup (tbl as Absyn.ModuleDecl{moduletab, ...}) (module::rest) kind = let
+                    val nextTbl = lookup (Moduletab.lookup, moduletab,
+                                          Symbol.toSymbol (module, Symbol.MODULE, pos))
+                 in
+                    doLookup nextTbl rest kind
+                 end
+               | doLookup _ _ _ =
+                    raise InternalError "AST node besides ModuleDecl stored in moduletab."
 
-          val moduleTbl = lookup (ModuletabStack.lookup, ms,
-                                  Symbol.toSymbol (topModule, Symbol.MODULE, pos))
-       in
-          doLookup moduleTbl rest kind
-       end
+             val moduleTbl = lookup (ModuletabStack.lookup, ms,
+                                     Symbol.toSymbol (topModule, Symbol.MODULE, pos))
+          in
+             doLookup moduleTbl rest kind
+          end
+   end
 
    (* tblToString converts a single table to a string with the provided foldi
     * function (we can't use a generic foldi function here due to the different
@@ -141,6 +142,12 @@ structure Semant :> SEMANT = struct
          hdr ^ "\n----------------------------------------\n" ^
          tblToString Symtab.foldi (SymtabStack.top ts) Entry.toString ^ "\n"
    end
+
+   (* Lookup a type alias in the given environment. *)
+   fun aliasToTy (ts, ms) pos (id, kind) =
+      case lookupId (ts, ms) pos (id, kind) of
+         Entry.TYPE ty => ty
+       | _ => raise Symbol.IdError (pos, "Symbol is not a Type.", id)
 
 
    (* SEMANTIC ANALYSIS FUNCTIONS *)
@@ -166,7 +173,7 @@ structure Semant :> SEMANT = struct
           * exception value into the new symbol table and check the handler
           * against that environment.
           *)
-         SOME id => let val entry = lookupId ts ms id Symbol.EXN_TYPE pos
+         SOME id => let val entry = lookupId (ts, ms) pos (id, Symbol.EXN_TYPE)
                     in
                         (* Exceptions and types are in the same namespace. *)
                         if isExn entry then
@@ -302,9 +309,9 @@ structure Semant :> SEMANT = struct
            * have an exception.
            *)
           fun getExnTy (Entry.EXN ty) = ty
-            | getExnTy _ = raise Symbol.IdError ("Symbol is not an exception type.", id)
+            | getExnTy _ = raise Symbol.IdError (pos, "Symbol is not an exception type.", id)
 
-          val entry = lookupId ts ms id Symbol.EXN_TYPE pos
+          val entry = lookupId (ts, ms) pos (id, Symbol.EXN_TYPE)
           val exnTy = getExnTy entry
           val valuesTy = Types.EXN (checkNamedExprLst checkExpr ts ms values, Types.UNVISITED)
        in
@@ -356,7 +363,8 @@ structure Semant :> SEMANT = struct
      | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele, pos}) = Types.BOTTOM
      | checkBaseExpr ts ms (Absyn.StringExp _) = Types.STRING
 
-   and checkTy ts ms ast = Absyn.absynToTy ast
+   and checkTy ts ms ast =
+      Absyn.absynToTy (fn id => aliasToTy (ts, ms) 0 (id, Symbol.EXN_TYPE)) ast
 
    and checkDecl ts ms (Absyn.Absorb{module, ...}) = ()
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
@@ -377,7 +385,7 @@ structure Semant :> SEMANT = struct
        end
      | checkDecl ts ms (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
-          val declaredTy = Absyn.absynToTy absynTy
+          val declaredTy = Absyn.absynToTy (fn id => aliasToTy (ts, ms) pos (id, Symbol.EXN_TYPE)) absynTy
           val initTy = checkExpr ts ms init
        in
           (* Since there is a type specified, check that the return type of the
@@ -401,7 +409,7 @@ structure Semant :> SEMANT = struct
           * functions are defined in so functions may call themselves.
           *)
          fun round1 ts ms [] = ()
-           | round1 ts ms (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, ...}::rest) = let
+           | round1 ts ms (Absyn.FunDecl{sym, absynTy, formals, tyFormals, body, pos, ...}::rest) = let
                 (* Create a list of formal parameters and their Types as tuples. *)
                 fun buildFormalsLst [] = []
                   | buildFormalsLst (lst: (Symbol.symbol * Absyn.Ty * Absyn.pos) list) = let
@@ -410,7 +418,7 @@ structure Semant :> SEMANT = struct
                    (* Check for duplicate named parameters. *)
                    val _ = findDupEle symLst
 
-                   val tyLst = map Absyn.absynToTy (map #2 lst)
+                   val tyLst = map (Absyn.absynToTy (fn id => aliasToTy (ts, ms) pos (id, Symbol.EXN_TYPE))) (map #2 lst)
                 in
                    ListPair.zip (symLst, tyLst)
                 end
@@ -418,8 +426,10 @@ structure Semant :> SEMANT = struct
                 (* This fun decl may not have an explicit type, so just make
                  * something up for now.  This will get resolved in round2.
                  *)
-                val retTy = if Option.isSome absynTy then Absyn.absynToTy (valOf absynTy)
-                            else Types.BOTTOM
+                val retTy = if Option.isSome absynTy then
+                               Absyn.absynToTy (fn id => aliasToTy (ts, ms) pos (id, Symbol.EXN_TYPE)) (valOf absynTy)
+                            else
+                               Types.BOTTOM
                 val formals = buildFormalsLst formals
              in
                 (* Check that a function by this name is not already defined in
