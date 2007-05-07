@@ -18,7 +18,7 @@ structure Types :> TYPES =
 struct
    datatype Finite = NOT_FINITE | UNVISITED | VISITED | FINITE
 
-   datatype Type = ALIAS of Symbol.symbol * Finite
+   datatype Type = ALIAS of Type * Finite
                  | ANY of Finite
                  | BOOLEAN
                  | BOTTOM
@@ -29,9 +29,10 @@ struct
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
 
+   (* FIXME:  so much to write here *)
    fun eq (tyA:Type, tyB:Type) = true
 
-   fun toString (ALIAS (sym, _)) = Symbol.toString sym
+   fun toString (ALIAS (ty, _)) = toString ty
      | toString (ANY _) = "any"
      | toString BOOLEAN = "boolean"
      | toString BOTTOM = "bottom"

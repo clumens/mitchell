@@ -30,7 +30,7 @@ sig
     *        whatever type is expected for type checking purposes.
     *    BOTTOM is the type for when there's no other type.
     *)
-   datatype Type = ALIAS of Symbol.symbol * Finite
+   datatype Type = ALIAS of Type * Finite
                  | ANY of Finite
                  | BOOLEAN
                  | BOTTOM
