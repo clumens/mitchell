@@ -35,8 +35,8 @@ sig
    (* position * error message * problem symbol *)
    exception SymbolError of StreamPos.pos * string * symbol
 
-   (* error message * problem identifier *)
-   exception IdError of string * MString.mstring list
+   (* position * error message * problem identifier *)
+   exception IdError of StreamPos.pos * string * MString.mstring list
 
    (* Are two symbols equal?  This must compare both the symbol names and the
     * subtable types.  Two symbols with the same name in different subtables
@@ -45,7 +45,7 @@ sig
    val eq: symbol * symbol -> bool
 
    (* Format an IdError exception for printing. *)
-   val idErrorToString: (string * MString.mstring list) -> string
+   val idErrorToString: (StreamPos.pos * string * MString.mstring list) -> string
 
    (* Hash a symbol for entry/lookup into a symbol table. *)
    val hash: symbol -> Word.word

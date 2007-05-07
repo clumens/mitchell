@@ -22,7 +22,7 @@ struct
 
    exception SymbolError of StreamPos.pos * string * symbol
 
-   exception IdError of string * MString.mstring list
+   exception IdError of StreamPos.pos * string * MString.mstring list
 
    fun eq (a: symbol, b: symbol) =
       (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL
@@ -57,7 +57,7 @@ struct
    fun symbolErrorToString (_, errorMsg, sym) =
       (toString sym) ^ " : " ^ errorMsg
 
-   fun idErrorToString (errorMsg, id) =
+   fun idErrorToString (_, errorMsg, id) =
       (String.concatWith "." (map MString.toString id)) ^ " : " ^ errorMsg
 
    fun hash sym = let
