@@ -91,25 +91,23 @@ structure Absyn = struct
             SOME dup => raise Symbol.SymbolError (pos, msg, dup)
           | NONE => ()
    in
-      fun absynToTy (BottomTy _) = Types.BOTTOM
-        | absynToTy (ExnTy{exn', pos}) = let
+      fun absynToTy lookup (BottomTy _) = Types.BOTTOM
+        | absynToTy lookup (ExnTy{exn', pos}) = let
              val _ = checkForDupes (map #1 exn') pos "Exception definition already includes a symbol with this name."
           in
-             Types.EXN (map (fn ele => (#1 ele, absynToTy (#2 ele))) exn', Types.UNVISITED)
+             Types.EXN (map (fn ele => (#1 ele, absynToTy lookup (#2 ele))) exn', Types.UNVISITED)
           end
-        | absynToTy (IdTy{id, ...}) =
-             (* FIXME - write this one *)
-             Types.BOTTOM
-        | absynToTy (ListTy{lst, ...}) = Types.LIST (absynToTy lst, Types.UNVISITED)
-        | absynToTy (RecordTy{record, pos}) = let
+        | absynToTy lookup (IdTy{id, ...}) = Types.ALIAS (lookup id, Types.UNVISITED)
+        | absynToTy lookup (ListTy{lst, ...}) = Types.LIST (absynToTy lookup lst, Types.UNVISITED)
+        | absynToTy lookup (RecordTy{record, pos}) = let
              val _ = checkForDupes (map #1 record) pos "Record definition already includes a symbol with this name."
           in
-             Types.RECORD (map (fn ele => (#1 ele, absynToTy (#2 ele))) record, Types.UNVISITED)
+             Types.RECORD (map (fn ele => (#1 ele, absynToTy lookup (#2 ele))) record, Types.UNVISITED)
           end
-        | absynToTy (UnionTy{tycons, pos}) = let
+        | absynToTy lookup (UnionTy{tycons, pos}) = let
              val _ = checkForDupes (map #1 tycons) pos "Union type definition already includdes a symbol with this name."
           in
-             Types.UNION (map (fn ele => (#1 ele, Option.map absynToTy (#2 ele))) tycons,
+             Types.UNION (map (fn ele => (#1 ele, Option.map (absynToTy lookup) (#2 ele))) tycons,
                           Types.UNVISITED)
           end
    end
