@@ -99,6 +99,7 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
                                              | NONE => ()) ast
       handle Semant.TypeError e => ( print (Error.fmtError (filename, sm, #1 e, Semant.typeErrorToString e)) ; quit true )
            | Symbol.SymbolError e => ( print (Error.fmtError (filename, sm, #1 e, Symbol.symbolErrorToString e)) ; quit true )
+           | Symbol.IdError e => ( print (Error.fmtError (filename, sm, #1 e, Symbol.idErrorToString e)) ; quit true )
    end
 
    (* This is where the magic happens. *)
