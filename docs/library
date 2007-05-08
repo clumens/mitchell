@@ -1,0 +1,184 @@
+Contents of the standard mitchell library
+=========================================
+
+Boolean
+-------
+This module defines functions for manipulating the builtin boolean type.
+
+ƒ and ( ; a: boolean, b: boolean): boolean
+   Returns the logical and of the two booleans.
+
+ƒ fromString ( ; s: string): boolean
+   Converts s into a boolean.  Raises String.Convert on failure.
+
+ƒ not ( ; b: boolean): boolean
+   Returns the negation of the b.
+
+ƒ or ( ; a: boolean, b: boolean): boolean
+   Returns the logical or of the two booleans.
+
+ƒ toString ( ; b: boolean): string
+   Converts b into a string.  Raises String.Convert on failure.
+
+
+Date
+----
+
+
+GetOpt
+------
+
+
+Integer
+-------
+This module defines functions for manipulating the builtin integer type.
+
+ℰ Negative
+   This exception is raised if the result of an operation is negative, since
+   mitchell does not support negative numbers.
+
+ƒ = ( ; i: integer, j: integer): boolean
+   Returns t if i and j are equal.
+
+ƒ < ( ; i: integer, j: integer): boolean
+   Returns t if i is less than j.
+
+ƒ > ( ; i: integer, j: integer): boolean
+   Returns t if i is greater than j.
+
+ƒ <= ( ; i: integer, j: integer): boolean
+   Returns t if i is less than or equal to j.
+
+ƒ >= ( ; i: integer, j: integer): boolean
+   Returns t if i is greater than or equal to j.
+
+ƒ + ( ; i: integer, j: integer): integer
+   Returns the summation of i and j.
+
+ƒ - ( ; i: integer, j: integer): integer
+   Returns the difference of i and j.  Raises Integer.Negative if the result
+   is negative.
+
+ƒ * ( ; i: integer, j: integer): integer
+   Returns the product of i and j.
+
+ƒ fromString ( ; s: string): integer
+   Converts s into an integer.  Raises String.Convert on failure.
+
+ƒ toString ( ; i: integer): string
+   Converts i into a string.  Raises String.Convert on failure.
+
+
+List
+----
+This module defines functions for manipulating polymorphic lists.
+
+ℰ Empty
+   This exception is raised when certain operations are performed on empty
+   lists.
+
+ℰ Subscript
+   This exception is raised when an attempt is made to access a subscript of
+   a list that does not exist.
+
+ƒ append ( α ; e: α, l: list α): list α
+   Returns a new list with e placed at the end of l.
+
+ƒ concat ( α ; l: list α, m: list α): list α
+   Returns a new list composed of m attached in order to the end of l.
+
+ƒ empty ( α ; l: list α): boolean
+   Returns t if l contains no elements.
+
+ƒ head ( α ; l: list α): α
+   Returns the first element of l.  Raises List.Empty if the list contains
+   no elements.
+
+ƒ last ( α ; l: list α): α
+   Returns the last element of l.  Raises List.Empty if the list contains no
+   elements.
+
+ƒ length ( α ; l: list α): integer
+   Returns the length of l.
+
+ƒ nth ( α ; l: list α, i: integer): α
+   Returns the list element at index i.  Lists are indexed starting with 0.
+   Raises List.Subscript if Integer.>= (i, List.length(l)).
+
+ƒ prepend ( α ; e: α, l: list α): list α
+   Returns a new list with e placed in front of the original list l.
+
+ƒ rev ( α ; l: list α): list α
+   Returns a new list that is the reverse of l.
+
+ƒ slice ( α ; l: list α, i: integer, j: integer): list α
+   Returns a sublist of l, starting at index i and with length j.  Raises
+   List.Subscript if Integer.>= (i, List.length(l)) or if
+   Integer.>= (Integer.+ (i, j), List.length(l)).
+
+ƒ tail ( α ; l: list α): list α
+   Returns all but the first element of l.  Raises List.Empty if the list
+   contains no elements.
+
+
+Option
+------
+
+
+String
+------
+This module defines functions for manipulating the builtin string type.
+
+ℰ Convert
+   This exception is raised when the conversion to or from a string fails.
+
+ƒ = ( ; s: string, t: string): boolean
+   Returns t if s is lexicographically equal to t.
+
+ƒ < ( ; s: string, t: string): boolean
+   Returns t if s is lexicographically less than to t.
+
+ƒ > ( ; s: string, t: string): boolean
+   Returns t if s is lexicographically greater than to t.
+
+ƒ <= ( ; s: string, t: string): boolean
+   Returns t if s is lexicographically less than or equal to t.
+
+ƒ >= ( ; s: string, t: string): boolean
+   Returns t if s is lexicographically greater than or equal to t.
+
+ƒ + ( ; s: string, t: string): string
+   Returns a new string that is the concatenation of s and t.
+
+ƒ contains ( ; s: string, ss: string): boolean
+   Returns t if s contains the substring ss.
+
+ƒ isPrefix ( ; s: string, ss: string): boolean
+   Returns t if s starts with the substring ss.
+
+ƒ isSuffix ( ; s: string, ss: string): boolean
+   Returns t if s ends with the substring ss.
+
+ƒ join ( ; l: list string, s: string): string
+   Returns a new string that is the concatenation of the strings in l, using
+   s as a separator.
+
+ƒ length ( ; s: string): length
+   Returns the number of characters in s.
+
+ƒ nth ( ; s: string, i: integer): string
+   Returns the character of s at index i.  Strings are indexed starting with 0.
+   Raises List.Subscript if Integer.>= (i, String.length(s)).
+
+ƒ slice ( ; s: string, i: integer, j: integer): string
+   Returns a substring of s, starting at index i and with length j.  Raises
+   List.Subscript if Integer.>= (i, String.length(s)) or if
+   Integer.>= (Integer.+ (i, j), String.length(s)).
+
+ƒ split ( ; s: string, t: string): list string
+   Splits s into a list of strings on the separator t.  The separator is not
+   included in any of the resulting strings.
+
+
+Time
+----

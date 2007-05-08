@@ -14,7 +14,6 @@
    - need to think up a format for built modules that will allow us to
      suck in a symbol table for them during semantic analysis
    - internal interface to C libraries for implementing the runtime
-   - outline contents for runtime library
    - some sort of plugin/registration system for compilation phases (?)
 - symbol table / type checker:
    - does it make sense to keep the symtab and moduletab in a tree
