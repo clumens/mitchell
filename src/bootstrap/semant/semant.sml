@@ -331,8 +331,40 @@ structure Semant :> SEMANT = struct
                                  "this expression type", ty)
            | (firstTy, _) => firstTy
           )
-       (* TODO *)
-     | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
+     | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, pos, ...}) = (
+          case lookupId (ts, ms) pos (id, Symbol.FUN_TYCON) of
+             Entry.FUNCTION{ty, tyFormals, formals} => let
+                   (* Compare a single actual parameter type against a single
+                    * formal parameter type, raising an exception if they don't
+                    * match up.
+                    *)
+                   fun tyCmp ((actualTy, expr), formalTy) =
+                      if (Types.eq (actualTy, formalTy)) then ()
+                      else raise TypeError (exprPos expr,
+                                            "Type of actual parameter does not match type of formal parameter.",
+                                            "actual parameter type", actualTy,
+                                            "formal parameter type", formalTy)
+
+                   (* Pair up actual parameter types with their expressions so
+                    * we can get accurate error reporting in tyCmp above.
+                    *)
+                   val actualTys = ListPair.zip (map (checkExpr ts ms) args, args)
+                   val formalTys = map #2 formals
+                in
+                   (* Function calls must have the same number of parameters and
+                    * type parameters as the function declaration expects.  If
+                    * all that matches up, check the types of the parameters and
+                    * finally return the function's return type as the whole
+                    * expression's type.
+                    *)
+                   if length tyFormals = length tyArgs then
+                      ( ListPair.appEq tyCmp (actualTys, formalTys) ; ty )
+                      handle ListPair.UnequalLengths => raise Symbol.IdError (pos, "Number of actual parameters does not match number of formals.", id)
+                   else
+                      raise Symbol.IdError (pos, "Number of type parameters does not match number of formals.", id)
+                end
+             | _ => raise Symbol.IdError (pos, "Referenced symbol is not a function.", id)
+          )
      | checkBaseExpr ts ms (Absyn.IdExp (id, pos)) = let
           val sym = Symbol.toSymbol ((hd id), Symbol.VALUE, pos)
        in
