@@ -236,6 +236,7 @@ structure Semant :> SEMANT = struct
      | checkBaseExpr ts ms (Absyn.CaseExp{test, default, branches, ...}) = let
           fun checkBranch ts ms (Absyn.RegularBranch expr) =
                  (ts, ms, checkBaseExpr ts ms expr)
+              (* TODO *)
             | checkBranch ts ms (Absyn.UnionBranch (id, syms)) = (ts, ms, Types.BOTTOM)
 
           (* UnionBranches can introduce new bindings, so we have to check the
@@ -330,6 +331,7 @@ structure Semant :> SEMANT = struct
                                  "this expression type", ty)
            | (firstTy, _) => firstTy
           )
+       (* TODO *)
      | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, ...}) = Types.BOTTOM
      | checkBaseExpr ts ms (Absyn.IdExp (id, pos)) = let
           val sym = Symbol.toSymbol ((hd id), Symbol.VALUE, pos)
@@ -360,6 +362,7 @@ structure Semant :> SEMANT = struct
      | checkBaseExpr ts ms (Absyn.RaiseExp (expr, _)) = ( checkExpr ts ms expr ; Types.ANY Types.UNVISITED )
      | checkBaseExpr ts ms (Absyn.RecordAssnExp (lst, _)) =
           Types.RECORD (checkNamedExprLst checkExpr ts ms lst, Types.UNVISITED)
+       (* TODO *)
      | checkBaseExpr ts ms (Absyn.RecordRefExp{record, ele, pos}) = Types.BOTTOM
      | checkBaseExpr ts ms (Absyn.StringExp _) = Types.STRING
 
@@ -390,7 +393,9 @@ structure Semant :> SEMANT = struct
                 )
            | _ => raise InternalError "Node other than ModuleDecl stored in Moduletab."
        end
+       (* TODO *)
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
+       (* TODO *)
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
      | checkDecl ts ms (decl as Absyn.ModuleDecl{sym, decls, symtab, moduletab, ...}) = let
           (* Add the module to the lexical parent's environment. *)
@@ -406,6 +411,7 @@ structure Semant :> SEMANT = struct
           (* Check the guts of the module against the module's environment. *)
           (checkDeclLst ts' ms' decls) before (!writeFn (symtabTopToString (Symbol.toString sym) ts'))
        end
+       (* TODO *)
      | checkDecl ts ms (Absyn.TyDecl{sym, absynTy, tyvars, ...}) = ()
      | checkDecl ts ms (Absyn.ValDecl{sym, absynTy=SOME absynTy, init, pos}) = let
           val declaredTy = Absyn.absynToTy (fn id => aliasToTy (ts, ms) pos (id, Symbol.EXN_TYPE)) absynTy
