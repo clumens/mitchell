@@ -167,27 +167,26 @@ structure Semant :> SEMANT = struct
        *)
       val ts' = SymtabStack.enter (ts, Symtab.mkTable (47, SymtabStack.NotFound))
    in
-      case exnKind of
-         (* This is not a default handler, so lookup the exception type in the
-          * environment.  If it's found (which it had better be), enter the
-          * exception value into the new symbol table and check the handler
-          * against that environment.
-          *)
-         SOME id => let val entry = lookupId (ts, ms) pos (id, Symbol.EXN_TYPE)
-                    in
-                        (* Exceptions and types are in the same namespace. *)
-                        if isExn entry then
-                           ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
-                           before (!writeFn (symtabTopToString "exn-handler" ts'))
-                        else
-                           raise Symbol.SymbolError (pos, "Symbol is not an exception type.", sym)
-                    end
-         (* The default handler only gets a skeleton entry added for the
-          * exception type.
-          *)
-       | NONE => let val _ = insertSym ts' (sym, Entry.TYPE (Types.EXN ([], Types.FINITE)))
-                 in (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "exn-handler" ts'))
-                 end
+      if Option.isSome exnKind then let
+           (* This is not a default handler, so lookup the exception type in the
+            * environment.  If it's found (which it had better be), enter the
+            * exception value into the new symbol table and check the handler
+            * against that environment.
+            *)
+            val id = Option.valOf exnKind
+            val entry = lookupId (ts, ms) pos (id, Symbol.EXN_TYPE)
+         in
+            (* Exceptions and types are in the same namespace. *)
+            if isExn entry then
+               ( insertSym ts' (sym, entry) ; checkExpr ts' ms expr )
+               before (!writeFn (symtabTopToString "exn-handler" ts'))
+            else
+               raise Symbol.SymbolError (pos, "Symbol is not an exception type.", sym)
+         end
+      (* The default handler only gets a skeleton entry added for the type. *)
+      else let val _ = insertSym ts' (sym, Entry.TYPE (Types.EXN ([], Types.FINITE)))
+         in (checkExpr ts' ms expr) before (!writeFn (symtabTopToString "exn-handler" ts'))
+         end
    end
 
    and checkExnHandlerLst ts ms ([], SOME default) = checkExnHandler ts ms default
