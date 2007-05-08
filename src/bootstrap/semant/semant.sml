@@ -366,7 +366,30 @@ structure Semant :> SEMANT = struct
    and checkTy ts ms ast =
       Absyn.absynToTy (fn id => aliasToTy (ts, ms) 0 (id, Symbol.EXN_TYPE)) ast
 
-   and checkDecl ts ms (Absyn.Absorb{module, ...}) = ()
+   and checkDecl ts ms (Absyn.Absorb{module, pos}) = let
+          val localsymtab = SymtabStack.top ts
+          val localmoduletab = ModuletabStack.top ms
+
+          (* Look up the module we're absorbing into the local scope, erroring
+           * if the given symbol does not map to a module.
+           *)
+          val sym = Symbol.toSymbol (hd module, Symbol.MODULE, pos)
+          val astNode = ModuletabStack.lookup ms sym
+                        handle _ => raise Symbol.SymbolError (Symbol.pos sym, "Referenced symbol is unknown.", sym)
+       in
+          (* Loop over all symbols defined in the module, adding them to the
+           * local symbol table.  Replacement of symbols previously defined in
+           * this scope is allowed.  We must also loop over the module table and
+           * add local bindings for those as well.
+           *)
+          case astNode of
+             Absyn.ModuleDecl{symtab, moduletab, ...} =>
+                ( Symtab.appi (fn (k, v) => Symtab.insert localsymtab (k, v)) symtab ;
+                  Moduletab.appi (fn (k, v) => Moduletab.insert localmoduletab (k, v))
+                                 moduletab
+                )
+           | _ => raise InternalError "Node other than ModuleDecl stored in Moduletab."
+       end
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=SOME absynTy, formals, tyFormals, body, ...}) = ()
      | checkDecl ts ms (Absyn.FunDecl{sym, absynTy=NONE, formals, tyFormals, body, ...}) = ()
      | checkDecl ts ms (decl as Absyn.ModuleDecl{sym, decls, symtab, moduletab, ...}) = let
