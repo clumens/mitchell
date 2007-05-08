@@ -311,8 +311,7 @@ structure Semant :> SEMANT = struct
           fun getExnTy (Entry.EXN ty) = ty
             | getExnTy _ = raise Symbol.IdError (pos, "Symbol is not an exception type.", id)
 
-          val entry = lookupId (ts, ms) pos (id, Symbol.EXN_TYPE)
-          val exnTy = getExnTy entry
+          val exnTy = getExnTy (lookupId (ts, ms) pos (id, Symbol.EXN_TYPE))
           val valuesTy = Types.EXN (checkNamedExprLst checkExpr ts ms values, Types.UNVISITED)
        in
           if not (Types.eq (exnTy, valuesTy)) then
@@ -330,40 +329,43 @@ structure Semant :> SEMANT = struct
                                  "this expression type", ty)
            | (firstTy, _) => firstTy
           )
-     | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, pos, ...}) = (
-          case lookupId (ts, ms) pos (id, Symbol.FUN_TYCON) of
-             Entry.FUNCTION{ty, tyFormals, formals} => let
-                   (* Compare a single actual parameter type against a single
-                    * formal parameter type, raising an exception if they don't
-                    * match up.
-                    *)
-                   fun tyCmp ((actualTy, expr), formalTy) =
-                      if (Types.eq (actualTy, formalTy)) then ()
-                      else raise TypeError (exprPos expr,
-                                            "Type of actual parameter does not match type of formal parameter.",
-                                            "actual parameter type", actualTy,
-                                            "formal parameter type", formalTy)
+     | checkBaseExpr ts ms (Absyn.FunCallExp{id, args, tyArgs, pos, ...}) = let
+          (* Functions and type constructors are in the same namespace, so make
+           * sure we have an exception.
+           *)
+          fun getFunTy (Entry.FUNCTION{ty, tyFormals, formals}) = (ty, tyFormals, formals)
+            | getFunTy _ = raise Symbol.IdError (pos, "Referenced symbol is not a function.", id)
 
-                   (* Pair up actual parameter types with their expressions so
-                    * we can get accurate error reporting in tyCmp above.
-                    *)
-                   val actualTys = ListPair.zip (map (checkExpr ts ms) args, args)
-                   val formalTys = map #2 formals
-                in
-                   (* Function calls must have the same number of parameters and
-                    * type parameters as the function declaration expects.  If
-                    * all that matches up, check the types of the parameters and
-                    * finally return the function's return type as the whole
-                    * expression's type.
-                    *)
-                   if length tyFormals = length tyArgs then
-                      ( ListPair.appEq tyCmp (actualTys, formalTys) ; ty )
-                      handle ListPair.UnequalLengths => raise Symbol.IdError (pos, "Number of actual parameters does not match number of formals.", id)
-                   else
-                      raise Symbol.IdError (pos, "Number of type parameters does not match number of formals.", id)
-                end
-             | _ => raise Symbol.IdError (pos, "Referenced symbol is not a function.", id)
-          )
+          (* Compare a single actual parameter type against a single
+           * formal parameter type, raising an exception if they don't
+           * match up.
+           *)
+          fun tyCmp ((actualTy, expr), formalTy) =
+             if (Types.eq (actualTy, formalTy)) then ()
+             else raise TypeError (exprPos expr,
+                                   "Type of actual parameter does not match type of formal parameter.",
+                                   "actual parameter type", actualTy,
+                                   "formal parameter type", formalTy)
+
+          val (ty, tyFormals, formals) = getFunTy (lookupId (ts, ms) pos (id, Symbol.FUN_TYCON))
+
+          (* Pair up actual parameter types with their expressions so we can get
+           * accurate error reporting in tyCmp above.
+           *)
+          val actualTys = ListPair.zip (map (checkExpr ts ms) args, args)
+          val formalTys = map #2 formals
+       in
+          (* Function calls must have the same number of parameters and type
+           * parameters as the function declaration expects.  If all that matches
+           * up, check the types of the parameters and finally return the
+           * function's return type as the whole expression's type.
+           *)
+          if length tyFormals = length tyArgs then
+             ( ListPair.appEq tyCmp (actualTys, formalTys) ; ty )
+             handle ListPair.UnequalLengths => raise Symbol.IdError (pos, "Number of actual parameters does not match number of formals.", id)
+          else
+             raise Symbol.IdError (pos, "Number of type parameters does not match number of formals.", id)
+       end
      | checkBaseExpr ts ms (Absyn.IdExp (id, pos)) = let
           val sym = Symbol.toSymbol ((hd id), Symbol.VALUE, pos)
        in
@@ -401,6 +403,10 @@ structure Semant :> SEMANT = struct
       Absyn.absynToTy (fn id => aliasToTy (ts, ms) 0 (id, Symbol.EXN_TYPE)) ast
 
    and checkDecl ts ms (Absyn.Absorb{module, pos}) = let
+          (* Copy the contents of one table into another. *)
+          fun copyTable appFn insertFn src dest =
+             appFn (fn (k, v) => insertFn dest (k, v)) src
+
           val localsymtab = SymtabStack.top ts
           val localmoduletab = ModuletabStack.top ms
 
@@ -418,10 +424,8 @@ structure Semant :> SEMANT = struct
            *)
           case astNode of
              Absyn.ModuleDecl{symtab, moduletab, ...} =>
-                ( Symtab.appi (fn (k, v) => Symtab.insert localsymtab (k, v)) symtab ;
-                  Moduletab.appi (fn (k, v) => Moduletab.insert localmoduletab (k, v))
-                                 moduletab
-                )
+                ( copyTable Symtab.appi Symtab.insert symtab localsymtab ;
+                  copyTable Moduletab.appi Moduletab.insert moduletab localmoduletab )
            | _ => raise InternalError "Node other than ModuleDecl stored in Moduletab."
        end
        (* TODO *)
@@ -502,8 +506,10 @@ structure Semant :> SEMANT = struct
                 ( insertSym ts (sym, Entry.FUNCTION{ty=retTy, tyFormals=tyFormals, formals=formals}) ; round1 ts ms rest )
              end
            | round1 ts ms _ = raise InternalError "FunDecl list contains something other than functions."
+
+         fun round2 ts ms decls = app (checkDecl ts ms) decls
       in
-         round1 ts ms funcs
+         round1 ts ms funcs ; round2 ts ms funcs
       end
 
       (* Process a block of possibly mutually recursive type declarations. *)
@@ -534,8 +540,10 @@ structure Semant :> SEMANT = struct
                    ( insertSym ts (sym, Entry.TYPE Types.BOTTOM) ; round1 ts ms rest )
              end
            | round1 ts ms _ = raise InternalError "TyDecl list contains something other than types."
+
+         fun round2 ts ms decls = app (checkDecl ts ms) tys
       in
-         round1 ts ms tys
+         round1 ts ms tys ; round2 ts ms tys
       end
 
       (* For function and type declarations, we need to handle possibly
@@ -544,14 +552,14 @@ structure Semant :> SEMANT = struct
        * back for the rest.  All other declarations are straightforward.
        *)
       fun doCheck ts ms (lst as (Absyn.FunDecl _)::decls) = let
-             val (funcs, rest) = ListMisc.split (fn (Absyn.FunDecl _) => true | _ => false)
-                                                lst
+             fun isFunDecl (Absyn.FunDecl _) = true | isFunDecl _ = false
+             val (funcs, rest) = ListMisc.split isFunDecl lst
           in
              (processFunDecls ts ms funcs) before (doCheck ts ms rest)
           end
         | doCheck ts ms (lst as (Absyn.TyDecl _)::decls) = let
-             val (tys, rest) = ListMisc.split (fn (Absyn.TyDecl _) => true | _ => false)
-                                              lst
+             fun isTyDecl (Absyn.TyDecl _) = true | isTyDecl _ = false
+             val (tys, rest) = ListMisc.split isTyDecl lst
           in
              (processTyDecls ts ms tys) before (doCheck ts ms rest)
           end
