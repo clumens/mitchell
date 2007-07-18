@@ -18,11 +18,11 @@ structure Symbol :> SYMBOL =
 struct
    datatype Subtable = EXN_TYPE | FUN_TYCON | MODULE | VALUE
 
-   type symbol = MString.mstring * Label.label * Subtable * StreamPos.pos
+   type symbol = MString.mstring * Label.label * Subtable * AntlrStreamPos.pos
 
-   exception SymbolError of StreamPos.pos * string * symbol
+   exception SymbolError of AntlrStreamPos.pos * string * symbol
 
-   exception IdError of StreamPos.pos * string * MString.mstring list
+   exception IdError of AntlrStreamPos.pos * string * MString.mstring list
 
    fun eq (a: symbol, b: symbol) =
       (#3 a = #3 b) andalso (MString.compare (#1 a, #1 b)) = EQUAL

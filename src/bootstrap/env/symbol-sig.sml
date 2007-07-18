@@ -33,10 +33,10 @@ sig
    type symbol
 
    (* position * error message * problem symbol *)
-   exception SymbolError of StreamPos.pos * string * symbol
+   exception SymbolError of AntlrStreamPos.pos * string * symbol
 
    (* position * error message * problem identifier *)
-   exception IdError of StreamPos.pos * string * MString.mstring list
+   exception IdError of AntlrStreamPos.pos * string * MString.mstring list
 
    (* Are two symbols equal?  This must compare both the symbol names and the
     * subtable types.  Two symbols with the same name in different subtables
@@ -45,7 +45,7 @@ sig
    val eq: symbol * symbol -> bool
 
    (* Format an IdError exception for printing. *)
-   val idErrorToString: (StreamPos.pos * string * MString.mstring list) -> string
+   val idErrorToString: (AntlrStreamPos.pos * string * MString.mstring list) -> string
 
    (* Hash a symbol for entry/lookup into a symbol table. *)
    val hash: symbol -> Word.word
@@ -60,13 +60,13 @@ sig
    val nameGt: symbol * symbol -> bool
 
    (* Return the position of a symbol in the input stream. *)
-   val pos: symbol -> StreamPos.pos
+   val pos: symbol -> AntlrStreamPos.pos
 
    (* Return the subtable a symbol exists in. *)
    val subtable: symbol -> Subtable
 
    (* Format a SymbolError exception for printing. *)
-   val symbolErrorToString: (StreamPos.pos * string * symbol) -> string
+   val symbolErrorToString: (AntlrStreamPos.pos * string * symbol) -> string
 
    (* Perform the reverse operation - convert a symbol into a string that
     * is suitable for printing.
@@ -77,5 +77,5 @@ sig
     * The subtable is used to discriminate between the various kinds of symbols
     * that can all have the same name but live in the same table.
     *)
-   val toSymbol: MString.mstring * Subtable * StreamPos.pos -> symbol
+   val toSymbol: MString.mstring * Subtable * AntlrStreamPos.pos -> symbol
 end

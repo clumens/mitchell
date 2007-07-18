@@ -23,7 +23,7 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
    open Error
    structure Parser = MitchellParseFn (MitchellLex)
 
-   val sm = StreamPos.mkSourcemap ()
+   val sm = AntlrStreamPos.mkSourcemap ()
 
    (* Create the output stream we're writing internal debugging output to. *)
    fun mkStream inFile Options.Stdout = TextIO.stdOut
@@ -48,7 +48,7 @@ structure Main :> sig val main: 'a * string list -> 'b end = struct
        *)
       fun repairToString tokToString sm (pos, repair) =
          Error.fmtError (filename, sm, pos,
-                         "Parse error: " ^ Repair.actionToString tokToString repair)
+                         "Parse error: " ^ AntlrRepair.actionToString tokToString repair)
 
       (* Perform the actual parse.  If there are any repair error messages,
        * print them out and then quit.  Otherwise return the AST.

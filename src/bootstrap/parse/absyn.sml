@@ -17,7 +17,7 @@
 
 (* This structure defines the format of the abstact syntax tree. *)
 structure Absyn = struct
-   type pos = StreamPos.pos
+   type pos = AntlrStreamPos.pos
 
    (* A reference to a (hopefully) existing identifier.  This is something we
     * will look up in the symbol table later on, not something to be stored in

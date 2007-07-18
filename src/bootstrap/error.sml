@@ -20,7 +20,7 @@ structure Error = struct
 
    (* Format error messages to all look the same. *)
    fun fmtError (filename, sm, pos, msg) =
-      filename ^ " " ^ (StreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
+      filename ^ " " ^ (AntlrStreamPos.toString sm pos) ^ ": " ^ msg ^ "\n"
 
    (* A function to kill the compiler.  failure is a boolean for whether this
     * is an error case or not.  This function mainly exists to easily turn off

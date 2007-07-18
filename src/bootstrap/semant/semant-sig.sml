@@ -20,10 +20,10 @@ sig
    exception InternalError of string
 
    (* position * error message * expected message * expected ty * got message * got ty *)
-   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
+   exception TypeError of AntlrStreamPos.pos * string * string * Types.Type * string * Types.Type
 
    (* We only need to expose a single function for checking the entire AST. *)
    val checkProg: (string -> unit) -> Absyn.Decl list -> unit
 
-   val typeErrorToString: (StreamPos.pos * string * string * Types.Type * string * Types.Type) -> string
+   val typeErrorToString: (AntlrStreamPos.pos * string * string * Types.Type * string * Types.Type) -> string
 end

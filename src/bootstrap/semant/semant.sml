@@ -16,7 +16,7 @@
  *)
 structure Semant :> SEMANT = struct
    exception InternalError of string
-   exception TypeError of StreamPos.pos * string * string * Types.Type * string * Types.Type
+   exception TypeError of AntlrStreamPos.pos * string * string * Types.Type * string * Types.Type
 
    fun typeErrorToString (_, errorMsg, expectedMsg, expectedTy, gotMsg, gotTy) =
       errorMsg ^ ":\n\t" ^ expectedMsg ^ ":\t" ^ (Types.toString expectedTy) ^

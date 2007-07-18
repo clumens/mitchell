@@ -31,7 +31,7 @@
    (* A span gives us both the start and ending position, but we really only
     * care about the start.
     *)
-   fun span2pos (span: StreamPos.span) = #1 span
+   fun span2pos (span: AntlrStreamPos.span) = #1 span
 );
 
 (* START *)

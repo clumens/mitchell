@@ -31,7 +31,7 @@
    fun eof() = EOF
 
    (* position * error message *)
-   exception TokenizeError of StreamPos.pos * string
+   exception TokenizeError of AntlrStreamPos.pos * string
 
    val text: MString.mstring ref = ref (MString.fromString "")
    fun addText s = ( text := MString.^ (!text, s) )
