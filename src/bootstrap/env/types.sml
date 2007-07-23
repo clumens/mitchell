@@ -36,6 +36,7 @@ struct
    local
       fun pairEq (tyCmp, (symA, tyA), (symB, tyB)) = Symbol.eq (symA, symB) andalso
                                                      tyCmp (tyA, tyB)
+
       fun listsEq (tyCmp, lstA, lstB) =
          ListPair.allEq (fn (a, b) => pairEq (tyCmp, a, b)) (lstA, lstB)
          handle ListPair.UnequalLengths => false
