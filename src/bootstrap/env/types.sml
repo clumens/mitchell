@@ -29,8 +29,39 @@ struct
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
 
-   (* FIXME:  so much to write here *)
-   fun eq (tyA:Type, tyB:Type) = true
+   fun unalias (ALIAS (ty, _)) = unalias ty
+     | unalias ty = ty
+
+   (* XXX: does this need modification for polymorphic types? *)
+   local
+      fun pairEq (tyCmp, (symA, tyA), (symB, tyB)) = Symbol.eq (symA, symB) andalso
+                                                     tyCmp (tyA, tyB)
+      fun listsEq (tyCmp, lstA, lstB) =
+         ListPair.allEq (fn (a, b) => pairEq (tyCmp, a, b)) (lstA, lstB)
+         handle ListPair.UnequalLengths => false
+
+      fun optListsEq (tyCmp, lstA, lstB) =
+         ListPair.allEq (fn ((symA, SOME tyA), (symB, SOME tyB)) => pairEq (tyCmp, (symA, tyA), (symB, tyB))
+                          | ((symA, NONE), (symB, NONE)) => Symbol.eq (symA, symB)
+                          | (_, _) => false)
+                        (lstA, lstB)
+         handle ListPair.UnequalLengths => false
+   in
+      fun eq (ALIAS (tyA, _), ALIAS (tyB, _)) = eq (unalias tyA, unalias tyB)
+        | eq (ALIAS (tyA, _), tyB) = eq (unalias tyA, tyB)
+        | eq (tyA, ALIAS (tyB, _)) = eq (tyA, unalias tyB)
+        | eq (ANY _, _) = true
+        | eq (_, ANY _) = true
+        | eq (BOOLEAN, BOOLEAN) = true
+        | eq (BOTTOM, BOTTOM) = true
+        | eq (EXN (lstA, _), EXN (lstB, _)) = listsEq (eq, lstA, lstB)
+        | eq (INTEGER, INTEGER) = true
+        | eq (LIST (tyA, _), LIST (tyB, _)) = eq (tyA, tyB)
+        | eq (RECORD (lstA, _), RECORD (lstB, _)) = listsEq (eq, lstA, lstB)
+        | eq (STRING, STRING) = true
+        | eq (UNION (lstA, _), UNION (lstB, _)) = optListsEq (eq, lstA, lstB)
+        | eq (_, _) = false
+   end
 
    fun toString (ALIAS (ty, _)) = toString ty
      | toString (ANY _) = "any"

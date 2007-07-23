@@ -41,6 +41,9 @@ sig
                  | STRING
                  | UNION of (Symbol.symbol * Type option) list * Finite
 
+   (* Strip off any aliases present on a type. *)
+   val unalias: Type -> Type
+
    (* Compare two types for equality. *)
    val eq: Type * Type -> bool
 
