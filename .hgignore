@@ -1,9 +1,0 @@
-(^|/)CVS($|/)
-(^|/)\.hg($|/)
-(^|/)\.hgtags($|/)
-(^|/)\.cm($|/)
-(^|/)\..*.swp($|/)
-dump.dot
-mitchell.grm.sml
-mitchell.grm.tex
-mitchell.lex.sml
